@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -26,11 +27,13 @@ type Columns interface {
 	Update(ctx context.Context, dto *models.ColumnsDTO) error
 	UpdateSeveral(ctx context.Context, dto []*models.ColumnsDTO) error
 	Delete(ctx context.Context, dto *models.DeleteColumnDTO) error
+	DeleteAll(ctx context.Context, dto *models.DeleteColumnsDTO) error
 }
 
 func (r *ColumnRepo) Get(ctx context.Context, req *models.GetColumnsDTO) ([]*models.Column, error) {
-	query := fmt.Sprintf(`SELECT id, section_id, name, field, position, type, width, parent_id, allow_sort, allow_filter, created_at
-		FROM %s WHERE section_id=$1 ORDER BY position`,
+	query := fmt.Sprintf(`SELECT id, section_id, name, field, position, type, width, COALESCE(parent_id::text, '') AS parent_id, 
+		allow_sort, allow_filter, created_at
+		FROM %s WHERE section_id=$1 ORDER BY position, created_at`,
 		ColumnsTable,
 	)
 	tmp := []*models.Column{}
@@ -44,6 +47,7 @@ func (r *ColumnRepo) Get(ctx context.Context, req *models.GetColumnsDTO) ([]*mod
 		if i != 0 && v.ParentID == data[len(data)-1].ID {
 			data[len(data)-1].Children = append(data[len(data)-1].Children, v)
 		} else {
+			// v.Children = make([]*models.Column, 0)
 			data = append(data, v)
 		}
 	}
@@ -56,6 +60,11 @@ func (r *ColumnRepo) Create(ctx context.Context, dto *models.ColumnsDTO) error {
 		ColumnsTable,
 	)
 
+	dto.ID = uuid.NewString()
+	if dto.ParentID == "" {
+		dto.ParentID = uuid.Nil.String()
+	}
+
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
@@ -67,6 +76,12 @@ func (r *ColumnRepo) CreateSeveral(ctx context.Context, dto []*models.ColumnsDTO
 		VALUES (:id, :section_id, :name, :field, :position, :type, :width, :parent_id, :allow_sort, :allow_filter)`,
 		ColumnsTable,
 	)
+	for i, d := range dto {
+		dto[i].ID = uuid.NewString()
+		if d.ParentID == "" {
+			dto[i].ParentID = uuid.Nil.String()
+		}
+	}
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
@@ -80,6 +95,10 @@ func (r *ColumnRepo) Update(ctx context.Context, dto *models.ColumnsDTO) error {
 		ColumnsTable,
 	)
 
+	if dto.ParentID == "" {
+		dto.ParentID = uuid.Nil.String()
+	}
+
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
@@ -90,6 +109,10 @@ func (r *ColumnRepo) UpdateSeveral(ctx context.Context, dto []*models.ColumnsDTO
 	values := []string{}
 	args := []interface{}{}
 	for i, v := range dto {
+		if v.ParentID == "" {
+			dto[i].ParentID = uuid.Nil.String()
+		}
+
 		tmp := []interface{}{v.ID, v.Name, v.Field, v.Position, v.Type, v.Width, v.ParentID, v.AllowSort, v.AllowFilter}
 		args = append(args, tmp...)
 		numbers := []string{}
@@ -115,6 +138,15 @@ func (r *ColumnRepo) UpdateSeveral(ctx context.Context, dto []*models.ColumnsDTO
 
 func (r *ColumnRepo) Delete(ctx context.Context, dto *models.DeleteColumnDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, ColumnsTable)
+
+	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *ColumnRepo) DeleteAll(ctx context.Context, dto *models.DeleteColumnsDTO) error {
+	query := fmt.Sprintf(`DELETE FROM %s WHERE section_id=:section_id`, ColumnsTable)
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)

@@ -64,9 +64,8 @@ func (h *Handlers) get(c *gin.Context) {
 
 func (h *Handlers) getById(c *gin.Context) {
 	id := c.Param("id")
-	err := uuid.Validate(id)
-	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid id param")
+	if err := uuid.Validate(id); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "invalid id param")
 		return
 	}
 
