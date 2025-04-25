@@ -1,0 +1,15 @@
+export const AcceptedFiles = Object.freeze({
+	'application/msword': ['.doc'],
+	'application/x-extension-doc': ['.doc'],
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+	'application/x-extension-docx': ['.docx'],
+	'application/vnd.oasis.opendocument.text': ['.odt'],
+	'application/vnd.ms-excel': ['.xls'],
+	'application/x-extension-xls': ['.xls'],
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+	'application/x-extension-xlsx': ['.xlsx'],
+	'application/pdf': ['.pdf'],
+	'image/png': ['.png'],
+	'image/jpeg': ['.jpeg', '.jpg'],
+	'text/csv': ['.csv'],
+})
