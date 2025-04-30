@@ -26,6 +26,7 @@ type Columns interface {
 	CreateSeveral(ctx context.Context, dto []*models.ColumnsDTO) error
 	Update(ctx context.Context, dto *models.ColumnsDTO) error
 	UpdateSeveral(ctx context.Context, dto []*models.ColumnsDTO) error
+	UpdatePositions(ctx context.Context, dto []*models.UpdateColumnPosition) error
 	Delete(ctx context.Context, dto *models.DeleteColumnDTO) error
 	DeleteAll(ctx context.Context, dto *models.DeleteColumnsDTO) error
 }
@@ -122,11 +123,39 @@ func (r *ColumnRepo) UpdateSeveral(ctx context.Context, dto []*models.ColumnsDTO
 		values = append(values, fmt.Sprintf("(%s)", strings.Join(numbers, ",")))
 	}
 
-	//TODO надо проверить нормально ли отрабатывает
-	query := fmt.Sprintf(`UPDATE %s AS t SET name=s.name, field=s.field, position=s.position, type=s.type, width=s.width,
-		parent_id=s.parent_id, allow_sort=s.allow_sort, allow_filter=s.allow_filter 
-		FROM (VALUES %s) AS s(id, name, field, position::integer, type, width::integer, parent_id::uuid, allow_sort::boolean, allow_filter::boolean) 
-		WHERE t.id=s.id::integer`,
+	query := fmt.Sprintf(`UPDATE %s AS t SET name=s.name, field=s.field, position=s.position::integer, type=s.type, width=s.width::integer,
+		parent_id=s.parent_id::uuid, allow_sort=s.allow_sort::boolean, allow_filter=s.allow_filter::boolean 
+		FROM (VALUES %s) AS s(id, name, field, position, type, width, parent_id, allow_sort, allow_filter) 
+		WHERE t.id=s.id::uuid`,
+		ColumnsTable, strings.Join(values, ","),
+	)
+
+	if _, err := r.db.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *ColumnRepo) UpdatePositions(ctx context.Context, dto []*models.UpdateColumnPosition) error {
+	values := []string{}
+	args := []interface{}{}
+	for i, v := range dto {
+		if v.ParentID == "" {
+			dto[i].ParentID = uuid.Nil.String()
+		}
+
+		tmp := []interface{}{v.ID, v.Position, v.ParentID}
+		args = append(args, tmp...)
+		numbers := []string{}
+		for j := range tmp {
+			numbers = append(numbers, fmt.Sprintf("$%d", i*len(tmp)+j+1))
+		}
+		values = append(values, fmt.Sprintf("(%s)", strings.Join(numbers, ",")))
+	}
+
+	query := fmt.Sprintf(`UPDATE %s AS t SET position=s.position::integer, parent_id=s.parent_id::uuid 
+		FROM (VALUES %s) AS s(id, position, parent_id)
+		WHERE t.id=s.id::uuid`,
 		ColumnsTable, strings.Join(values, ","),
 	)
 

@@ -5,6 +5,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/columns"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/forms"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/realm"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sections"
 	"github.com/gin-gonic/gin"
@@ -41,4 +42,5 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	// accesses.Register(secure, h.services.Accesses, h.middleware)
 	sections.Register(secure, h.services.Section, h.middleware)
 	columns.Register(secure, h.services.Columns, h.middleware)
+	forms.Register(secure, h.services, h.middleware)
 }

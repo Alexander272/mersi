@@ -34,6 +34,12 @@ type ColumnsDTO struct {
 	AllowFilter bool   `db:"allow_filter" json:"allowFilter" default:"true"`
 }
 
+type UpdateColumnPosition struct {
+	ID       string `db:"id" json:"id"`
+	Position int    `db:"position" json:"position"`
+	ParentID string `db:"parent_id" json:"parentId" binding:"omitempty"`
+}
+
 type DeleteColumnDTO struct {
 	ID string `json:"id" db:"id" binding:"required"`
 }

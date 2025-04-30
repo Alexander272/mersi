@@ -24,6 +24,7 @@ type Columns interface {
 	CreateSeveral(ctx context.Context, dto []*models.ColumnsDTO) error
 	Update(ctx context.Context, dto *models.ColumnsDTO) error
 	UpdateSeveral(ctx context.Context, dto []*models.ColumnsDTO) error
+	UpdatePositions(ctx context.Context, dto []*models.UpdateColumnPosition) error
 	Delete(ctx context.Context, dto *models.DeleteColumnDTO) error
 	DeleteAll(ctx context.Context, dto *models.DeleteColumnsDTO) error
 }
@@ -59,7 +60,14 @@ func (s *ColumnsService) Update(ctx context.Context, dto *models.ColumnsDTO) err
 
 func (s *ColumnsService) UpdateSeveral(ctx context.Context, dto []*models.ColumnsDTO) error {
 	if err := s.repo.UpdateSeveral(ctx, dto); err != nil {
-		return fmt.Errorf("failed to update columns. error: %w", err)
+		return fmt.Errorf("failed to update few columns. error: %w", err)
+	}
+	return nil
+}
+
+func (s *ColumnsService) UpdatePositions(ctx context.Context, dto []*models.UpdateColumnPosition) error {
+	if err := s.repo.UpdatePositions(ctx, dto); err != nil {
+		return fmt.Errorf("failed to update column positions. error: %w", err)
 	}
 	return nil
 }
