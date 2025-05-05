@@ -7,7 +7,10 @@ CREATE TABLE IF NOT EXISTS public.creating_form
     step integer NOT NULL,
     step_name text COLLATE pg_catalog."default" NOT NULL,
     field text COLLATE pg_catalog."default" NOT NULL,
+    field_name text COLLATE pg_catalog."default" NOT NULL,
+    path text COLLATE pg_catalog."default" DEFAULT ''::text,
     type text COLLATE pg_catalog."default" NOT NULL,
+    is_required boolean DEFAULT true,
     position integer NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     CONSTRAINT creating_form_pkey PRIMARY KEY (id)

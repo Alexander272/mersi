@@ -29,7 +29,7 @@ type CreateForm interface {
 }
 
 func (r *CreateFormRepo) Get(ctx context.Context, req *models.GetCreateFormDTO) ([]*models.CreateFormStep, error) {
-	query := fmt.Sprintf(`SELECT id, section_id, step, step_name, field, type, position FROM %s
+	query := fmt.Sprintf(`SELECT id, section_id, step, step_name, field, field_name, path, type, is_required, position FROM %s
 		WHERE section_id=$1 ORDER BY step, position`,
 		CreatingFormTable,
 	)
@@ -56,8 +56,8 @@ func (r *CreateFormRepo) Get(ctx context.Context, req *models.GetCreateFormDTO) 
 }
 
 func (r *CreateFormRepo) Create(ctx context.Context, dto *models.CreateFormFieldDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, step, step_name, field, type, position)
-		VALUES (:id, :section_id, :step, :step_name, :field, :type, :position)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, step, step_name, field, field_name, path, type, is_required, position)
+		VALUES (:id, :section_id, :step, :step_name, :field, :field_name, :path, :type, :is_required, :position)`,
 		CreatingFormTable,
 	)
 	dto.ID = uuid.NewString()
@@ -69,7 +69,8 @@ func (r *CreateFormRepo) Create(ctx context.Context, dto *models.CreateFormField
 }
 
 func (r *CreateFormRepo) Update(ctx context.Context, dto *models.CreateFormFieldDTO) error {
-	query := fmt.Sprintf(`UPDATE %s SET step=:step, step_name=:step_name, field=:field, type=:type, position=:position
+	query := fmt.Sprintf(`UPDATE %s SET step=:step, step_name=:step_name, field=:field, type=:type, position=:position,
+		field_name=:field_name, path=:path, is_required=:is_required
 		WHERE id=:id`, CreatingFormTable,
 	)
 
@@ -83,7 +84,7 @@ func (r *CreateFormRepo) UpdateSeveral(ctx context.Context, dto []*models.Create
 	values := []string{}
 	args := []interface{}{}
 	for i, v := range dto {
-		tmp := []interface{}{v.ID, v.Step, v.StepName, v.Field, v.Type, v.Position}
+		tmp := []interface{}{v.ID, v.Step, v.StepName, v.Field, v.Type, v.Position, v.FieldName, v.Path, v.IsRequired}
 		args = append(args, tmp...)
 		numbers := []string{}
 		for j := range tmp {
@@ -92,8 +93,9 @@ func (r *CreateFormRepo) UpdateSeveral(ctx context.Context, dto []*models.Create
 		values = append(values, fmt.Sprintf("(%s)", strings.Join(numbers, ",")))
 	}
 
-	query := fmt.Sprintf(`UPDATE %s AS t SET step=s.step::integer, step_name=s.step_name, field=s.field, type=s.type, position=s.position::integer
-		FROM (VALUES %s) AS s(id, step, step_name, field, type, position) 
+	query := fmt.Sprintf(`UPDATE %s AS t SET step=s.step::integer, step_name=s.step_name, field=s.field, type=s.type, position=s.position::integer,
+		field_name=s.field_name, path=s.path, is_required=s.is_required::boolean
+		FROM (VALUES %s) AS s(id, step, step_name, field, type, position, field_name, path, is_required) 
 		WHERE t.id=s.id::uuid`,
 		CreatingFormTable, strings.Join(values, ","),
 	)

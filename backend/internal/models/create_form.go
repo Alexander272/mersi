@@ -13,24 +13,30 @@ type GetCreateFormDTO struct {
 }
 
 type CreateFormField struct {
-	ID        string    `json:"id" db:"id"`
-	SectionID string    `json:"sectionId" db:"section_id"`
-	Step      int       `json:"step" db:"step"`
-	StepName  string    `json:"stepName" db:"step_name"`
-	Field     string    `json:"field" db:"field"`
-	Type      string    `json:"type" db:"type"`
-	Position  int       `json:"position" db:"position"`
-	Created   time.Time `json:"created" db:"created_at"`
+	ID         string    `json:"id" db:"id"`
+	SectionID  string    `json:"sectionId" db:"section_id"`
+	Step       int       `json:"step" db:"step"`
+	StepName   string    `json:"stepName" db:"step_name"`
+	Field      string    `json:"field" db:"field"`
+	FieldName  string    `json:"fieldName" db:"field_name"`
+	Path       string    `json:"path" db:"path"`
+	Type       string    `json:"type" db:"type"`
+	IsRequired bool      `json:"isRequired" db:"is_required"`
+	Position   int       `json:"position" db:"position"`
+	Created    time.Time `json:"created" db:"created_at"`
 }
 
 type CreateFormFieldDTO struct {
-	ID        string `json:"id" db:"id"`
-	SectionID string `json:"sectionId" db:"section_id"`
-	Step      int    `json:"step" db:"step"`
-	StepName  string `json:"stepName" db:"step_name"`
-	Field     string `json:"field" db:"field"`
-	Type      string `json:"type" db:"type"`
-	Position  int    `json:"position" db:"position"`
+	ID         string `json:"id" db:"id"`
+	SectionID  string `json:"sectionId" db:"section_id" binding:"required"`
+	Step       int    `json:"step" db:"step" binding:"min=0"`
+	StepName   string `json:"stepName" db:"step_name" binding:"required"`
+	Field      string `json:"field" db:"field" binding:"required"`
+	FieldName  string `json:"fieldName" db:"field_name" binding:"required"`
+	Path       string `json:"path" db:"path"`
+	Type       string `json:"type" db:"type" binding:"required"`
+	IsRequired bool   `json:"isRequired" db:"is_required"`
+	Position   int    `json:"position" db:"position" binding:"min=0"`
 }
 
 type DeleteCreateFormFieldDTO struct {
