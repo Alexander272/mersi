@@ -18,35 +18,34 @@ import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
-import type { IColumn, IColumnDTO } from '../../types/columns'
+import type { ICreateFormField, ICreateFormFieldDTO } from '../../types/create'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { useGetGroupedSectionsQuery } from '@/features/sections/sectionsApiSlice'
 import { changeDialogIsOpen, getDialogState } from '@/features/dialog/dialogSlice'
 import { Dialog } from '@/features/dialog/components/Dialog'
 import { Fallback } from '@/components/Fallback/Fallback'
+import {
+	useCreateFieldToCreateFormMutation,
+	useDeleteFieldToCreateFormMutation,
+	useUpdateFieldToCreateFormMutation,
+} from '../../formApiSlice'
 import { Confirm } from '@/components/Confirm/Confirm'
 import { DeleteIcon } from '@/components/Icons/DeleteIcon'
-import { useCreateColumnMutation, useDeleteColumnMutation, useUpdateColumnMutation } from '../../columnsApiSlice'
 
-type Context = { item?: IColumn; section?: string }
+type Context = { item?: ICreateFormField }
 
-export const ColumnDialog = () => {
-	const modal = useAppSelector(getDialogState('Columns'))
+export const FieldDialog = () => {
+	const modal = useAppSelector(getDialogState('CreateFormField'))
 	const dispatch = useAppDispatch()
 
 	const closeHandler = () => {
-		dispatch(changeDialogIsOpen({ variant: 'Columns', isOpen: false }))
+		dispatch(changeDialogIsOpen({ variant: 'CreateFormField', isOpen: false }))
 	}
 
 	const context = modal?.context as Context
 	return (
 		<Dialog
-			title={context?.item?.id ? 'Редактировать колонку' : 'Добавить колонку'}
-			headerActions={
-				context?.item?.id && (context?.item?.children?.length || 0) == 0 ? (
-					<DeleteComponent {...(modal?.context as Context)} />
-				) : undefined
-			}
+			title={context?.item?.stepName ? 'Редактировать поле' : 'Добавить поле'}
+			headerActions={context?.item?.id ? <DeleteComponent {...(modal?.context as Context)} /> : undefined}
 			body={<Form {...context} />}
 			open={modal?.isOpen || false}
 			onClose={closeHandler}
@@ -56,68 +55,66 @@ export const ColumnDialog = () => {
 	)
 }
 
-const defaultValues: IColumnDTO = {
+const defaultValues: ICreateFormFieldDTO = {
 	id: '',
 	sectionId: '',
-	name: '',
+	step: 0,
+	stepName: '',
 	field: '',
-	position: 0,
-	width: 200,
+	fieldName: '',
+	path: '',
 	type: '',
-	allowSort: true,
-	allowFilter: true,
+	isRequired: false,
+	position: 0,
 }
 
 const Form: FC<Context> = ({ item }) => {
+	defaultValues.sectionId = item?.sectionId || ''
+	defaultValues.step = item?.step || 0
+	defaultValues.stepName = item?.stepName || ''
+	defaultValues.position = item?.position || 0
+
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetGroupedSectionsQuery(null)
+	const [create, { isLoading: creating }] = useCreateFieldToCreateFormMutation()
+	const [update, { isLoading: updating }] = useUpdateFieldToCreateFormMutation()
 
-	const [create, { isLoading: creating }] = useCreateColumnMutation()
-	const [update, { isLoading: updating }] = useUpdateColumnMutation()
-
-	const def = {
-		...defaultValues,
-		sectionId: item?.sectionId || '',
-		parentId: item?.parentId,
-		position: item?.position || 0,
-	}
 	const {
 		control,
 		handleSubmit,
 		formState: { dirtyFields },
-	} = useForm<IColumnDTO>({
-		values: item?.id ? item : def,
+	} = useForm<ICreateFormFieldDTO>({
+		values: item?.id ? item : defaultValues,
 	})
 
-	const closeHandler = () => dispatch(changeDialogIsOpen({ variant: 'Columns', isOpen: false }))
+	const closeHandler = () => dispatch(changeDialogIsOpen({ variant: 'CreateFormField', isOpen: false }))
 
 	const saveHandler = handleSubmit(async form => {
 		console.log('save', form, dirtyFields)
 		if (!Object.keys(dirtyFields).length) return
 
-		const newData: IColumnDTO = {
+		const newData: ICreateFormFieldDTO = {
 			id: item?.id || '',
 			sectionId: form.sectionId,
-			name: form.name.trim(),
+			step: form.step,
+			stepName: form.stepName.trim(),
 			field: form.field.trim(),
-			position: form.position,
-			width: +(form.width || 0),
+			fieldName: form.fieldName.trim(),
+			path: form.path.trim(),
 			type: form.type,
-			allowSort: form.allowSort,
-			allowFilter: form.allowFilter,
-			parentId: form.parentId,
+			isRequired: form.isRequired,
+			position: form.position,
 		}
 
 		try {
-			if (!item?.id) {
-				await create(newData).unwrap()
-				toast.success('Колонка создана')
-			} else {
+			if (item?.id) {
 				await update(newData).unwrap()
-				toast.success('Колонка обновлена')
+				toast.success('Поле обновлено')
+			} else {
+				await create(newData).unwrap()
+				toast.success('Поле создано')
 			}
-			dispatch(changeDialogIsOpen({ variant: 'Columns', isOpen: false }))
+			dispatch(changeDialogIsOpen({ variant: 'CreateFormField', isOpen: false }))
 		} catch (error) {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })
@@ -128,23 +125,29 @@ const Form: FC<Context> = ({ item }) => {
 		<Stack component={'form'} position={'relative'} spacing={2} onSubmit={saveHandler} mt={-2}>
 			<Controller
 				control={control}
-				name={'name'}
-				render={({ field }) => <TextField {...field} label={'Название колонки'} fullWidth />}
+				name={'fieldName'}
+				render={({ field }) => <TextField {...field} label={'Название поля'} fullWidth />}
 			/>
 			<Controller
 				control={control}
 				name={'field'}
 				render={({ field }) => <TextField {...field} label={'Название поля (в объекте)'} fullWidth />}
 			/>
+			<Controller
+				control={control}
+				name={'path'}
+				//TODO Может как-нибудь по другому это все обозвать
+				render={({ field }) => <TextField {...field} label={'Группа (таблица)'} fullWidth />}
+			/>
 			<FormControl>
-				<InputLabel id={'type'}>Тип колонки</InputLabel>
+				<InputLabel id={'type'}>Тип поля</InputLabel>
 				<Controller
 					control={control}
 					name='type'
 					render={({ field, fieldState: { error } }) => (
-						<Select labelId={'type'} label={'Тип колонки'} error={Boolean(error)} {...field}>
+						<Select labelId={'type'} label={'Тип поля'} error={Boolean(error)} {...field}>
 							<MenuItem value='' disabled>
-								Выберите тип колонки
+								Выберите тип поля
 							</MenuItem>
 							<MenuItem value='text'>Текст</MenuItem>
 							<MenuItem value='number'>Число</MenuItem>
@@ -153,72 +156,17 @@ const Form: FC<Context> = ({ item }) => {
 							<MenuItem value='list'>Список</MenuItem>
 							{/* //TODO наверное стоит что-нибудь более понятное написать */}
 							<MenuItem value='autocomplete'>Текст с авто дополнениями</MenuItem>
-							<MenuItem value='parent'>Группа с вложенными колонками</MenuItem>
 						</Select>
 					)}
 				/>
 			</FormControl>
-
 			<Controller
 				control={control}
-				name={'width'}
-				render={({ field }) => (
-					<TextField
-						{...field}
-						label={'Ширина колонки'}
-						fullWidth
-						slotProps={{
-							htmlInput: {
-								step: 1,
-								min: 1,
-								type: 'number',
-							},
-						}}
-					/>
-				)}
-			/>
-
-			<FormControl>
-				<InputLabel id={'sectionId'}>Секция</InputLabel>
-				<Controller
-					control={control}
-					name='sectionId'
-					render={({ field, fieldState: { error } }) => (
-						<Select labelId={'sectionId'} label={'Секция'} error={Boolean(error)} {...field}>
-							<MenuItem value='' disabled>
-								Выберите секцию
-							</MenuItem>
-
-							{data?.data.map(d => {
-								return d.sections.map(item => (
-									<MenuItem key={item.id} value={item.id}>
-										{d.title} / {item.name}
-									</MenuItem>
-								))
-							})}
-						</Select>
-					)}
-				/>
-			</FormControl>
-
-			<Controller
-				control={control}
-				name={'allowSort'}
+				name={'isRequired'}
 				render={({ field }) => (
 					<FormControlLabel
 						control={<Switch checked={field.value || false} {...field} />}
-						label={<>Сортировка {!field.value && 'не '}доступна</>}
-						sx={{ userSelect: 'none' }}
-					/>
-				)}
-			/>
-			<Controller
-				control={control}
-				name={'allowFilter'}
-				render={({ field }) => (
-					<FormControlLabel
-						control={<Switch checked={field.value || false} {...field} />}
-						label={<>Фильтрация {!field.value && 'не '}доступна</>}
+						label={<>Поле {!field.value && 'не '}обязательно</>}
 						sx={{ userSelect: 'none' }}
 					/>
 				)}
@@ -234,7 +182,7 @@ const Form: FC<Context> = ({ item }) => {
 				</Button>
 			</Stack>
 
-			{isFetching || creating || updating ? (
+			{creating || updating ? (
 				<Fallback position={'absolute'} zIndex={5} background={'#f5f5f557'} mt={'0!important'} />
 			) : null}
 		</Stack>
@@ -245,14 +193,14 @@ const DeleteComponent: FC<Context> = ({ item }) => {
 	const { palette } = useTheme()
 	const dispatch = useAppDispatch()
 
-	const [remove, { isLoading }] = useDeleteColumnMutation()
+	const [remove, { isLoading }] = useDeleteFieldToCreateFormMutation()
 
 	const deleteHandler = async () => {
 		if (!item?.id) return
 		try {
 			await remove(item.id).unwrap()
-			toast.success('Колонка удалена')
-			dispatch(changeDialogIsOpen({ variant: 'Columns', isOpen: false }))
+			toast.success('Поле удалено')
+			dispatch(changeDialogIsOpen({ variant: 'CreateFormField', isOpen: false }))
 		} catch (error) {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })
@@ -272,7 +220,7 @@ const DeleteComponent: FC<Context> = ({ item }) => {
 			}
 			width='56px'
 			onClick={deleteHandler}
-			confirmText={`Вы уверены, что хотите удалить колонку "${item?.name}"?`}
+			confirmText={`Вы уверены, что хотите удалить поле "${item?.fieldName}"?`}
 		/>
 	)
 }

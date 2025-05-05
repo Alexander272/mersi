@@ -1,7 +1,7 @@
 import { toast } from 'react-toastify'
 
 import type { IBaseFetchError } from '@/app/types/error'
-import type { IColumn, IColumnDTO } from './types/columns'
+import type { IColumn, IColumnDTO, IColumnPositionDTO } from './types/columns'
 import { API } from '@/app/api'
 import { apiSlice } from '@/app/apiSlice'
 
@@ -40,6 +40,14 @@ export const columnsApiSlice = apiSlice.injectEndpoints({
 			}),
 			invalidatesTags: [{ type: 'Columns', id: 'List' }],
 		}),
+		updateColumnPositions: builder.mutation<null, IColumnPositionDTO[]>({
+			query: body => ({
+				url: `${API.columns}/positions`,
+				method: 'PUT',
+				body,
+			}),
+			invalidatesTags: [{ type: 'Columns', id: 'List' }],
+		}),
 		deleteColumn: builder.mutation<null, string>({
 			query: id => ({
 				url: `${API.columns}/${id}`,
@@ -50,5 +58,10 @@ export const columnsApiSlice = apiSlice.injectEndpoints({
 	}),
 })
 
-export const { useGetColumnsQuery, useCreateColumnMutation, useUpdateColumnMutation, useDeleteColumnMutation } =
-	columnsApiSlice
+export const {
+	useGetColumnsQuery,
+	useCreateColumnMutation,
+	useUpdateColumnMutation,
+	useUpdateColumnPositionsMutation,
+	useDeleteColumnMutation,
+} = columnsApiSlice

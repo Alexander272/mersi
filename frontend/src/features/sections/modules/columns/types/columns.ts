@@ -26,4 +26,10 @@ export interface IColumnDTO {
 	allowFilter: boolean
 }
 
+export interface IColumnPositionDTO {
+	id: string
+	position: number
+	parentId: string
+}
+
 export type ColumnTypes = 'text' | 'number' | 'date' | 'file' | 'list' | 'autocomplete' | 'parent'

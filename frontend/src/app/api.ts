@@ -48,4 +48,5 @@ export const API = {
 		grouped: '/sections/grouped' as const,
 	},
 	columns: '/columns' as const,
+	createForm: '/forms/create',
 }

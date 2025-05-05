@@ -21,6 +21,8 @@ export type DialogVariants =
 	| 'Receive'
 	| 'Access'
 	| 'Columns'
+	| 'CreateFormGroup'
+	| 'CreateFormField'
 
 interface IDialogOptions {
 	isOpen: boolean

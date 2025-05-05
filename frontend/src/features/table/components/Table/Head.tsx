@@ -1,0 +1,112 @@
+import { JSX } from 'react'
+
+import { ColWidth, RowHeight } from '../../constants/defaultValues'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
+import { getSection } from '@/features/sections/sectionSlice'
+import { IColumn } from '@/features/sections/modules/columns/types/columns'
+import { TableCell } from '@/components/Table/TableCell'
+import { TableHead } from '@/components/Table/TableHead'
+import { TableRow } from '@/components/Table/TableRow'
+import { TableGroup } from '@/components/Table/TableGroup'
+import { CellText } from '@/components/CellText/CellText'
+import { Badge } from '@/components/Badge/Badge'
+import { Fallback } from '@/components/Fallback/Fallback'
+import { SortUpIcon } from '@/components/Icons/SortUpIcon'
+import { getHidden } from '../../tableSlice'
+
+export const Head = () => {
+	const section = useAppSelector(getSection)
+	// const sort = useAppSelector(getTableSort)
+	const hidden = useAppSelector(getHidden)
+
+	//TODO получать sectionId
+	const { data, isFetching } = useGetColumnsQuery('46ba9e17-65c7-474b-8c47-7975ab4319d5')
+
+	let hasFewRows = false
+	const width = data?.data.reduce((ac, cur) => {
+		if (cur.children) {
+			hasFewRows = true
+			return ac + cur.children.reduce((ac, cur) => ac + (hidden[cur.field] ? 0 : cur.width || ColWidth), 0)
+		}
+		return ac + (hidden[cur.field] ? 0 : cur.width || ColWidth)
+	}, 12)
+	const height = (hasFewRows ? 2 : 1) * RowHeight
+
+	const dispatch = useAppDispatch()
+
+	const setSortHandler = (field: string) => () => {
+		// dispatch(setSort(field))
+	}
+
+	const getCell = (c: IColumn) => {
+		return (
+			<TableCell
+				key={c.field}
+				width={c.width || ColWidth}
+				isActive
+				onClick={c.allowSort ? setSortHandler(c.field) : undefined}
+			>
+				<CellText value={c.name} />
+				{c.allowSort ? (
+					<Badge
+						color='primary'
+						// badgeContent={Object.keys(sort).findIndex(k => k == c.key) + 1}
+						// invisible={Object.keys(sort).length < 2}
+					>
+						<SortUpIcon
+							fontSize={16}
+							fill={/*sort[c.key] ? 'black' : */ '#adadad'}
+							// transform: sort[c.key] == 'ASC' ? '' : 'rotateX(180deg)',
+							// transition: '.2s all ease-in-out',
+						/>
+					</Badge>
+				) : null}
+			</TableCell>
+		)
+	}
+	const renderHeader = () => {
+		const header: JSX.Element[] = []
+
+		data?.data.forEach(c => {
+			if (c.children) {
+				let width = 0
+				const subhead: JSX.Element[] = []
+
+				c.children.forEach(c => {
+					if (!hidden[c.field]) {
+						width += c.width || ColWidth
+
+						subhead.push(getCell(c))
+					}
+				})
+
+				if (subhead.length > 0) {
+					header.push(
+						<TableGroup key={c.field}>
+							<TableRow>
+								<TableCell width={width} key={c.field}>
+									<CellText value={c.name} />
+								</TableCell>
+							</TableRow>
+							<TableRow>{subhead}</TableRow>
+						</TableGroup>
+					)
+				}
+			} else if (!hidden[c.field]) {
+				header.push(getCell(c))
+			}
+		})
+
+		return header
+	}
+
+	if (isFetching) return <Fallback />
+	return (
+		<TableHead>
+			<TableRow width={width} height={height} sx={{ padding: '0 6px' }}>
+				{renderHeader()}
+			</TableRow>
+		</TableHead>
+	)
+}

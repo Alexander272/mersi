@@ -7,9 +7,12 @@ import { Breadcrumb } from '@/components/Breadcrumb/Breadcrumb'
 import { PageBox } from '@/components/PageBox/PageBox'
 import { Form } from '@/features/sections/components/Form/Form'
 import { Columns } from '@/features/sections/modules/columns/components/Columns/Columns'
+import { ChildrenTabs } from '@/features/sections/components/Tabs/ChildrenTabs'
+import { FieldsList } from '@/features/sections/modules/form/components/List/FieldsList'
 
 export default function Sections() {
 	const [item, setItem] = useState('new')
+	const [child, setChild] = useState('columns')
 
 	const itemHandler = (data: string) => {
 		setItem(data)
@@ -39,7 +42,13 @@ export default function Sections() {
 					<List item={item} setItem={itemHandler} />
 					<Stack width={'100%'} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1 }}>
 						<Form section={item} setSection={itemHandler} />
-						{item != 'new' && <Columns section={item} />}
+						{item != 'new' && (
+							<>
+								<ChildrenTabs value={child} onChange={setChild} />
+								{child == 'columns' && <Columns section={item} />}
+								{child == 'form' && <FieldsList section={item} />}
+							</>
+						)}
 					</Stack>
 				</Stack>
 			</Box>

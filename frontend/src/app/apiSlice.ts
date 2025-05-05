@@ -78,6 +78,7 @@ export const apiSlice = createApi({
 		'Accesses',
 		'Sections',
 		'Columns',
+		'CreateForm',
 	],
 	endpoints: () => ({}),
 })
