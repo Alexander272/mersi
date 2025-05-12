@@ -10,4 +10,6 @@ const (
 	SectionTable      = "public.sections"
 	ColumnsTable      = "public.columns"
 	CreatingFormTable = "public.creating_form"
+	InstrumentsTable  = "public.instruments"
+	DocumentsTable    = "public.documents"
 )

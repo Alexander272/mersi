@@ -10,6 +10,8 @@ type Services struct {
 	Section
 	Columns
 	CreateForm
+	Instrument
+	Document
 }
 
 type Deps struct {
@@ -23,11 +25,15 @@ func NewServices(deps *Deps) *Services {
 	section := NewSectionService(deps.Repo.Section)
 	columns := NewColumnsService(deps.Repo.Columns)
 	createForm := NewCreateFormService(deps.Repo.CreateForm)
+	instrument := NewInstrumentService(deps.Repo.Instrument)
+	document := NewDocumentService(deps.Repo.Document)
 
 	return &Services{
 		Realm:      realm,
 		Section:    section,
 		Columns:    columns,
 		CreateForm: createForm,
+		Instrument: instrument,
+		Document:   document,
 	}
 }

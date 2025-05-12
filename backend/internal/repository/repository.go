@@ -17,12 +17,20 @@ type Columns interface {
 type CreateForm interface {
 	postgres.CreateForm
 }
+type Instrument interface {
+	postgres.Instrument
+}
+type Document interface {
+	postgres.Document
+}
 
 type Repository struct {
 	Realm
 	Section
 	Columns
 	CreateForm
+	Document
+	Instrument
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -31,5 +39,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Section:    postgres.NewSectionRepo(db),
 		Columns:    postgres.NewColumnRepo(db),
 		CreateForm: postgres.NewCreateFormRepo(db),
+		Instrument: postgres.NewInstrumentRepo(db),
+		Document:   postgres.NewDocumentRepo(db),
 	}
 }

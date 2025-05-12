@@ -100,6 +100,10 @@ func (h *Handler) updateSeveral(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
 	}
+	if len(dto) == 0 {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty data", "Отправлены некорректные данные")
+		return
+	}
 
 	if err := h.service.UpdateSeveral(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())

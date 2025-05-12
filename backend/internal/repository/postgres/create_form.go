@@ -56,6 +56,8 @@ func (r *CreateFormRepo) Get(ctx context.Context, req *models.GetCreateFormDTO) 
 }
 
 func (r *CreateFormRepo) Create(ctx context.Context, dto *models.CreateFormFieldDTO) error {
+	//TODO надо еще добавить всякие ограничения и доп параметры
+	// к примеру: мин и макс для чисел, многострочность для текста, группу для файлов и тому подобное
 	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, step, step_name, field, field_name, path, type, is_required, position)
 		VALUES (:id, :section_id, :step, :step_name, :field, :field_name, :path, :type, :is_required, :position)`,
 		CreatingFormTable,
