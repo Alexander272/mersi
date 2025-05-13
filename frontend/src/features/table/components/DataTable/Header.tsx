@@ -1,16 +1,18 @@
 import { Button, Stack, Typography, useTheme } from '@mui/material'
 
-import { PlusIcon } from '@/components/Icons/PlusIcon'
-import { useAppSelector } from '@/hooks/redux'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { getSection } from '@/features/sections/sectionSlice'
+import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
+import { PlusIcon } from '@/components/Icons/PlusIcon'
+import { CreateDialog } from '../CreateDialog/CreateDialog'
 
 export const Header = () => {
 	const { palette } = useTheme()
 	const section = useAppSelector(getSection)
-	// const dispatch = useAppDispatch()
+	const dispatch = useAppDispatch()
 
 	const createHandler = () => {
-		// dispatch(changeModalIsOpen({ variant: 'create', isOpen: true }))
+		dispatch(changeDialogIsOpen({ variant: 'CreateTableItem', isOpen: true }))
 	}
 
 	return (
@@ -33,6 +35,8 @@ export const Header = () => {
 
 				{/* <Create /> */}
 			</Stack>
+
+			<CreateDialog />
 		</Stack>
 	)
 }

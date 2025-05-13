@@ -76,6 +76,7 @@ export const apiSlice = createApi({
 		'Roles',
 		'Realms',
 		'Accesses',
+		'Documents',
 		'Sections',
 		'Columns',
 		'CreateForm',

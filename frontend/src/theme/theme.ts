@@ -74,17 +74,17 @@ export const theme = createTheme({
 			defaultProps: {
 				size: 'small',
 			},
-			styleOverrides: {
-				root: {
-					transform: 'translate(14px, 6px) scale(1)',
-					'&.Mui-focused': {
-						transform: 'translate(14px, -9px) scale(0.75)',
-					},
-					'&.MuiInputLabel-shrink': {
-						transform: 'translate(14px, -9px) scale(0.75)',
-					},
-				},
-			},
+			// styleOverrides: {
+			// 	root: {
+			// 		transform: 'translate(14px, 6px) scale(1)',
+			// 		'&.Mui-focused': {
+			// 			transform: 'translate(14px, -9px) scale(0.75)',
+			// 		},
+			// 		'&.MuiInputLabel-shrink': {
+			// 			transform: 'translate(14px, -9px) scale(0.75)',
+			// 		},
+			// 	},
+			// },
 		},
 		MuiTextField: {
 			defaultProps: {
@@ -110,13 +110,13 @@ export const theme = createTheme({
 				root: {
 					borderRadius: 12,
 				},
-				input: {
-					paddingTop: '6px',
-					paddingBottom: '6px',
-					'input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
-					'input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
-					'input[type=number]': { MozAppearance: 'textfield' },
-				},
+				// input: {
+				// 	paddingTop: '6px',
+				// 	paddingBottom: '6px',
+				// 	'input[type=number]::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
+				// 	'input[type=number]::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
+				// 	'input[type=number]': { MozAppearance: 'textfield' },
+				// },
 			},
 		},
 		MuiInputBase: {
@@ -128,6 +128,14 @@ export const theme = createTheme({
 			styleOverrides: {
 				root: {
 					borderRadius: 12,
+				},
+			},
+		},
+		MuiBadge: {
+			defaultProps: {
+				anchorOrigin: {
+					vertical: 'top',
+					horizontal: 'left',
 				},
 			},
 		},

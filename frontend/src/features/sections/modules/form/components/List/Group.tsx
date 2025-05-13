@@ -70,7 +70,7 @@ export const Group: FC<Props> = ({ data, section, index, update }) => {
 	}
 
 	return (
-		<Stack border={'2px solid #f5f5f5'} borderRadius={3} mb={1}>
+		<Stack border={'2px solid #f5f5f5'} borderRadius={3} mb={2}>
 			<Stack direction={'row'} alignItems={'center'} position={'relative'}>
 				<IconButton sx={{ cursor: 'grab', mr: 1 }} className='drag'>
 					<DragIcon fill={'#a8a8a8'} fontSize={24} />

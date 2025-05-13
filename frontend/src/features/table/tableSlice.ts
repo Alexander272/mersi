@@ -4,7 +4,7 @@ import { type PayloadAction, createSlice } from '@reduxjs/toolkit'
 import type { IContextMenu, ISelect } from './types/table'
 import { Size } from '@/constants/defaultValues'
 import { RootState } from '@/app/store'
-import { localKeys } from './constants/localKeys'
+import { localKeys } from './constants/storage'
 
 interface ITableSlice {
 	page: number

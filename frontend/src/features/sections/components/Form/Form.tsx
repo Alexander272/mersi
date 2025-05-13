@@ -66,6 +66,8 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 	const saveHandler = handleSubmit(async form => {
 		console.log('save', form, dirtyFields)
 		if (!Object.keys(dirtyFields).length) return
+
+		//TODO дописать
 	})
 
 	const deleteHandler = async () => {

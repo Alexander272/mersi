@@ -5,4 +5,6 @@ export const localKeys = Object.freeze({
 	filter: 'mersi/filter' as const,
 	hidden: 'mersi/hidden' as const,
 	columns: 'mersi/columns' as const,
+
+	form: 'mersi/new/form' as const,
 })

@@ -84,34 +84,49 @@ export const Columns: FC<Props> = ({ section }) => {
 	}
 
 	return (
-		<Stack component={'form'} onSubmit={updateHandler}>
-			{isFetching || isLoading ? <Fallback position={'absolute'} zIndex={5} background={'#f5f5f557'} /> : null}
+		<>
+			<Stack component={'form'} onSubmit={updateHandler}>
+				{isFetching || isLoading ? (
+					<Fallback position={'absolute'} zIndex={5} background={'#f5f5f557'} />
+				) : null}
 
-			<Stack direction={'row'} justifyContent={'space-between'} mb={1} mx={2}>
-				<Button
-					// onClick={updateHandler}
-					type='submit'
-					variant='outlined'
-					// disabled={!Object.keys(dirtyFields).length}
-					sx={{ textTransform: 'inherit' }}
-				>
-					Обновить индексы
-				</Button>
+				<Stack direction={'row'} justifyContent={'space-between'} mb={1} mx={2}>
+					<Button
+						// onClick={updateHandler}
+						type='submit'
+						variant='outlined'
+						// disabled={!Object.keys(dirtyFields).length}
+						sx={{ textTransform: 'inherit' }}
+					>
+						Обновить индексы
+					</Button>
 
-				<Button onClick={openDialog} variant='outlined' sx={{ width: 160, textTransform: 'inherit' }}>
-					Новая
-				</Button>
+					<Button onClick={openDialog} variant='outlined' sx={{ width: 160, textTransform: 'inherit' }}>
+						Новая
+					</Button>
+				</Stack>
+
+				<FormProvider {...methods}>
+					<ReactSortable
+						list={fields}
+						setList={() => {}}
+						onEnd={dropHandler}
+						handle='.drag'
+						{...sortableOptions}
+					>
+						{fields.map((item, idx) => (
+							<Column
+								key={item.id}
+								index={idx}
+								id={data?.data[idx]?.id || ''}
+								data={item}
+								insert={insert}
+							/>
+						))}
+					</ReactSortable>
+				</FormProvider>
 			</Stack>
-
-			<FormProvider {...methods}>
-				<ReactSortable list={fields} setList={() => {}} onEnd={dropHandler} handle='.drag' {...sortableOptions}>
-					{fields.map((item, idx) => (
-						<Column key={item.id} index={idx} id={data?.data[idx]?.id || ''} data={item} insert={insert} />
-					))}
-				</ReactSortable>
-			</FormProvider>
-
 			<ColumnDialog />
-		</Stack>
+		</>
 	)
 }

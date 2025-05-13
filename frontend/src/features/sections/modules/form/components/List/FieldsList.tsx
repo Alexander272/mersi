@@ -67,34 +67,44 @@ export const FieldsList: FC<Props> = ({ section }) => {
 	})
 
 	return (
-		<Stack component={'form'} onSubmit={submitHandler}>
-			{isFetching || isLoading ? <Fallback position={'absolute'} zIndex={5} background={'#f5f5f557'} /> : null}
+		<>
+			<Stack component={'form'} onSubmit={submitHandler}>
+				{isFetching || isLoading ? (
+					<Fallback position={'absolute'} zIndex={5} background={'#f5f5f557'} />
+				) : null}
 
-			<Stack direction={'row'} justifyContent={'space-between'} mb={1} mx={2}>
-				<Button onClick={openDialog} variant='outlined' sx={{ width: 160, textTransform: 'inherit' }}>
-					Новая группа
-				</Button>
+				<Stack direction={'row'} justifyContent={'space-between'} mb={1.5} mx={2}>
+					<Button onClick={openDialog} variant='outlined' sx={{ width: 160, textTransform: 'inherit' }}>
+						Новая группа
+					</Button>
 
-				<Button
-					type={'submit'}
-					disabled={!Object.keys(dirtyFields).length}
-					variant='outlined'
-					sx={{ width: 160, textTransform: 'inherit' }}
-				>
-					Сохранить
-				</Button>
+					<Button
+						type={'submit'}
+						disabled={!Object.keys(dirtyFields).length}
+						variant='outlined'
+						sx={{ width: 160, textTransform: 'inherit' }}
+					>
+						Сохранить
+					</Button>
+				</Stack>
+
+				<FormProvider {...methods}>
+					<ReactSortable
+						list={fields}
+						setList={() => {}}
+						onEnd={dropHandler}
+						handle='.drag'
+						{...sortableOptions}
+					>
+						{fields.map((item, idx) => (
+							<Group key={item.id} index={idx} data={item} section={section} update={update} />
+						))}
+					</ReactSortable>
+				</FormProvider>
 			</Stack>
-
-			<FormProvider {...methods}>
-				<ReactSortable list={fields} setList={() => {}} onEnd={dropHandler} handle='.drag' {...sortableOptions}>
-					{fields.map((item, idx) => (
-						<Group key={item.id} index={idx} data={item} section={section} update={update} />
-					))}
-				</ReactSortable>
-			</FormProvider>
 
 			<GroupDialog />
 			<FieldDialog />
-		</Stack>
+		</>
 	)
 }

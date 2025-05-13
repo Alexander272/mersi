@@ -5,9 +5,18 @@ export const API = {
 		signOut: `auth/sign-out` as const,
 	},
 	si: {
+		base: 'si' as const,
+		moved: 'si/moved' as const,
+		save: 'si/save' as const,
 		instruments: {
 			base: 'si/instruments' as const,
+			unique: 'si/instruments/unique' as const,
 		},
+		documents: {
+			base: 'si/documents' as const,
+			list: 'si/documents/list' as const,
+		},
+
 		verification: {
 			base: 'si/verifications' as const,
 			all: 'si/verifications/all' as const,
@@ -16,14 +25,8 @@ export const API = {
 			base: 'si/locations' as const,
 			all: 'si/locations/all' as const,
 		},
-		documents: {
-			base: 'si/verifications/documents' as const,
-		},
 		export: 'files' as const,
 		schedule: 'files/schedule' as const,
-		base: 'si' as const,
-		moved: 'si/moved' as const,
-		save: 'si/save' as const,
 	},
 	departments: '/departments' as const,
 	employees: '/employees' as const,

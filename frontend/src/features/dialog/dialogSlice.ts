@@ -2,8 +2,8 @@ import { RootState } from '@/app/store'
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 export type DialogVariants =
-	| 'CreateDataItem'
-	| 'EditDataItem'
+	| 'CreateTableItem'
+	| 'EditTableItem'
 	| 'NewVerification'
 	| 'SeveralVerifications'
 	| 'NewLocation'
