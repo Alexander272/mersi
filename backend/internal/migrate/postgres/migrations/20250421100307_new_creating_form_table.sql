@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS public.creating_form
     type text COLLATE pg_catalog."default" NOT NULL,
     is_required boolean DEFAULT true,
     position integer NOT NULL,
+    min integer,
+    max integer,
+    multiline boolean DEFAULT false,
+    rows integer,
+    disableFuture boolean DEFAULT false,
     created_at timestamp with time zone DEFAULT now(),
     CONSTRAINT creating_form_pkey PRIMARY KEY (id)
 )

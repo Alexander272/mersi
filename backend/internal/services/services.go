@@ -12,6 +12,9 @@ type Services struct {
 	CreateForm
 	Instrument
 	Document
+	VerificationDoc
+	Verification
+	SI
 }
 
 type Deps struct {
@@ -27,13 +30,20 @@ func NewServices(deps *Deps) *Services {
 	createForm := NewCreateFormService(deps.Repo.CreateForm)
 	instrument := NewInstrumentService(deps.Repo.Instrument)
 	document := NewDocumentService(deps.Repo.Document)
+	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
+	verification := NewVerificationService(deps.Repo.Verification, verificationDoc)
+
+	si := NewSiService(&SiDeps{Instrument: instrument})
 
 	return &Services{
-		Realm:      realm,
-		Section:    section,
-		Columns:    columns,
-		CreateForm: createForm,
-		Instrument: instrument,
-		Document:   document,
+		Realm:           realm,
+		Section:         section,
+		Columns:         columns,
+		CreateForm:      createForm,
+		Instrument:      instrument,
+		Document:        document,
+		VerificationDoc: verificationDoc,
+		Verification:    verification,
+		SI:              si,
 	}
 }

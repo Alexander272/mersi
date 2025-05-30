@@ -2,12 +2,15 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
+	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -23,6 +26,7 @@ func NewInstrumentRepo(db *sqlx.DB) *InstrumentRepo {
 }
 
 type Instrument interface {
+	GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error)
 	GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error)
 	Create(ctx context.Context, dto *models.InstrumentDTO) error
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
@@ -30,18 +34,44 @@ type Instrument interface {
 	Delete(ctx context.Context, id string) error
 }
 
-// func (r *InstrumentRepo) Get()
+func (r *InstrumentRepo) GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error) {
+	query := fmt.Sprintf(`SELECT name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register,
+		country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, act_of_entering, 
+		act_of_entering_id, notes, status FROM %s WHERE id=$1`,
+		InstrumentsTable,
+	)
+	data := &models.Instrument{}
+
+	if err := r.db.GetContext(ctx, data, query, req.Id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
 
 func (r *InstrumentRepo) GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error) {
 	reg := regexp.MustCompile("([a-z0-9])([A-Z])")
 	snake := reg.ReplaceAllString(req.Field, "${1}_${2}")
 	req.Field = strings.ToLower(snake)
 
-	query := fmt.Sprintf(`SELECT DISTINCT($1) FROM %s`, InstrumentsTable)
-	data := []string{}
+	enabledFields := map[string]struct{}{"manufacturer": {}, "country_of_produce": {}, "responsible": {}, "type": {}}
 
-	if err := r.db.SelectContext(ctx, &data, query, req.Field); err != nil {
+	if _, exist := enabledFields[req.Field]; !exist {
+		return nil, fmt.Errorf("field is not allowed")
+	}
+
+	query := fmt.Sprintf(`SELECT DISTINCT(%s) AS item FROM %s`, req.Field, InstrumentsTable)
+	tmp := []pq_models.UniqueData{}
+
+	if err := r.db.SelectContext(ctx, &tmp, query); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+
+	data := []string{}
+	for _, v := range tmp {
+		data = append(data, v.Item)
 	}
 	return data, nil
 }
@@ -56,6 +86,9 @@ func (r *InstrumentRepo) Create(ctx context.Context, dto *models.InstrumentDTO) 
 	)
 	dto.Id = uuid.NewString()
 	dto.Status = constants.InstrumentStatusWork
+	if dto.ActOfEnteringId == "" {
+		dto.ActOfEnteringId = uuid.Nil.String()
+	}
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)

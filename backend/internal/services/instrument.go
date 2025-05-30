@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -19,10 +20,22 @@ func NewInstrumentService(repo repository.Instrument) *InstrumentService {
 }
 
 type Instrument interface {
+	GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error)
 	GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error)
 	Create(ctx context.Context, dto *models.InstrumentDTO) error
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
 	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
+}
+
+func (s *InstrumentService) GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error) {
+	data, err := s.repo.GetById(ctx, req)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to get instrument by id. error: %w", err)
+	}
+	return data, nil
 }
 
 func (s *InstrumentService) GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error) {

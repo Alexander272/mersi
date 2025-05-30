@@ -25,6 +25,10 @@ type GetInstrumentsDTO struct {
 	SectionId string `json:"sectionId" db:"section_id"`
 }
 
+type GetInstrumentByIdDTO struct {
+	Id string `json:"id" binding:"required"`
+}
+
 type GetUniqueDTO struct {
 	Field string `json:"field"`
 }
