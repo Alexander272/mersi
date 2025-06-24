@@ -7,7 +7,7 @@ type Realm struct {
 	Name                 string    `json:"name" db:"name"`
 	Realm                string    `json:"realm" db:"realm"`
 	IsActive             bool      `json:"isActive" db:"is_active"`
-	ReserveChannel       string    `json:"reserveChannel" db:"reserve_channel"`
+	NotificationChannel  string    `json:"notificationChannel" db:"notification_channel"`
 	ExpirationNotice     bool      `json:"expirationNotice" db:"expiration_notice"`
 	LocationType         string    `json:"locationType" db:"location_type"`
 	NeedConfirmed        bool      `json:"needConfirmed" db:"need_confirmed"`

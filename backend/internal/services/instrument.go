@@ -25,6 +25,7 @@ type Instrument interface {
 	Create(ctx context.Context, dto *models.InstrumentDTO) error
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
 	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
+	Delete(ctx context.Context, id string) error
 }
 
 func (s *InstrumentService) GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error) {
@@ -63,6 +64,13 @@ func (s *InstrumentService) Update(ctx context.Context, dto *models.InstrumentDT
 func (s *InstrumentService) ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error {
 	if err := s.repo.ChangeStatus(ctx, dto); err != nil {
 		return fmt.Errorf("failed to change instrument status. error: %w", err)
+	}
+	return nil
+}
+
+func (s *InstrumentService) Delete(ctx context.Context, id string) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("failed to delete instrument. error: %w", err)
 	}
 	return nil
 }

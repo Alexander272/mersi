@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS public.instruments
     id uuid NOT NULL,
     section_id uuid NOT NULL,
     user_id uuid,
+    position integer,
     name text COLLATE pg_catalog."default" NOT NULL,
     date_of_receipt integer NOT NULL,
     type text COLLATE pg_catalog."default" DEFAULT ''::text,

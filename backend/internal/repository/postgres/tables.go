@@ -2,8 +2,8 @@ package postgres
 
 const (
 	RoleTable             = "public.roles"
-	MenuItemTable         = "public.menu_item"
-	MenuTable             = "public.menu"
+	RuleItemTable         = "public.rule_item"
+	RuleTable             = "public.rule"
 	UsersTable            = "public.users"
 	RealmTable            = "public.realms"
 	AccessTable           = "public.accesses"

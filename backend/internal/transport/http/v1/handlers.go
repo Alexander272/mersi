@@ -4,6 +4,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/config"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/auth"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/columns"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/forms"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/realm"
@@ -35,7 +36,7 @@ func NewHandler(deps Deps) *Handler {
 func (h *Handler) Init(group *gin.RouterGroup) {
 	v1 := group.Group("/v1")
 
-	// auth.Register(v1, auth.Deps{Service: h.services.Session, Middleware: h.middleware, Auth: h.conf.Auth})
+	auth.Register(v1, auth.Deps{Service: h.services.Session, Middleware: h.middleware, Auth: h.conf.Auth})
 
 	secure := v1.Group("", h.middleware.VerifyToken)
 

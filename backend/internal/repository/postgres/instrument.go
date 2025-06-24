@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
 	"github.com/google/uuid"
@@ -77,15 +76,16 @@ func (r *InstrumentRepo) GetUniqueData(ctx context.Context, req *models.GetUniqu
 }
 
 func (r *InstrumentRepo) Create(ctx context.Context, dto *models.InstrumentDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, user_id, name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register,
-		country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, act_of_entering, act_of_entering_id, 
-		notes, status) VALUES (:id, :section_id, :user_id, :name, :date_of_receipt, :type, :factory_number, :measurement_limits, :accuracy, :state_register,
-		:country_of_produce, :manufacturer, :responsible, :inventory, :year_of_issue, :inter_verification_interval, :act_of_entering, 
-		:act_of_entering_id, :notes, :status)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, user_id, position, name, date_of_receipt, type, factory_number, measurement_limits, 
+		accuracy, state_register, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
+		act_of_entering, act_of_entering_id, notes, status) 
+		VALUES (:id, :section_id, :user_id, :position, :name, :date_of_receipt, :type, :factory_number, :measurement_limits, 
+		:accuracy, :state_register, :country_of_produce, :manufacturer, :responsible, :inventory, :year_of_issue, :inter_verification_interval, 
+		:act_of_entering, :act_of_entering_id, :notes, :status)`,
 		InstrumentsTable,
 	)
 	dto.Id = uuid.NewString()
-	dto.Status = constants.InstrumentStatusWork
+	dto.Status = models.InstrumentStatusWork
 	if dto.ActOfEnteringId == "" {
 		dto.ActOfEnteringId = uuid.Nil.String()
 	}

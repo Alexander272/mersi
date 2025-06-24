@@ -36,7 +36,7 @@ func (r *RealmRepo) Get(ctx context.Context, req *models.GetRealmsDTO) ([]*model
 		condition = ""
 	}
 
-	query := fmt.Sprintf(`SELECT id, name, realm, is_active, reserve_channel, expiration_notice, location_type, has_responsible,
+	query := fmt.Sprintf(`SELECT id, name, realm, is_active, notification_channel, expiration_notice, location_type, has_responsible,
 		has_employees, need_confirmed, has_commissioning_cert, has_preservations, has_transfer, created_at
 		FROM %s %s ORDER BY created_at`,
 		RealmTable, condition,
@@ -50,7 +50,7 @@ func (r *RealmRepo) Get(ctx context.Context, req *models.GetRealmsDTO) ([]*model
 }
 
 func (r *RealmRepo) GetByUser(ctx context.Context, req *models.GetRealmByUserDTO) ([]*models.Realm, error) {
-	query := fmt.Sprintf(`SELECT r.id, name, realm, reserve_channel, expiration_notice, location_type, is_active, has_responsible,
+	query := fmt.Sprintf(`SELECT r.id, name, realm, notification_channel, expiration_notice, location_type, is_active, has_responsible,
 		has_employees, need_confirmed, has_commissioning_cert, has_preservations, has_transfer, created_at
 		FROM %s AS r
 		LEFT JOIN LATERAL (SELECT a.id FROM %s AS a INNER JOIN %s AS u ON a.user_id=u.id WHERE sso_id=$1 AND realm_id=r.id) AS a ON true
@@ -66,7 +66,7 @@ func (r *RealmRepo) GetByUser(ctx context.Context, req *models.GetRealmByUserDTO
 }
 
 func (r *RealmRepo) GetById(ctx context.Context, req *models.GetRealmByIdDTO) (*models.Realm, error) {
-	query := fmt.Sprintf(`SELECT id, name, realm, is_active, reserve_channel, expiration_notice, location_type,
+	query := fmt.Sprintf(`SELECT id, name, realm, is_active, notification_channel, expiration_notice, location_type,
 		has_responsible, has_employees, need_confirmed, has_commissioning_cert, has_preservations, has_transfer, created_at
 		FROM %s WHERE id=$1`,
 		RealmTable,
@@ -83,9 +83,9 @@ func (r *RealmRepo) GetById(ctx context.Context, req *models.GetRealmByIdDTO) (*
 }
 
 func (r *RealmRepo) Create(ctx context.Context, dto *models.RealmDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, name, realm, is_active, reserve_channel, expiration_notice, location_type,
+	query := fmt.Sprintf(`INSERT INTO %s (id, name, realm, is_active, notification_channel, expiration_notice, location_type,
 		has_responsible, has_employees, need_confirmed, has_commissioning_cert, has_preservations, has_transfer)
-		VALUES (:id, :name, :realm, :is_active, :reserve_channel, :expiration_notice, :location_type, :has_responsible,
+		VALUES (:id, :name, :realm, :is_active, :notification_channel, :expiration_notice, :location_type, :has_responsible,
 		:has_employees, :need_confirmed, :has_commissioning_cert, :has_preservations, :has_transfer)`,
 		RealmTable,
 	)
@@ -98,7 +98,7 @@ func (r *RealmRepo) Create(ctx context.Context, dto *models.RealmDTO) error {
 }
 
 func (r *RealmRepo) Update(ctx context.Context, dto *models.RealmDTO) error {
-	query := fmt.Sprintf(`UPDATE %s SET name=:name, is_active=:is_active, reserve_channel=:reserve_channel,
+	query := fmt.Sprintf(`UPDATE %s SET name=:name, is_active=:is_active, notification_channel=:notification_channel,
 		expiration_notice=:expiration_notice, location_type=:location_type, has_responsible=:has_responsible,
 		has_employees=:has_employees, need_confirmed=:need_confirmed, has_commissioning_cert=:has_commissioning_cert,
 		has_preservations=:has_preservations, has_transfer=:has_transfer WHERE id=:id`,

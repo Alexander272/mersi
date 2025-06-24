@@ -6,6 +6,13 @@ import (
 )
 
 type Services struct {
+	RuleItem
+	Rule
+	Role
+	User
+	Session
+	Permission
+
 	Realm
 	Section
 	Columns
@@ -33,7 +40,15 @@ func NewServices(deps *Deps) *Services {
 	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
 	verification := NewVerificationService(deps.Repo.Verification, verificationDoc)
 
-	si := NewSiService(&SiDeps{Instrument: instrument})
+	si := NewSiService(&SiDeps{Repo: deps.Repo.SI, Instrument: instrument, Verification: verification})
+
+	role := NewRoleService(deps.Repo.Role)
+	ruleItem := NewRuleItemService(deps.Repo.RuleItem)
+	rule := NewRuleService(deps.Repo.Rule, ruleItem)
+
+	user := NewUserService(role)
+	session := NewSessionService(deps.Keycloak, user)
+	permission := NewPermissionService("configs/privacy.conf", rule, role)
 
 	return &Services{
 		Realm:           realm,
@@ -45,5 +60,13 @@ func NewServices(deps *Deps) *Services {
 		VerificationDoc: verificationDoc,
 		Verification:    verification,
 		SI:              si,
+
+		Role:     role,
+		RuleItem: ruleItem,
+		Rule:     rule,
+
+		User:       user,
+		Session:    session,
+		Permission: permission,
 	}
 }

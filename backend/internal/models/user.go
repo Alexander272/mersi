@@ -1,10 +1,10 @@
 package models
 
 type User struct {
-	ID   string   `json:"id" db:"id"`
-	Name string   `json:"name" db:"name"`
-	Role string   `json:"role"`
-	Menu []string `json:"menu"`
+	ID          string   `json:"id" db:"id"`
+	Name        string   `json:"name" db:"name"`
+	Role        string   `json:"role"`
+	Permissions []string `json:"permissions"`
 	// Filters []*SIFilter `json:"filters"`
 
 	Roles []*RoleWithRealm `json:"-"`
@@ -15,11 +15,16 @@ type User struct {
 
 type UserData struct {
 	ID        string `json:"id" db:"id"`
-	SSOID     string `json:"ssoId" db:"sso_id"`
+	SSO_ID    string `json:"ssoId" db:"sso_id"`
 	Username  string `json:"username" db:"username"`
 	FirstName string `json:"firstName" db:"first_name"`
 	LastName  string `json:"lastName" db:"last_name"`
 	Email     string `json:"email" db:"email"`
+}
+
+type GetUserInfoDTO struct {
+	UserID string `json:"userId"`
+	Realm  string
 }
 
 type GetByRealmDTO struct {

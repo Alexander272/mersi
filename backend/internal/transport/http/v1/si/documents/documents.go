@@ -49,12 +49,17 @@ func (h *Handler) getTemp(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Группа файлов не задана")
 		return
 	}
-	//TODO get real userId
-	userId := "ed6bf9fa-9168-414d-a413-281439cbbacb"
+
+	u, exists := c.Get(constants.CtxUser)
+	if !exists {
+		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		return
+	}
+	user := u.(models.User)
 
 	req := &models.GetTempDocumentDTO{
 		Group:  group,
-		UserId: userId,
+		UserId: user.ID,
 	}
 
 	data, err := h.service.GetTemp(c, req)
@@ -97,8 +102,12 @@ func (h *Handler) upload(c *gin.Context) {
 	instrumentId := form.Value["instrumentId"][0]
 	group := form.Value["group"][0]
 
-	//TODO get real userId
-	userId := "ed6bf9fa-9168-414d-a413-281439cbbacb"
+	u, exists := c.Get(constants.CtxUser)
+	if !exists {
+		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		return
+	}
+	user := u.(models.User)
 
 	files := form.File["files"]
 	if len(files) == 0 {
@@ -106,7 +115,7 @@ func (h *Handler) upload(c *gin.Context) {
 		return
 	}
 
-	dto := &models.DocumentsDTO{InstrumentId: instrumentId, Group: group, UserId: userId, Files: files}
+	dto := &models.DocumentsDTO{InstrumentId: instrumentId, Group: group, UserId: user.ID, Files: files}
 	res, err := h.service.Upload(c, dto)
 	if err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
@@ -136,15 +145,19 @@ func (h *Handler) delete(c *gin.Context) {
 	}
 	group := c.Query("group")
 
-	//TODO get real userId
-	userId := "ed6bf9fa-9168-414d-a413-281439cbbacb"
+	u, exists := c.Get(constants.CtxUser)
+	if !exists {
+		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		return
+	}
+	user := u.(models.User)
 
 	req := &models.DeleteDocumentDTO{
 		Id:           id,
 		InstrumentId: instrumentId,
 		Filename:     filename,
 		Group:        group,
-		UserId:       userId,
+		UserId:       user.ID,
 	}
 
 	if err := h.service.Delete(c, req); err != nil {

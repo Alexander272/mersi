@@ -33,7 +33,7 @@ func Register(api *gin.RouterGroup, service services.Verification, middleware *m
 		verifications.GET("", handler.get)
 		verifications.GET("/last", handler.getLast)
 
-		write := api.Group("", middleware.CheckPermissions(constants.Verification, constants.Write))
+		write := verifications.Group("", middleware.CheckPermissions(constants.Verification, constants.Write))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

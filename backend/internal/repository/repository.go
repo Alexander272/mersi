@@ -5,6 +5,16 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type RuleItem interface {
+	postgres.RuleItem
+}
+type Rule interface {
+	postgres.Rule
+}
+type Role interface {
+	postgres.Role
+}
+
 type Realm interface {
 	postgres.Realm
 }
@@ -29,8 +39,15 @@ type Verification interface {
 type VerificationDoc interface {
 	postgres.VerificationDoc
 }
+type SI interface {
+	postgres.SI
+}
 
 type Repository struct {
+	RuleItem
+	Rule
+	Role
+
 	Realm
 	Section
 	Columns
@@ -39,10 +56,15 @@ type Repository struct {
 	Instrument
 	Verification
 	VerificationDoc
+	SI
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
+		RuleItem: postgres.NewRuleItemRepo(db),
+		Rule:     postgres.NewRuleRepo(db),
+		Role:     postgres.NewRoleRepo(db),
+
 		Realm:           postgres.NewRealmRepo(db),
 		Section:         postgres.NewSectionRepo(db),
 		Columns:         postgres.NewColumnRepo(db),
@@ -51,5 +73,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Document:        postgres.NewDocumentRepo(db),
 		Verification:    postgres.NewVerificationRepo(db),
 		VerificationDoc: postgres.NewVerificationDocRepo(db),
+		SI:              postgres.NewSIRepo(db),
 	}
 }

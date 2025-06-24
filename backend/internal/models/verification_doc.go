@@ -24,7 +24,7 @@ type GetGroupedVerificationDocsDTO struct {
 type VerificationDocDTO struct {
 	Id             string `json:"id" db:"id"`
 	VerificationId string `json:"verificationId" db:"verification_id"`
-	Name           string `json:"name" db:"name"`
+	Name           string `json:"doc" db:"name"`
 	DocId          string `json:"docId" db:"doc_id"`
 }
 

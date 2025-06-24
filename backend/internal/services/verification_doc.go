@@ -44,6 +44,9 @@ func (s *VerificationDocService) GetGrouped(ctx context.Context, req *models.Get
 }
 
 func (s *VerificationDocService) CreateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
 	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create several verification documents. error: %w", err)
 	}
@@ -58,6 +61,9 @@ func (s *VerificationDocService) Update(ctx context.Context, dto *models.Verific
 }
 
 func (s *VerificationDocService) UpdateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
 	if err := s.repo.UpdateSeveral(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update several verification documents. error: %w", err)
 	}

@@ -71,15 +71,11 @@ func (r *VerificationDocRepo) GetGrouped(ctx context.Context, req *models.GetGro
 
 func (r *VerificationDocRepo) CreateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, verification_id, name, doc_id) 
-		VALUES (:id, :verification_id, :name, :doc_id)`,
+		VALUES (:id, :verification_id, :name, CAST(NULLIF(:doc_id, '') AS uuid))`,
 		VerificationDocsTable,
 	)
 	for i := range dto {
 		dto[i].Id = uuid.NewString()
-		if dto[i].DocId == "" {
-			//TODO возможно это не будет работать тк бд будет выдавать ошибку
-			dto[i].DocId = uuid.Nil.String()
-		}
 	}
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.verification_docs
 (
     id uuid NOT NULL,
     verification_id uuid NOT NULL,
-    doc_id uuid NOT NULL,
+    doc_id uuid,
     name text COLLATE pg_catalog."default" DEFAULT ''::text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),

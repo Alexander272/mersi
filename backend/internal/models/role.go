@@ -3,15 +3,15 @@ package models
 import "github.com/lib/pq"
 
 type Role struct {
-	ID   string   `json:"id" db:"id"`
-	Name string   `json:"name" db:"name"`
-	Menu []string `json:"menu"`
+	ID    string   `json:"id" db:"id"`
+	Name  string   `json:"name" db:"name"`
+	Rules []string `json:"rules"`
 }
-type RoleWithMenuDTO struct {
+type RoleWithRuleDTO struct {
 	ID      string         `json:"id" db:"id"`
 	Name    string         `json:"name" db:"name"`
 	Extends pq.StringArray `db:"extends"`
-	Menu    pq.StringArray `db:"menu"`
+	Rules   pq.StringArray `db:"rules"`
 	// Menu    string         `db:"menu"`
 }
 
