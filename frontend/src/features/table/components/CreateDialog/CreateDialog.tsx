@@ -2,17 +2,21 @@ import { useEffect, useState } from 'react'
 import { Button, Divider, Stack } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
+import type { ISiForm } from '../../types/si'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetCreateFormStepsQuery } from '@/features/sections/modules/form/formApiSlice'
 import { changeDialogIsOpen, getDialogState } from '@/features/dialog/dialogSlice'
+import { getSection } from '@/features/sections/sectionSlice'
 import { Dialog } from '@/features/dialog/components/Dialog'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { Step, Stepper } from '@/components/Stepper/Stepper'
 import { localKeys } from '../../constants/storage'
 import { useCreateSiMutation } from '../../siApiSlice'
 import { Form as FormFields } from '../Form/Form'
+import { useGetSI } from '../../hooks/getSI'
 
 export const CreateDialog = () => {
 	const modal = useAppSelector(getDialogState('CreateTableItem'))
@@ -38,11 +42,11 @@ const Form = () => {
 	const [activeStep, setActiveStep] = useState(0)
 	const [steps, setSteps] = useState<Step[]>([])
 
-	// const section = useAppSelector(getSection) //TODO получать нормальное значение section
-	const section = '46ba9e17-65c7-474b-8c47-7975ab4319d5'
+	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetCreateFormStepsQuery(section, { skip: !section })
+	const { data, isFetching } = useGetCreateFormStepsQuery(section?.id || '', { skip: !section?.id })
+	const { data: si } = useGetSI()
 	const [create, { isLoading }] = useCreateSiMutation()
 
 	useEffect(() => {
@@ -51,7 +55,7 @@ const Form = () => {
 		setSteps(newSteps)
 	}, [data])
 
-	const methods = useForm({ values: JSON.parse(localStorage.getItem(localKeys.form) || '{}') })
+	const methods = useForm<ISiForm>({ values: JSON.parse(localStorage.getItem(localKeys.form) || '{}') })
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'CreateTableItem', isOpen: false }))
@@ -69,11 +73,17 @@ const Form = () => {
 			return
 		}
 
-		form.instrument.sectionId = section
-		//TODO надо еще что-то делать с полем nextVerificationData
+		form.instrument.sectionId = section?.id || ''
+		form.instrument.position = (si?.total || 0) + 1
+		if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval != '') {
+			form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
+				.add(+form.instrument.interVerificationInterval, 'month')
+				.unix()
+		}
+
 		try {
 			await create(form).unwrap()
-			toast.success('Новая позиция добавлена')
+			toast.success('Данные добавлены')
 			localStorage.removeItem(localKeys.form)
 			methods.reset()
 			setActiveStep(0)

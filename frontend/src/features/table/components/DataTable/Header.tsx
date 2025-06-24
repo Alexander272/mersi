@@ -1,14 +1,13 @@
-import { Button, Stack, Typography, useTheme } from '@mui/material'
+import { Button, Stack, useTheme } from '@mui/material'
 
-import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { getSection } from '@/features/sections/sectionSlice'
+import { useAppDispatch } from '@/hooks/redux'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { PlusIcon } from '@/components/Icons/PlusIcon'
 import { CreateDialog } from '../CreateDialog/CreateDialog'
+import { ActiveSection } from '@/features/sections/components/Active/Active'
 
 export const Header = () => {
 	const { palette } = useTheme()
-	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
 
 	const createHandler = () => {
@@ -18,9 +17,7 @@ export const Header = () => {
 	return (
 		<Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'} mt={1} mb={0.5} mx={2}>
 			<Stack direction={'row'}>
-				<Typography color={'primary'} variant='h5'>
-					{section?.name}
-				</Typography>
+				<ActiveSection />
 
 				<Button onClick={createHandler} variant='outlined'>
 					<PlusIcon fontSize={12} mr={1} fill={palette.primary.main} /> Добавить

@@ -6,6 +6,7 @@ import { Auth } from '@/pages/auth/AuthLazy'
 import { Home } from '@/pages/home/HomeLazy'
 import { Sections } from '@/pages/sections/SectionLazy'
 import { AppRoutes } from './routes'
+import PrivateRoute from './PrivateRoute'
 
 const config: RouteObject[] = [
 	{
@@ -18,7 +19,7 @@ const config: RouteObject[] = [
 			},
 			{
 				path: AppRoutes.Home,
-				// element: <PrivateRoute />,
+				element: <PrivateRoute />,
 				children: [
 					{
 						index: true,

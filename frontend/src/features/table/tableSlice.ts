@@ -1,7 +1,7 @@
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit'
 
-// import type { ISort, ISearch, IFilter } from './types/data'
 import type { IContextMenu, ISelect } from './types/table'
+import type { IFilter, ISort } from './types/params'
 import { Size } from '@/constants/defaultValues'
 import { RootState } from '@/app/store'
 import { localKeys } from './constants/storage'
@@ -9,8 +9,8 @@ import { localKeys } from './constants/storage'
 interface ITableSlice {
 	page: number
 	size: number
-	// sort: ISort
-	// filters: IFilter[]
+	sort: ISort
+	filters: IFilter[]
 	// search: ISearch
 	selected: ISelect
 	contextMenu?: IContextMenu
@@ -20,8 +20,8 @@ interface ITableSlice {
 const initialState: ITableSlice = {
 	page: +(localStorage.getItem(localKeys.page) || 1),
 	size: +(localStorage.getItem(localKeys.size) || Size),
-	// sort: {},
-	// filters: [],
+	sort: {},
+	filters: [],
 	// search: {
 	// 	value: '',
 	// 	fields: ['name', 'uname'],
@@ -43,21 +43,21 @@ const tableSlice = createSlice({
 			localStorage.setItem(localKeys.size, action.payload.toString())
 		},
 
-		// setSort: (state, action: PayloadAction<string>) => {
-		// 	if (!state.sort[action.payload]) {
-		// 		state.sort = { ...(state.sort || {}), [action.payload]: 'ASC' }
-		// 		return
-		// 	}
+		setSort: (state, action: PayloadAction<string>) => {
+			if (!state.sort[action.payload]) {
+				state.sort = { ...(state.sort || {}), [action.payload]: 'ASC' }
+				return
+			}
 
-		// 	if (state.sort[action.payload] == 'ASC') state.sort[action.payload] = 'DESC'
-		// 	else {
-		// 		delete state.sort[action.payload]
-		// 	}
-		// },
+			if (state.sort[action.payload] == 'ASC') state.sort[action.payload] = 'DESC'
+			else {
+				delete state.sort[action.payload]
+			}
+		},
 
-		// setFilters: (state, action: PayloadAction<IFilter[]>) => {
-		// 	state.filters = action.payload
-		// },
+		setFilters: (state, action: PayloadAction<IFilter[]>) => {
+			state.filters = action.payload
+		},
 
 		// setSearch: (state, action: PayloadAction<string>) => {
 		// 	state.search.value = action.payload
@@ -96,8 +96,8 @@ const tableSlice = createSlice({
 
 export const getTablePage = (state: RootState) => state.table.page
 export const getTableSize = (state: RootState) => state.table.size
-// export const getTableSort = (state: RootState) => state.table.sort
-// export const getFilters = (state: RootState) => state.table.filters
+export const getSort = (state: RootState) => state.table.sort
+export const getFilters = (state: RootState) => state.table.filters
 // export const getSearch = (state: RootState) => state.table.search
 export const getSelected = (state: RootState) => state.table.selected
 export const getContextMenu = (state: RootState) => state.table.contextMenu
@@ -109,9 +109,9 @@ export const tableReducer = tableSlice.reducer
 export const {
 	setPage,
 	setSize,
-	// setSort,
+	setSort,
+	setFilters,
 	// setSearch,
-	// setFilters,
 	// setSearchFields,
 	setSelected,
 	setContextMenu,

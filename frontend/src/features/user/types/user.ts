@@ -1,12 +1,12 @@
-// import { ISIFilter } from '@/features/dataTable/types/data'
+import type { IFilter } from '@/features/table/types/table'
 
 export interface IUser {
 	id: string
 	name: string
 	role: string
-	menu: string[]
+	permissions: string[]
 	token: string
-	// filters: ISIFilter[]
+	filters: IFilter[]
 }
 
 export interface IUserData {

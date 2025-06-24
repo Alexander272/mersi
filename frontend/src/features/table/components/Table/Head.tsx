@@ -1,6 +1,5 @@
 import { JSX } from 'react'
 
-import { ColWidth, RowHeight } from '../../constants/defaultValues'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
@@ -13,30 +12,24 @@ import { CellText } from '@/components/CellText/CellText'
 import { Badge } from '@/components/Badge/Badge'
 import { Fallback } from '@/components/Fallback/Fallback'
 import { SortUpIcon } from '@/components/Icons/SortUpIcon'
-import { getHidden } from '../../tableSlice'
+import { ColWidth, RowHeight } from '../../constants/defaultValues'
+import { getHidden, getSort, setSort } from '../../tableSlice'
+import { useCalcWidth } from '../../utils/calcWidth'
 
 export const Head = () => {
 	const section = useAppSelector(getSection)
-	// const sort = useAppSelector(getTableSort)
+	const sort = useAppSelector(getSort)
 	const hidden = useAppSelector(getHidden)
 
-	//TODO получать sectionId
-	const { data, isFetching } = useGetColumnsQuery('46ba9e17-65c7-474b-8c47-7975ab4319d5')
+	const { data, isFetching } = useGetColumnsQuery(section?.id || '', { skip: !section?.id })
 
-	let hasFewRows = false
-	const width = data?.data.reduce((ac, cur) => {
-		if (cur.children) {
-			hasFewRows = true
-			return ac + cur.children.reduce((ac, cur) => ac + (hidden[cur.field] ? 0 : cur.width || ColWidth), 0)
-		}
-		return ac + (hidden[cur.field] ? 0 : cur.width || ColWidth)
-	}, 12)
+	const { width, hasFewRows } = useCalcWidth(data?.data || [])
 	const height = (hasFewRows ? 2 : 1) * RowHeight
 
 	const dispatch = useAppDispatch()
 
 	const setSortHandler = (field: string) => () => {
-		// dispatch(setSort(field))
+		dispatch(setSort(field))
 	}
 
 	const getCell = (c: IColumn) => {
@@ -51,14 +44,14 @@ export const Head = () => {
 				{c.allowSort ? (
 					<Badge
 						color='primary'
-						// badgeContent={Object.keys(sort).findIndex(k => k == c.key) + 1}
-						// invisible={Object.keys(sort).length < 2}
+						badgeContent={Object.keys(sort).findIndex(k => k == c.field) + 1}
+						invisible={Object.keys(sort).length < 2}
 					>
 						<SortUpIcon
 							fontSize={16}
-							fill={/*sort[c.key] ? 'black' : */ '#adadad'}
-							// transform: sort[c.key] == 'ASC' ? '' : 'rotateX(180deg)',
-							// transition: '.2s all ease-in-out',
+							fill={sort[c.field] ? 'black' : '#adadad'}
+							transform={!sort[c.field] || sort[c.field] == 'ASC' ? '' : 'rotateX(180deg)'}
+							transition={'.2s all ease-in-out'}
 						/>
 					</Badge>
 				) : null}

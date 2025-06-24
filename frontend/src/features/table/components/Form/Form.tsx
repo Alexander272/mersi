@@ -30,6 +30,7 @@ export const Form: FC<Props> = ({ data }) => {
 				case 'autocomplete':
 					return <AutocompleteField key={item.id} data={item} />
 				// TODO надо еще придумать как выводить поля если они зависят друг от друга
+				// можно попробовать добавить колонку с id флага и тип флаг, а в поле получать значение этого флага и показывать поле если флаг true
 				default:
 					return null
 			}

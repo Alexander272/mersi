@@ -4,7 +4,7 @@ export interface IColumn {
 	name: string
 	field: string
 	position: number
-	type: string
+	type: ColumnTypes
 	width: number
 	parentId: string
 	allowSort: boolean
@@ -19,7 +19,7 @@ export interface IColumnDTO {
 	name: string
 	field: string
 	position: number
-	type: string
+	type: ColumnTypes
 	width?: number
 	parentId?: string
 	allowSort: boolean

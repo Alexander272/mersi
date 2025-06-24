@@ -21,9 +21,8 @@ const baseQuery = fetchBaseQuery({
 		const token = (api.getState() as RootState).user.token
 		if (token) headers.set('authorization', `Bearer ${token}`)
 
-		//TODO
-		// const realm = (api.getState() as RootState).realm.realm
-		// if (realm) headers.set('realm', realm.id)
+		const realm = (api.getState() as RootState).realm.realm
+		if (realm) headers.set('realm', realm.id)
 
 		return headers
 	},

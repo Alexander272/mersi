@@ -38,3 +38,14 @@ export interface ICoordinates {
 export interface ISelect {
 	[id: string]: boolean
 }
+
+export interface IFilter {
+	field: string
+	fieldType?: string
+	values: ISIFilterValue[]
+}
+export type CompareTypes = 'con' | 'start' | 'end' | 'like' | 'in' | 'eq' | 'gte' | 'lte' | 'range' | 'null'
+export interface ISIFilterValue {
+	compareType: CompareTypes
+	value: string
+}

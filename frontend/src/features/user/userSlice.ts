@@ -9,7 +9,7 @@ interface IUserState {
 	id: string | null
 	name?: string
 	role: string | null
-	menu: string[]
+	permissions: string[]
 	token: string | null
 }
 
@@ -17,7 +17,7 @@ const initialState: IUserState = {
 	id: null,
 	role: null,
 	token: null,
-	menu: [],
+	permissions: [],
 }
 
 const userSlice = createSlice({
@@ -30,15 +30,15 @@ const userSlice = createSlice({
 			state.id = action.payload.id
 			state.name = action.payload.name
 			state.role = action.payload.role
-			state.menu = action.payload.menu
+			state.permissions = action.payload.permissions
 			state.token = action.payload.token
 		},
 
 		setRole: (state, action: PayloadAction<string>) => {
 			state.role = action.payload
 		},
-		setMenu: (state, action: PayloadAction<string[]>) => {
-			state.menu = action.payload
+		setPermissions: (state, action: PayloadAction<string[]>) => {
+			state.permissions = action.payload
 		},
 
 		resetUser: () => initialState,
@@ -46,9 +46,9 @@ const userSlice = createSlice({
 })
 
 export const getToken = (state: RootState) => state.user.token
-export const getMenu = (state: RootState) => state.user.menu
+export const getPermissions = (state: RootState) => state.user.permissions
 
 export const userPath = userSlice.name
 export const userReducer = userSlice.reducer
 
-export const { setUser, setRole, setMenu, resetUser } = userSlice.actions
+export const { setUser, setRole, setPermissions, resetUser } = userSlice.actions

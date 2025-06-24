@@ -1,3 +1,5 @@
+import { IVerDocs } from './verificationDocs'
+
 export interface IVerificationDTO {
 	id: string
 	instrumentId: string
@@ -7,4 +9,5 @@ export interface IVerificationDTO {
 	notVerified: boolean
 	status: string
 	notes: string
+	docs?: IVerDocs[]
 }

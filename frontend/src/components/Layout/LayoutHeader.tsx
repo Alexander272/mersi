@@ -3,10 +3,10 @@ import { AppBar, Box, Stack, Toolbar } from '@mui/material'
 import { PermRules } from '@/constants/permissions'
 import { AppRoutes } from '@/pages/router/routes'
 import { useAppSelector } from '@/hooks/redux'
-import { useCheckPermission } from '@/features/auth/hooks/check'
+import { useCheckPermission } from '@/features/user/hooks/check'
 import { useSignOutMutation } from '@/features/auth/authApiSlice'
 import { getToken } from '@/features/user/userSlice'
-// import { ActiveRealm } from '@/features/realms/components/ActiveRealm'
+import { ActiveRealm } from '@/features/realms/components/ActiveRealm'
 import { GeometryIcon } from '../Icons/GeometryIcon'
 import { NavButton, NavLink } from './header.style'
 
@@ -33,9 +33,9 @@ export const LayoutHeader = () => {
 
 				{token && (
 					<Stack direction={'row'} spacing={3} minHeight={'100%'}>
-						{/* <NavButton>
+						<NavButton>
 							<ActiveRealm />
-						</NavButton> */}
+						</NavButton>
 						{showRealmsSetting && <NavLink to={AppRoutes.Realm}>Области</NavLink>}
 						<NavButton onClick={signOutHandler}>Выйти</NavButton>
 					</Stack>

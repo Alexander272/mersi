@@ -1,6 +1,7 @@
 export interface IInstrumentDTO {
 	id: string
 	sectionId: string
+	position: number
 	name: string
 	dateOfReceipt: number
 	type: string

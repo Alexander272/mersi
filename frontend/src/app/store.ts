@@ -4,6 +4,7 @@ import { setupListeners } from '@reduxjs/toolkit/query'
 import { userPath, userReducer } from '@/features/user/userSlice'
 import { dialogPath, dialogReducer } from '@/features/dialog/dialogSlice'
 import { tablePath, tableReducer } from '@/features/table/tableSlice'
+import { realmPath, realmReducer } from '@/features/realms/realmSlice'
 import { sectionPath, sectionReducer } from '@/features/sections/sectionSlice'
 import { resetStoreListener } from './middlewares/resetStore'
 import { apiSlice } from './apiSlice'
@@ -13,11 +14,10 @@ const rootReducer = combineReducers({
 	[userPath]: userReducer,
 	[dialogPath]: dialogReducer,
 	[tablePath]: tableReducer,
+	[realmPath]: realmReducer,
 	[sectionPath]: sectionReducer,
 	// [dataTablePath]: dataTableReducer,
-	// [modalPath]: modalReducer,
 	// [employeesPath]: employeesReducer,
-	// [realmPath]: realmReducer,
 })
 
 export const store = configureStore({
