@@ -72,8 +72,8 @@ func (r *VerificationRepo) Create(ctx context.Context, dto *models.VerificationD
 }
 
 func (r *VerificationRepo) Update(ctx context.Context, dto *models.VerificationDTO) error {
-	query := fmt.Sprintf(`UPDATE %s SET date=:date, next_date=:next_date, register_link=:register_link, not_verified=:not_verified
-		notes=:notes, status=:status WHERE id=:id`,
+	query := fmt.Sprintf(`UPDATE %s SET date=:date, next_date=:next_date, register_link=:register_link, not_verified=:not_verified,
+		notes=:notes, status=:status, updated_at=now() WHERE id=:id`,
 		VerificationTable,
 	)
 

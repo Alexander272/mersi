@@ -28,6 +28,11 @@ type SI struct {
 	Total int `json:"total" db:"total"`
 }
 
+type BaseSI struct {
+	Instrument   *Instrument   `json:"instrument"`
+	Verification *Verification `json:"verification"`
+}
+
 type GetSiDTO struct {
 	SectionId string
 	Page      *Page
@@ -36,7 +41,17 @@ type GetSiDTO struct {
 	Status    InstrumentStatus
 }
 
+type GetSiByIdDTO struct {
+	Id string
+}
+
 type SiDTO struct {
 	Instrument   *InstrumentDTO   `json:"instrument" binding:"required"`
 	Verification *VerificationDTO `json:"verification"`
+}
+
+type ChangePositionDTO struct {
+	SectionId   string `json:"sectionId" db:"section_id" binding:"required"`
+	NewPosition int    `json:"newPosition" db:"new_position" binding:"min=0"`
+	OldPosition int    `json:"oldPosition" db:"old_position" binding:"min=0"`
 }

@@ -44,7 +44,6 @@ type GetUniqueDTO struct {
 	Field string `json:"field"`
 }
 
-// TODO надо бы тут какие-нибудь ограничения прописать
 type InstrumentDTO struct {
 	Id                        string           `json:"id" db:"id"`
 	SectionId                 string           `json:"sectionId" db:"section_id"`

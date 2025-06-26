@@ -29,12 +29,13 @@ type Instrument interface {
 	GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error)
 	Create(ctx context.Context, dto *models.InstrumentDTO) error
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
+	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
 	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
 	Delete(ctx context.Context, id string) error
 }
 
 func (r *InstrumentRepo) GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error) {
-	query := fmt.Sprintf(`SELECT name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register,
+	query := fmt.Sprintf(`SELECT id, position, name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register,
 		country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, act_of_entering, 
 		act_of_entering_id, notes, status FROM %s WHERE id=$1`,
 		InstrumentsTable,
@@ -106,6 +107,34 @@ func (r *InstrumentRepo) Update(ctx context.Context, dto *models.InstrumentDTO) 
 	)
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *InstrumentRepo) ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error {
+	//TODO фиг знает как это будет отрабатывать с большими объемами данных
+	query := fmt.Sprintf(`UPDATE %s AS i SET position=n.position FROM (
+			SELECT id, 
+				CASE WHEN $1::integer < $2::integer THEN
+					(CASE 
+						WHEN "position" < $1 OR "position" > $2 THEN "position"
+						WHEN "position" >= $1 AND "position" < $2 THEN "position"+1
+						WHEN "position" = $2 THEN $1
+					END)
+				ELSE 
+					(CASE
+						WHEN "position" > $1 OR "position" < $2 THEN "position"
+						WHEN "position" <= $1 AND "position" > $2 THEN "position"-1
+						WHEN "position" = $2 THEN $1
+					END)
+				END AS "position"
+			FROM %s WHERE section_id=$3 ORDER BY position
+		) AS n WHERE i.id=n.id`,
+		InstrumentsTable, InstrumentsTable,
+	)
+
+	if _, err := r.db.ExecContext(ctx, query, dto.NewPosition, dto.OldPosition, dto.SectionId); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

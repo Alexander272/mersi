@@ -30,13 +30,32 @@ func NewSiService(deps *SiDeps) *SIService {
 
 type SI interface {
 	Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, error)
+	GetById(ctx context.Context, req *models.GetSiByIdDTO) (*models.BaseSI, error)
 	Create(ctx context.Context, dto *models.SiDTO) error
+	Update(ctx context.Context, dto *models.SiDTO) error
+	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
 }
 
 func (s *SIService) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, error) {
 	data, err := s.repo.Get(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get si. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *SIService) GetById(ctx context.Context, req *models.GetSiByIdDTO) (*models.BaseSI, error) {
+	instrument, err := s.instrument.GetById(ctx, &models.GetInstrumentByIdDTO{Id: req.Id})
+	if err != nil {
+		return nil, err
+	}
+	verification, err := s.verification.GetLast(ctx, &models.GetVerificationDTO{InstrumentId: req.Id})
+	if err != nil {
+		return nil, err
+	}
+	data := &models.BaseSI{
+		Instrument:   instrument,
+		Verification: verification,
 	}
 	return data, nil
 }
@@ -54,5 +73,24 @@ func (s *SIService) Create(ctx context.Context, dto *models.SiDTO) error {
 		}
 	}
 
+	return nil
+}
+
+func (s *SIService) Update(ctx context.Context, dto *models.SiDTO) error {
+	if err := s.instrument.Update(ctx, dto.Instrument); err != nil {
+		return err
+	}
+	if dto.Verification != nil {
+		if err := s.verification.Update(ctx, dto.Verification); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *SIService) ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error {
+	if err := s.instrument.ChangePosition(ctx, dto); err != nil {
+		return err
+	}
 	return nil
 }

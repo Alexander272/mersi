@@ -24,6 +24,7 @@ type Instrument interface {
 	GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error)
 	Create(ctx context.Context, dto *models.InstrumentDTO) error
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
+	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
 	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
 	Delete(ctx context.Context, id string) error
 }
@@ -57,6 +58,13 @@ func (s *InstrumentService) Create(ctx context.Context, dto *models.InstrumentDT
 func (s *InstrumentService) Update(ctx context.Context, dto *models.InstrumentDTO) error {
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update instrument. error: %w", err)
+	}
+	return nil
+}
+
+func (s *InstrumentService) ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error {
+	if err := s.repo.ChangePosition(ctx, dto); err != nil {
+		return fmt.Errorf("failed to change position. error: %w", err)
 	}
 	return nil
 }

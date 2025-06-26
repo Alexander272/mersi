@@ -1,6 +1,7 @@
 package instruments
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -29,6 +30,7 @@ func Register(api *gin.RouterGroup, service services.Instrument, middleware *mid
 
 	instruments := api.Group("/instruments", middleware.CheckPermissions(constants.SI, constants.Read))
 	{
+		instruments.GET("/:id", handler.get)
 		instruments.GET("/unique/:field", handler.getUnique)
 
 		write := instruments.Group("", middleware.CheckPermissions(constants.SI, constants.Write))
@@ -37,6 +39,27 @@ func Register(api *gin.RouterGroup, service services.Instrument, middleware *mid
 			write.PUT("/:id", handler.update)
 		}
 	}
+}
+
+func (h *Handler) get(c *gin.Context) {
+	id := c.Param("id")
+	if err := uuid.Validate(id); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+	req := &models.GetInstrumentByIdDTO{Id: id}
+
+	data, err := h.service.GetById(c, req)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), err.Error())
+			return
+		}
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), req)
+		return
+	}
+	c.JSON(http.StatusOK, response.DataResponse{Data: data})
 }
 
 func (h *Handler) getUnique(c *gin.Context) {

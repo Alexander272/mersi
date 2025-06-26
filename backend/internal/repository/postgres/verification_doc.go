@@ -31,7 +31,7 @@ type VerificationDoc interface {
 }
 
 func (r *VerificationDocRepo) Get(ctx context.Context, req *models.GetVerificationDocsDTO) ([]*models.VerificationDoc, error) {
-	query := fmt.Sprintf(`SELECT id, name, doc_id FROM %s WHERE verification_id=$1 ORDER BY created_at DESC`, VerificationDocsTable)
+	query := fmt.Sprintf(`SELECT id, name, COALESCE(doc_id::text,'') AS doc_id FROM %s WHERE verification_id=$1 ORDER BY created_at DESC`, VerificationDocsTable)
 	data := []*models.VerificationDoc{}
 
 	if err := r.db.SelectContext(ctx, &data, query, req.VerificationId); err != nil {
@@ -108,7 +108,7 @@ func (r *VerificationDocRepo) UpdateSeveral(ctx context.Context, dto []*models.V
 
 	query := fmt.Sprintf(`UPDATE %s AS t SET name=s.name, updated_at=now()
 		FROM (VALUES %s) AS s(id, name) WHERE t.id=s.id::uuid`,
-		VerificationTable, strings.Join(values, ","),
+		VerificationDocsTable, strings.Join(values, ","),
 	)
 
 	if _, err := r.db.ExecContext(ctx, query, args...); err != nil {

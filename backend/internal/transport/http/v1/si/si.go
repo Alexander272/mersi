@@ -35,10 +35,14 @@ func Register(api *gin.RouterGroup, services *services.Services, middleware *mid
 	si := api.Group("si", middleware.CheckPermissions(constants.SI, constants.Read))
 	{
 		si.GET("", handler.get)
+		si.GET("/:id", handler.getById)
 
 		write := si.Group("", middleware.CheckPermissions(constants.SI, constants.Write))
 		{
 			write.POST("", handler.create)
+			write.PUT("/:id", handler.update)
+			write.PUT("/position", handler.changePosition)
+			write.DELETE("/:id", handler.delete)
 		}
 	}
 
@@ -191,6 +195,23 @@ func (h *Handler) get(c *gin.Context) {
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: total})
 }
 
+func (h *Handler) getById(c *gin.Context) {
+	id := c.Param("id")
+	if err := uuid.Validate(id); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+	req := &models.GetSiByIdDTO{Id: id}
+
+	data, err := h.service.GetById(c, req)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), req)
+		return
+	}
+	c.JSON(http.StatusOK, response.DataResponse{Data: data})
+}
+
 func (h *Handler) create(c *gin.Context) {
 	dto := &models.SiDTO{}
 	if err := c.BindJSON(dto); err != nil {
@@ -213,10 +234,63 @@ func (h *Handler) create(c *gin.Context) {
 	}
 
 	logger.Info("СИ сохранено",
-		// logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("user_id", user.ID),
 		logger.AnyAttr("instrument-dto", dto.Instrument),
 		logger.AnyAttr("verification-dto", dto.Verification),
 		// logger.AnyAttr("location-dto", dto.Location),
 	)
 	c.JSON(http.StatusCreated, response.IdResponse{Message: "Данные о си успешно сохранены"})
+}
+
+func (h *Handler) update(c *gin.Context) {
+	dto := &models.SiDTO{}
+	if err := c.BindJSON(dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		return
+	}
+
+	u, exists := c.Get(constants.CtxUser)
+	if !exists {
+		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		return
+	}
+	user := u.(models.User)
+
+	if err := h.service.Update(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+
+	logger.Info("СИ обновлено",
+		logger.StringAttr("user_id", user.ID),
+		logger.AnyAttr("instrument-dto", dto.Instrument),
+		logger.AnyAttr("verification-dto", dto.Verification),
+	)
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о си обновлены"})
+}
+
+func (h *Handler) changePosition(c *gin.Context) {
+	dto := &models.ChangePositionDTO{}
+	if err := c.BindJSON(dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		return
+	}
+
+	if err := h.service.ChangePosition(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Номер позиции изменен"})
+}
+
+func (h *Handler) delete(c *gin.Context) {
+	id := c.Param("id")
+	if err := uuid.Validate(id); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+
+	response.NewErrorResponse(c, http.StatusNotImplemented, "not implemented", "not implemented")
 }
