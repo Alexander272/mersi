@@ -3,7 +3,7 @@ import { Button, Stack, useTheme } from '@mui/material'
 import { useAppDispatch } from '@/hooks/redux'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { PlusIcon } from '@/components/Icons/PlusIcon'
-import { CreateDialog } from '../CreateDialog/CreateDialog'
+import { CreateDialog } from '../Dialogs/CreateDialog'
 import { ActiveSection } from '@/features/sections/components/Active/Active'
 
 export const Header = () => {

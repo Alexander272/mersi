@@ -6,6 +6,7 @@ export const API = {
 	},
 	si: {
 		base: 'si' as const,
+		position: 'si/position' as const,
 		moved: 'si/moved' as const,
 		save: 'si/save' as const,
 		instruments: {

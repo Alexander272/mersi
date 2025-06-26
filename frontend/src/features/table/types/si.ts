@@ -26,3 +26,9 @@ export interface IGetSiDTO {
 	sort?: ISort
 	filters?: IFilter[]
 }
+
+export interface IChangePositionDTO {
+	sectionId: string
+	newPosition: number
+	oldPosition: number
+}

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Button, Divider, Stack } from '@mui/material'
+import { FC, useEffect, useState } from 'react'
+import { Button, Divider, Stack, Tooltip } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import dayjs from 'dayjs'
@@ -8,37 +8,21 @@ import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetCreateFormStepsQuery } from '@/features/sections/modules/form/formApiSlice'
-import { changeDialogIsOpen, getDialogState } from '@/features/dialog/dialogSlice'
+import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { getSection } from '@/features/sections/sectionSlice'
-import { Dialog } from '@/features/dialog/components/Dialog'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { Step, Stepper } from '@/components/Stepper/Stepper'
 import { localKeys } from '../../constants/storage'
 import { useCreateSiMutation } from '../../siApiSlice'
 import { Form as FormFields } from '../Form/Form'
 import { useGetSI } from '../../hooks/getSI'
+import { RefreshIcon } from '@/components/Icons/RefreshIcon'
 
-export const CreateDialog = () => {
-	const modal = useAppSelector(getDialogState('CreateTableItem'))
-	const dispatch = useAppDispatch()
-
-	const closeHandler = () => {
-		dispatch(changeDialogIsOpen({ variant: 'CreateTableItem', isOpen: false }))
-	}
-
-	return (
-		<Dialog
-			title={'Добавить'}
-			body={<Form />}
-			open={modal?.isOpen || false}
-			onClose={closeHandler}
-			maxWidth='md'
-			fullWidth
-		/>
-	)
+type Props = {
+	id: string
 }
 
-const Form = () => {
+export const CreateForm: FC<Props> = () => {
 	const [activeStep, setActiveStep] = useState(0)
 	const [steps, setSteps] = useState<Step[]>([])
 
@@ -93,6 +77,12 @@ const Form = () => {
 		}
 	})
 
+	const deleteHandler = () => {
+		console.log('delete')
+		localStorage.removeItem(localKeys.form)
+		methods.reset()
+	}
+
 	return (
 		<Stack position={'relative'} mt={-2}>
 			{isFetching || isLoading ? <BoxFallback /> : null}
@@ -100,16 +90,13 @@ const Form = () => {
 			<Stack direction={'row'} width={'100%'} alignItems={'center'} mb={1.5}>
 				{steps.length > 1 ? <Stepper steps={steps} active={activeStep} sx={{ width: '100%' }} /> : null}
 
-				{/* <Tooltip title='Удалить черновик'>
+				<Tooltip title='Очистить' enterDelay={600}>
 					<span>
-						<Button variant='outlined' color='error' onClick={deleteHandler} disabled={!instrument}>
-							<FileDeleteIcon
-								fill={!instrument ? palette.action.disabled : palette.error.main}
-								fontSize={22}
-							/>
+						<Button variant='outlined' color='inherit' onClick={deleteHandler}>
+							<RefreshIcon fontSize={18} />
 						</Button>
 					</span>
-				</Tooltip> */}
+				</Tooltip>
 			</Stack>
 
 			<Stack mt={2} component={'form'} onSubmit={saveHandler}>

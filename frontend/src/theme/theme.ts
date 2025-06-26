@@ -2,6 +2,16 @@ import { createTheme } from '@mui/material/styles'
 
 import { type IScrollbarParameters, generateScrollbarStyles } from '@/utils/generateScrollbarStyles'
 
+declare module '@mui/material/styles' {
+	interface Palette {
+		rowActive: Palette['primary']
+	}
+
+	interface PaletteOptions {
+		rowActive?: PaletteOptions['primary']
+	}
+}
+
 const scrollbarParameters: IScrollbarParameters = {
 	borderRadius: '5px',
 	scrollbarBgColor: '#f2f2f2',
@@ -21,6 +31,10 @@ export const theme = createTheme({
 		background: {
 			default: '#fafafa',
 			paper: '#FFF',
+		},
+		rowActive: {
+			main: '#c6d6ff',
+			light: '#dde6fd',
 		},
 	},
 	components: {
