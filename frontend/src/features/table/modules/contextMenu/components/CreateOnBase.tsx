@@ -1,13 +1,14 @@
+import { FC } from 'react'
 import { CircularProgress, ListItemIcon, MenuItem } from '@mui/material'
 
-import { localKeys } from '../../constants/storage'
+import { localKeys } from '../../../constants/storage'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { useLazyGetInstrumentByIdQuery } from '../../instrumentApiSlice'
+import { useLazyGetInstrumentByIdQuery } from '../../../instrumentApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
-import { getContextMenu, setContextMenu } from '../../tableSlice'
+import { getContextMenu, setContextMenu } from '../../../tableSlice'
 import { CopyIcon } from '@/components/Icons/CopyIcon'
 
-export const CreateOnBase = () => {
+export const CreateOnBase: FC = () => {
 	const context = useAppSelector(getContextMenu)
 	const dispatch = useAppDispatch()
 

@@ -1,7 +1,7 @@
 import { Table as TableContainer } from '@/components/Table/Table'
 import { Head } from './Head'
 import { Body } from './Body'
-import { ContextMenu } from '../ContextMenu/ContextMenuLazy'
+import { ContextMenu } from '../../modules/contextMenu/components/ContextMenuLazy'
 
 export const Table = () => {
 	return (
