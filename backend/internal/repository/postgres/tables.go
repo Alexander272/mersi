@@ -14,4 +14,5 @@ const (
 	DocumentsTable        = "public.documents"
 	VerificationDocsTable = "public.verification_docs"
 	VerificationTable     = "public.verifications"
+	ContextTable          = "public.context_menu"
 )

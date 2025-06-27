@@ -14,6 +14,7 @@ type Services struct {
 	Permission
 
 	Realm
+	Accesses
 	Section
 	Columns
 	CreateForm
@@ -22,6 +23,7 @@ type Services struct {
 	VerificationDoc
 	Verification
 	SI
+	ContextMenu
 }
 
 type Deps struct {
@@ -31,7 +33,16 @@ type Deps struct {
 }
 
 func NewServices(deps *Deps) *Services {
+	role := NewRoleService(deps.Repo.Role)
+	ruleItem := NewRuleItemService(deps.Repo.RuleItem)
+	rule := NewRuleService(deps.Repo.Rule, ruleItem)
+
+	user := NewUserService(role)
+	session := NewSessionService(deps.Keycloak, user)
+	permission := NewPermissionService("configs/privacy.conf", rule, role)
+
 	realm := NewRealmService(deps.Repo.Realm)
+	accesses := NewAccessesService(deps.Repo.Accesses)
 	section := NewSectionService(deps.Repo.Section)
 	columns := NewColumnsService(deps.Repo.Columns)
 	createForm := NewCreateFormService(deps.Repo.CreateForm)
@@ -42,16 +53,19 @@ func NewServices(deps *Deps) *Services {
 
 	si := NewSiService(&SiDeps{Repo: deps.Repo.SI, Instrument: instrument, Verification: verification})
 
-	role := NewRoleService(deps.Repo.Role)
-	ruleItem := NewRuleItemService(deps.Repo.RuleItem)
-	rule := NewRuleService(deps.Repo.Rule, ruleItem)
-
-	user := NewUserService(role)
-	session := NewSessionService(deps.Keycloak, user)
-	permission := NewPermissionService("configs/privacy.conf", rule, role)
+	contextMenu := NewContextService(deps.Repo.ContextMenu, role)
 
 	return &Services{
+		Role:     role,
+		RuleItem: ruleItem,
+		Rule:     rule,
+
+		User:       user,
+		Session:    session,
+		Permission: permission,
+
 		Realm:           realm,
+		Accesses:        accesses,
 		Section:         section,
 		Columns:         columns,
 		CreateForm:      createForm,
@@ -60,13 +74,6 @@ func NewServices(deps *Deps) *Services {
 		VerificationDoc: verificationDoc,
 		Verification:    verification,
 		SI:              si,
-
-		Role:     role,
-		RuleItem: ruleItem,
-		Rule:     rule,
-
-		User:       user,
-		Session:    session,
-		Permission: permission,
+		ContextMenu:     contextMenu,
 	}
 }

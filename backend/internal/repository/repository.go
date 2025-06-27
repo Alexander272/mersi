@@ -18,6 +18,9 @@ type Role interface {
 type Realm interface {
 	postgres.Realm
 }
+type Accesses interface {
+	postgres.Accesses
+}
 type Section interface {
 	postgres.Section
 }
@@ -42,6 +45,9 @@ type VerificationDoc interface {
 type SI interface {
 	postgres.SI
 }
+type ContextMenu interface {
+	postgres.ContextMenu
+}
 
 type Repository struct {
 	RuleItem
@@ -49,6 +55,7 @@ type Repository struct {
 	Role
 
 	Realm
+	Accesses
 	Section
 	Columns
 	CreateForm
@@ -57,6 +64,7 @@ type Repository struct {
 	Verification
 	VerificationDoc
 	SI
+	ContextMenu
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -66,6 +74,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Role:     postgres.NewRoleRepo(db),
 
 		Realm:           postgres.NewRealmRepo(db),
+		Accesses:        postgres.NewAccessesRepo(db),
 		Section:         postgres.NewSectionRepo(db),
 		Columns:         postgres.NewColumnRepo(db),
 		CreateForm:      postgres.NewCreateFormRepo(db),
@@ -74,5 +83,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Verification:    postgres.NewVerificationRepo(db),
 		VerificationDoc: postgres.NewVerificationDocRepo(db),
 		SI:              postgres.NewSIRepo(db),
+		ContextMenu:     postgres.NewContextRepo(db),
 	}
 }

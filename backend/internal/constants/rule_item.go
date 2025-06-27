@@ -16,6 +16,7 @@ const (
 	Sections     = "sections"
 	Columns      = "columns"
 	CreatingForm = "creatingForm"
+	ContextMenu  = "contextMenu"
 )
 
 const (
