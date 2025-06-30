@@ -11,6 +11,7 @@ type ContextMenu struct {
 
 type GetContextMenuDTO struct {
 	SectionId string `json:"sectionId"`
+	UserId    string `json:"userId"`
 	Role      string `json:"role"`
 }
 
@@ -25,4 +26,10 @@ type ContextMenuDTO struct {
 
 type DeleteContextMenuDTO struct {
 	Id string `json:"id" db:"id"`
+}
+
+type CustomContextMenuDTO struct {
+	Id          string `json:"id" db:"id"`
+	UserId      string `json:"userId" db:"user_id"`
+	ToolsMenuId string `json:"toolsMenuId" db:"tools_menu_id"`
 }

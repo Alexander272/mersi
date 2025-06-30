@@ -24,6 +24,7 @@ type Services struct {
 	Verification
 	SI
 	ContextMenu
+	ToolsMenu
 }
 
 type Deps struct {
@@ -54,6 +55,8 @@ func NewServices(deps *Deps) *Services {
 	si := NewSiService(&SiDeps{Repo: deps.Repo.SI, Instrument: instrument, Verification: verification})
 
 	contextMenu := NewContextService(deps.Repo.ContextMenu, role)
+	customContext := NewCustomContextService(deps.Repo.CustomContextMenu)
+	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role)
 
 	return &Services{
 		Role:     role,
@@ -75,5 +78,6 @@ func NewServices(deps *Deps) *Services {
 		Verification:    verification,
 		SI:              si,
 		ContextMenu:     contextMenu,
+		ToolsMenu:       toolsMenu,
 	}
 }

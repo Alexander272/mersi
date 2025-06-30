@@ -1,4 +1,4 @@
-package context_menu
+package tools_menu
 
 import (
 	"net/http"
@@ -14,23 +14,24 @@ import (
 )
 
 type Handler struct {
-	service services.ContextMenu
+	service services.ToolsMenu
 }
 
-func NewHandler(service services.ContextMenu) *Handler {
+func NewHandler(service services.ToolsMenu) *Handler {
 	return &Handler{
 		service: service,
 	}
 }
 
-func Register(api *gin.RouterGroup, service services.ContextMenu, middleware *middleware.Middleware) {
+func Register(api *gin.RouterGroup, service services.ToolsMenu, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	context := api.Group("context-menu", middleware.CheckPermissions(constants.ContextMenu, constants.Read))
+	tools := api.Group("tools-menu", middleware.CheckPermissions(constants.ToolsMenu, constants.Read))
 	{
-		context.GET("", handler.get)
+		tools.GET("", handler.get)
+		tools.POST("/favorite", handler.toggleFavorite)
 
-		write := context.Group("", middleware.CheckPermissions(constants.ContextMenu, constants.Write))
+		write := tools.Group("", middleware.CheckPermissions(constants.ToolsMenu, constants.Write))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)
@@ -45,7 +46,6 @@ func (h *Handler) get(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
-
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
 		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
@@ -53,7 +53,7 @@ func (h *Handler) get(c *gin.Context) {
 	}
 	user := u.(models.User)
 
-	req := &models.GetContextMenuDTO{
+	req := &models.GetToolsMenuDTO{
 		SectionId: section,
 		UserId:    user.ID,
 		Role:      user.Role,
@@ -67,8 +67,32 @@ func (h *Handler) get(c *gin.Context) {
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
 }
 
+func (h *Handler) toggleFavorite(c *gin.Context) {
+	u, exists := c.Get(constants.CtxUser)
+	if !exists {
+		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		return
+	}
+	user := u.(models.User)
+
+	dto := &models.ChangeFavoriteDTO{
+		UserId: user.ID,
+	}
+	if err := c.BindJSON(dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		return
+	}
+
+	if err := h.service.ToggleFavorite(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.IdResponse{Message: ""})
+}
+
 func (h *Handler) create(c *gin.Context) {
-	dto := &models.ContextMenuDTO{}
+	dto := &models.ToolsMenuDTO{}
 	if err := c.BindJSON(dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
@@ -79,7 +103,7 @@ func (h *Handler) create(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusCreated, response.IdResponse{Id: dto.Id, Message: "Пункт меню создан"})
+	c.JSON(http.StatusCreated, response.IdResponse{Message: "Создано"})
 }
 
 func (h *Handler) update(c *gin.Context) {
@@ -88,7 +112,7 @@ func (h *Handler) update(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
-	dto := &models.ContextMenuDTO{}
+	dto := &models.ToolsMenuDTO{}
 	if err := c.BindJSON(dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
@@ -100,21 +124,21 @@ func (h *Handler) update(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Пункт меню обновлен"})
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Обновлено"})
 }
 
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорветные данные")
 		return
 	}
-	dto := &models.DeleteContextMenuDTO{Id: id}
+	dto := &models.DeleteToolsMenuDTO{Id: id}
 
 	if err := h.service.Delete(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Пункт меню удален"})
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Удалено"})
 }

@@ -27,14 +27,28 @@ type ContextMenu interface {
 }
 
 func (r *ContextRepo) Get(ctx context.Context, req *models.GetContextMenuDTO) ([]*models.ContextMenu, error) {
-	query := fmt.Sprintf(`SELECT c.id, position, section_id, c.name, label, (r.name || ':' || r.method) AS rule FROM %s AS c
-		INNER JOIN %s AS r ON rule_item_id=r.id
-		WHERE section_id=$1 ORDER BY position`,
-		ContextTable, RuleItemTable,
+	// query := fmt.Sprintf(`SELECT c.id, position, section_id, c.name, label, (r.name || ':' || r.method) AS rule FROM %s AS c
+	// 	INNER JOIN %s AS r ON rule_item_id=r.id
+	// 	WHERE section_id=$1 ORDER BY position`,
+	// 	ContextTable, RuleItemTable,
+	// )
+
+	query := fmt.Sprintf(`WITH Items AS (
+		(SELECT id, position, section_id, name, label, rule_item_id FROM %s
+			WHERE section_id=$1 ORDER BY position)
+		UNION ALL
+		(SELECT c.id, position+10, section_id, name, label, rule_item_id FROM %s AS c
+			INNER JOIN tools_menu AS t ON tools_menu_id=t.id
+			WHERE section_id=$1 AND user_id=$2 ORDER BY position)
+	)
+	
+	SELECT c.id, position, section_id, c.name, label, (r.name || ':' || r.method) AS rule
+		FROM Items AS c INNER JOIN %s AS r ON rule_item_id=r.id ORDER BY position`,
+		ContextTable, CustomContextMenuTable, RuleItemTable,
 	)
 
 	data := []*models.ContextMenu{}
-	if err := r.db.SelectContext(ctx, &data, query, req.SectionId); err != nil {
+	if err := r.db.SelectContext(ctx, &data, query, req.SectionId, req.UserId); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return data, nil

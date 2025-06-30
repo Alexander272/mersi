@@ -12,6 +12,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/realm"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sections"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/tools_menu"
 	"github.com/gin-gonic/gin"
 )
 
@@ -49,6 +50,7 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	forms.Register(secure, h.services, h.middleware)
 	si.Register(secure, h.services, h.middleware)
 	context_menu.Register(secure, h.services.ContextMenu, h.middleware)
+	tools_menu.Register(secure, h.services.ToolsMenu, h.middleware)
 	// instruments.Register(secure, h.services.Instrument, h.middleware)
 	// documents.Register(secure, h.services.Document, h.middleware)
 }

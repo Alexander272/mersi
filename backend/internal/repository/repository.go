@@ -48,6 +48,12 @@ type SI interface {
 type ContextMenu interface {
 	postgres.ContextMenu
 }
+type CustomContextMenu interface {
+	postgres.CustomContextMenu
+}
+type ToolsMenu interface {
+	postgres.ToolsMenu
+}
 
 type Repository struct {
 	RuleItem
@@ -65,6 +71,8 @@ type Repository struct {
 	VerificationDoc
 	SI
 	ContextMenu
+	CustomContextMenu
+	ToolsMenu
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -73,16 +81,18 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Rule:     postgres.NewRuleRepo(db),
 		Role:     postgres.NewRoleRepo(db),
 
-		Realm:           postgres.NewRealmRepo(db),
-		Accesses:        postgres.NewAccessesRepo(db),
-		Section:         postgres.NewSectionRepo(db),
-		Columns:         postgres.NewColumnRepo(db),
-		CreateForm:      postgres.NewCreateFormRepo(db),
-		Instrument:      postgres.NewInstrumentRepo(db),
-		Document:        postgres.NewDocumentRepo(db),
-		Verification:    postgres.NewVerificationRepo(db),
-		VerificationDoc: postgres.NewVerificationDocRepo(db),
-		SI:              postgres.NewSIRepo(db),
-		ContextMenu:     postgres.NewContextRepo(db),
+		Realm:             postgres.NewRealmRepo(db),
+		Accesses:          postgres.NewAccessesRepo(db),
+		Section:           postgres.NewSectionRepo(db),
+		Columns:           postgres.NewColumnRepo(db),
+		CreateForm:        postgres.NewCreateFormRepo(db),
+		Instrument:        postgres.NewInstrumentRepo(db),
+		Document:          postgres.NewDocumentRepo(db),
+		Verification:      postgres.NewVerificationRepo(db),
+		VerificationDoc:   postgres.NewVerificationDocRepo(db),
+		SI:                postgres.NewSIRepo(db),
+		ContextMenu:       postgres.NewContextRepo(db),
+		CustomContextMenu: postgres.NewCustomContextRepo(db),
+		ToolsMenu:         postgres.NewToolsMenuRepo(db),
 	}
 }
