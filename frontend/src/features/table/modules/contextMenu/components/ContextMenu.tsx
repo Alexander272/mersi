@@ -10,7 +10,16 @@ import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { ChangePositionDialog } from '../../../components/Dialogs/ChangePositionDialog'
 import { EditDialog } from '../../../components/Dialogs/EditDialog'
 import { CreateOnBase } from './CreateOnBase'
-import { ChangePosition, Edit } from './ContextMenuItems'
+import {
+	ChangePosition,
+	Edit,
+	History,
+	Preservation,
+	Repair,
+	TransferToDep,
+	TransferToSave,
+	Verification,
+} from './ContextMenuItems'
 
 type ItemProps = { onClick?: () => void; label?: string }
 type MenuItem = { el: FC<ItemProps>; action?: DialogVariants }
@@ -19,7 +28,16 @@ const ContextMenuItems = new Map<string, MenuItem>([
 	['create', { el: CreateOnBase }],
 	['edit', { el: Edit, action: 'EditTableItem' }],
 	['change-position', { el: ChangePosition, action: 'ChangePosition' }],
+	['verification', { el: Verification, action: 'NewVerification' }],
+	['repair-info', { el: Repair, action: 'AddRepair' }],
+	['preservation-info', { el: Preservation, action: 'AddPreservation' }],
+	['transfer-to-save', { el: TransferToSave, action: 'AddTransferToSave' }],
+	['transfer-to-department', { el: TransferToDep, action: 'AddTransferToDep' }],
+	['history', { el: History, action: 'History' }],
 ])
+
+//TODO я не знаю стоит ли добавлять все возможные пункты в контекстное меню, поэтому можно сделать
+// в меню инструменты поле для добавления пункта в контекстное меню (что-то типа избранного, сделать звездочку с краю поля)
 
 export const ContextMenu = () => {
 	const section = useAppSelector(getSection)
@@ -69,7 +87,13 @@ export const ContextMenu = () => {
 					const item = ContextMenuItems.get(d.name)
 					const Elem = item?.el
 					if (!Elem) return null
-					return <Elem onClick={item.action ? contextHandler(item.action) : undefined} label={d.label} />
+					return (
+						<Elem
+							key={d.id}
+							onClick={item.action ? contextHandler(item.action) : undefined}
+							label={d.label}
+						/>
+					)
 				})}
 			</Menu>
 

@@ -24,6 +24,12 @@ export type DialogVariants =
 	| 'Columns'
 	| 'CreateFormGroup'
 	| 'CreateFormField'
+	| 'AddRepair'
+	| 'AddPreservation'
+	| 'AddTransferToSave'
+	| 'AddTransferToDep'
+	| 'History'
+	| 'WriteOff'
 
 interface IDialogOptions {
 	isOpen: boolean

@@ -29,6 +29,7 @@ export const API = {
 		export: 'files' as const,
 		schedule: 'files/schedule' as const,
 		context: 'context-menu' as const,
+		tools: 'tools-menu' as const,
 	},
 	departments: '/departments' as const,
 	employees: '/employees' as const,
