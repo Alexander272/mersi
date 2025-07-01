@@ -25,6 +25,7 @@ type Services struct {
 	SI
 	ContextMenu
 	ToolsMenu
+	Repair
 }
 
 type Deps struct {
@@ -57,6 +58,7 @@ func NewServices(deps *Deps) *Services {
 	contextMenu := NewContextService(deps.Repo.ContextMenu, role)
 	customContext := NewCustomContextService(deps.Repo.CustomContextMenu)
 	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role)
+	repair := NewRepairService(deps.Repo.Repair)
 
 	return &Services{
 		Role:     role,
@@ -79,5 +81,6 @@ func NewServices(deps *Deps) *Services {
 		SI:              si,
 		ContextMenu:     contextMenu,
 		ToolsMenu:       toolsMenu,
+		Repair:          repair,
 	}
 }

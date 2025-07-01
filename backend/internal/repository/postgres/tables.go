@@ -17,4 +17,5 @@ const (
 	ContextTable           = "public.context_menu"
 	ToolsMenuTable         = "public.tools_menu"
 	CustomContextMenuTable = "public.custom_context_menu"
+	RepairTable            = "public.repair"
 )

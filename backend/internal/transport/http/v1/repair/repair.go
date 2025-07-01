@@ -1,4 +1,4 @@
-package tools_menu
+package repair
 
 import (
 	"net/http"
@@ -14,24 +14,23 @@ import (
 )
 
 type Handler struct {
-	service services.ToolsMenu
+	service services.Repair
 }
 
-func NewHandler(service services.ToolsMenu) *Handler {
+func NewHandler(service services.Repair) *Handler {
 	return &Handler{
 		service: service,
 	}
 }
 
-func Register(api *gin.RouterGroup, service services.ToolsMenu, middleware *middleware.Middleware) {
+func Register(api *gin.RouterGroup, service services.Repair, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	tools := api.Group("tools-menu", middleware.CheckPermissions(constants.ToolsMenu, constants.Read))
+	repair := api.Group("repair", middleware.CheckPermissions(constants.Repair, constants.Read))
 	{
-		tools.GET("", handler.get)
-		tools.POST("/favorite", handler.toggleFavorite)
+		repair.GET("", handler.get)
 
-		write := tools.Group("", middleware.CheckPermissions(constants.ToolsMenu, constants.Write))
+		write := repair.Group("", middleware.CheckPermissions(constants.Repair, constants.Write))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)
@@ -41,23 +40,13 @@ func Register(api *gin.RouterGroup, service services.ToolsMenu, middleware *midd
 }
 
 func (h *Handler) get(c *gin.Context) {
-	section := c.Query("section")
-	if err := uuid.Validate(section); err != nil {
+	instrument := c.Query("instrument")
+	if err := uuid.Validate(instrument); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
-	u, exists := c.Get(constants.CtxUser)
-	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
-		return
-	}
-	user := u.(models.User)
+	req := &models.GetRepairDTO{InstrumentId: instrument}
 
-	req := &models.GetToolsMenuDTO{
-		SectionId: section,
-		UserId:    user.ID,
-		Role:      user.Role,
-	}
 	data, err := h.service.Get(c, req)
 	if err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
@@ -67,32 +56,8 @@ func (h *Handler) get(c *gin.Context) {
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
 }
 
-func (h *Handler) toggleFavorite(c *gin.Context) {
-	u, exists := c.Get(constants.CtxUser)
-	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
-		return
-	}
-	user := u.(models.User)
-
-	dto := &models.ChangeFavoriteDTO{
-		UserId: user.ID,
-	}
-	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
-		return
-	}
-
-	if err := h.service.ToggleFavorite(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
-		return
-	}
-	c.JSON(http.StatusOK, response.IdResponse{Message: ""})
-}
-
 func (h *Handler) create(c *gin.Context) {
-	dto := &models.ToolsMenuDTO{}
+	dto := &models.RepairDTO{}
 	if err := c.BindJSON(dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
@@ -103,7 +68,7 @@ func (h *Handler) create(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusCreated, response.IdResponse{Message: "Создано"})
+	c.JSON(http.StatusCreated, response.IdResponse{Message: "Данные о ремонте добавлены"})
 }
 
 func (h *Handler) update(c *gin.Context) {
@@ -112,8 +77,8 @@ func (h *Handler) update(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
-	dto := &models.ToolsMenuDTO{}
-	if err := c.BindJSON(dto); err != nil {
+	dto := &models.RepairDTO{}
+	if err := c.BindJSON(dto); err != nil || (dto.Id != "" && dto.Id != id) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
 	}
@@ -124,16 +89,16 @@ func (h *Handler) update(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Обновлено"})
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о ремонте обновлены"})
 }
 
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорветные данные")
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
-	dto := &models.DeleteToolsMenuDTO{Id: id}
+	dto := &models.DeleteRepairDTO{Id: id}
 
 	if err := h.service.Delete(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())

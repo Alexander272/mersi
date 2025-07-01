@@ -116,5 +116,5 @@ func (h *Handler) delete(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Пункт меню удален"})
+	c.JSON(http.StatusNoContent, response.IdResponse{})
 }

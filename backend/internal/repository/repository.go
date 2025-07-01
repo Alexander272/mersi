@@ -54,6 +54,9 @@ type CustomContextMenu interface {
 type ToolsMenu interface {
 	postgres.ToolsMenu
 }
+type Repair interface {
+	postgres.Repair
+}
 
 type Repository struct {
 	RuleItem
@@ -73,6 +76,7 @@ type Repository struct {
 	ContextMenu
 	CustomContextMenu
 	ToolsMenu
+	Repair
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -94,5 +98,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 		ContextMenu:       postgres.NewContextRepo(db),
 		CustomContextMenu: postgres.NewCustomContextRepo(db),
 		ToolsMenu:         postgres.NewToolsMenuRepo(db),
+		Repair:            postgres.NewRepairRepo(db),
 	}
 }
