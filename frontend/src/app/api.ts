@@ -30,6 +30,7 @@ export const API = {
 		schedule: 'files/schedule' as const,
 		context: 'context-menu' as const,
 		tools: 'tools-menu' as const,
+		repair: 'repair' as const,
 	},
 	departments: '/departments' as const,
 	employees: '/employees' as const,

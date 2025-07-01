@@ -5,13 +5,16 @@ import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetToolsMenuQuery } from '../toolsMenuApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
 import { changeDialogIsOpen, DialogVariants } from '@/features/dialog/dialogSlice'
+import { getSelected } from '@/features/table/tableSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
+import { CreateRepairDialog } from '../../repair/components/Dialogs/Create'
 import { MenuItems } from './ToolsMenuItem'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
 	const [open, setOpen] = useState(false)
 
+	const selected = useAppSelector(getSelected)
 	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
 
@@ -20,7 +23,7 @@ export const ToolsMenu = () => {
 	const toggleHandler = () => setOpen(prev => !prev)
 
 	const menuHandler = (variant: DialogVariants) => () => {
-		dispatch(changeDialogIsOpen({ variant, isOpen: true }))
+		dispatch(changeDialogIsOpen({ variant, isOpen: true, context: Object.keys(selected) }))
 		toggleHandler()
 	}
 
@@ -29,9 +32,9 @@ export const ToolsMenu = () => {
 			<Button
 				ref={anchor}
 				onClick={toggleHandler}
-				// size='small'
 				variant='outlined'
 				color='inherit'
+				// size='small'
 				// sx={{ paddingX: 1.5 }}
 			>
 				Инструменты
@@ -77,6 +80,8 @@ export const ToolsMenu = () => {
 					return <Elem key={d.id} item={d} onClick={item.action ? menuHandler(item.action) : undefined} />
 				})}
 			</Menu>
+
+			<CreateRepairDialog />
 		</>
 	)
 }
