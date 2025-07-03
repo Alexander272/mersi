@@ -8,9 +8,10 @@ import { UploadButton } from '@/features/files/components/UploadButton/UploadBut
 
 type Props = {
 	data: ICreateFormField
+	instrumentId?: string
 }
 
-export const FileField: FC<Props> = ({ data }) => {
+export const FileField: FC<Props> = ({ data, instrumentId = '' }) => {
 	const [doc, setDoc] = useState<IDocument | null>(null)
 
 	const { control, setValue } = useFormContext()
@@ -48,7 +49,7 @@ export const FileField: FC<Props> = ({ data }) => {
 				value={doc}
 				onChange={setDocument}
 				//TODO получать реальные значения
-				instrumentId=''
+				instrumentId={instrumentId}
 				group='act'
 				sx={{
 					width: 200,

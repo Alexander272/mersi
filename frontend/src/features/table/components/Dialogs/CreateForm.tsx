@@ -6,17 +6,17 @@ import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
+import { localKeys } from '../../constants/storage'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useGetSI } from '../../hooks/getSI'
 import { useGetCreateFormStepsQuery } from '@/features/sections/modules/form/formApiSlice'
+import { useCreateSiMutation } from '../../siApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { getSection } from '@/features/sections/sectionSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { Step, Stepper } from '@/components/Stepper/Stepper'
-import { localKeys } from '../../constants/storage'
-import { useCreateSiMutation } from '../../siApiSlice'
-import { Form as FormFields } from '../Form/Form'
-import { useGetSI } from '../../hooks/getSI'
 import { RefreshIcon } from '@/components/Icons/RefreshIcon'
+import { Form as FormFields } from '../Form/Form'
 
 type Props = {
 	id: string

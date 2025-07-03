@@ -8,6 +8,7 @@ import { changeDialogIsOpen, DialogVariants } from '@/features/dialog/dialogSlic
 import { getSelected } from '@/features/table/tableSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { CreateRepairDialog } from '../../repair/components/Dialogs/Create'
+import { CreateVerificationDialog } from '../../verification/components/Dialogs/Create'
 import { MenuItems } from './ToolsMenuItem'
 
 export const ToolsMenu = () => {
@@ -82,6 +83,7 @@ export const ToolsMenu = () => {
 			</Menu>
 
 			<CreateRepairDialog />
+			<CreateVerificationDialog />
 		</>
 	)
 }

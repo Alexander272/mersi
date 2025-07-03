@@ -110,7 +110,7 @@ export const EditForm: FC<Props> = ({ id }) => {
 
 			<Stack mt={2} component={'form'} onSubmit={saveHandler}>
 				<FormProvider {...methods}>
-					<FormFields data={data?.data[activeStep].fields || []} />
+					<FormFields data={data?.data[activeStep].fields || []} instrumentId={si?.data.instrument.id} />
 				</FormProvider>
 
 				<Divider sx={{ width: '50%', alignSelf: 'center' }} />

@@ -11,9 +11,10 @@ import { SelectField } from './SelectField'
 
 type Props = {
 	data: ICreateFormField[]
+	instrumentId?: string
 }
 
-export const Form: FC<Props> = ({ data }) => {
+export const Form: FC<Props> = ({ data, instrumentId }) => {
 	const renderFields = () => {
 		return data.map(item => {
 			switch (item.type) {
@@ -24,7 +25,7 @@ export const Form: FC<Props> = ({ data }) => {
 				case 'date':
 					return <DateField key={item.id} data={item} />
 				case 'file':
-					return <FileField key={item.id} data={item} />
+					return <FileField key={item.id} data={item} instrumentId={instrumentId} />
 				case 'list':
 					return <SelectField key={item.id} data={item} />
 				case 'autocomplete':

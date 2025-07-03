@@ -2,16 +2,24 @@ import { FC, useState } from 'react'
 import { Button, Divider, IconButton, Stack, Typography, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
-import type { IRepairDTO } from '../../types/repair'
+import type { IVerificationDTO } from '../../types/verification'
 import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
-import { useCreateRepairMutation } from '../../repairApiSlice'
+import { useCreateVerificationMutation } from '../../verificationApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
 import { Inputs } from './Inputs'
+
+const def = {
+	verificationDate: dayjs().unix(),
+	registerLink: '',
+	status: 'work',
+	notes: '',
+}
 
 type Props = {
 	ids: string[]
@@ -26,12 +34,12 @@ export const Create: FC<Props> = ({ ids }) => {
 	const { data, isFetching } = useGetInstrumentByIdQuery(ids?.length ? ids[active] : '', {
 		skip: !ids?.length || !ids[active],
 	})
-	const [create, { isLoading }] = useCreateRepairMutation()
+	const [create, { isLoading }] = useCreateVerificationMutation()
 
-	const methods = useForm<IRepairDTO>()
+	const methods = useForm<IVerificationDTO>({ defaultValues: def })
 
 	const closeHandler = () => {
-		dispatch(changeDialogIsOpen({ variant: 'AddRepair', isOpen: false }))
+		dispatch(changeDialogIsOpen({ variant: 'NewVerification', isOpen: false }))
 	}
 
 	const activeHandler = (type: 'prev' | 'next') => () => {
@@ -40,12 +48,17 @@ export const Create: FC<Props> = ({ ids }) => {
 	}
 
 	const saveHandler = methods.handleSubmit(async form => {
+		if (!data) return
 		console.log('save', form, methods.formState.dirtyFields)
 
-		form.instrumentId = ids[active]
+		form.instrumentId = data.data.id
+		form.nextVerificationDate = dayjs(form.verificationDate * 1000)
+			.add(+(data.data.interVerificationInterval || 0), 'month')
+			.unix()
+
 		try {
 			await create(form).unwrap()
-			toast.success('Данные о ремонте добавлены')
+			toast.success('Данные о поверке добавлены')
 			closeHandler()
 		} catch (error) {
 			const fetchError = error as IFetchError
@@ -55,7 +68,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
 	return (
-		<Stack position={'relative'} mt={-2}>
+		<Stack position={'relative'} mt={-2.5}>
 			{isFetching || isLoading ? <BoxFallback /> : null}
 
 			<Stack spacing={2} direction={'row'} paddingX={3}>
@@ -85,7 +98,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 			<Stack mt={2} component={'form'} onSubmit={saveHandler}>
 				<FormProvider {...methods}>
-					<Inputs />
+					<Inputs instrumentId={ids?.length ? ids[active] : ''} />
 				</FormProvider>
 
 				<Divider sx={{ width: '50%', alignSelf: 'center' }} />

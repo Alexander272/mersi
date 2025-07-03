@@ -1,6 +1,6 @@
-import { IInstrumentDTO } from './instrument'
-import { ISort, IFilter } from './params'
-import { IVerificationDTO } from './verification'
+import type { IVerificationDTO } from '../modules/verification/types/verification'
+import type { IInstrumentDTO } from './instrument'
+import type { ISort, IFilter } from './params'
 
 export interface ISI {
 	id: string
