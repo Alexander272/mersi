@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/verifications/fields"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -25,10 +26,10 @@ func NewHandler(service services.Verification) *Handler {
 	}
 }
 
-func Register(api *gin.RouterGroup, service services.Verification, middleware *middleware.Middleware) {
-	handler := NewHandler(service)
+func Register(api *gin.RouterGroup, service *services.Services, middleware *middleware.Middleware) {
+	handler := NewHandler(service.Verification)
 
-	verifications := api.Group("verification", middleware.CheckPermissions(constants.Verification, constants.Read))
+	verifications := api.Group("verifications", middleware.CheckPermissions(constants.Verification, constants.Read))
 	{
 		verifications.GET("", handler.get)
 		verifications.GET("/last", handler.getLast)
@@ -39,6 +40,8 @@ func Register(api *gin.RouterGroup, service services.Verification, middleware *m
 			write.PUT("/:id", handler.update)
 		}
 	}
+
+	fields.Register(verifications, service.VerificationFields, middleware)
 }
 
 func (h *Handler) get(c *gin.Context) {

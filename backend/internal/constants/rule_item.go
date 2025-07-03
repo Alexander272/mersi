@@ -15,6 +15,7 @@ const (
 	Realms               = "realms"
 	Sections             = "sections"
 	Columns              = "columns"
+	VerificationFields   = "verification-fields"
 	CreatingForm         = "creatingForm"
 	ContextMenu          = "contextMenu"
 	ToolsMenu            = "toolsMenu"

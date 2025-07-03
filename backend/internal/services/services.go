@@ -26,6 +26,7 @@ type Services struct {
 	ContextMenu
 	ToolsMenu
 	Repair
+	VerificationFields
 }
 
 type Deps struct {
@@ -55,6 +56,7 @@ func NewServices(deps *Deps) *Services {
 
 	si := NewSiService(&SiDeps{Repo: deps.Repo.SI, Instrument: instrument, Verification: verification})
 
+	verificationFields := NewVerificationFieldService(deps.Repo.VerificationFields)
 	contextMenu := NewContextService(deps.Repo.ContextMenu, role)
 	customContext := NewCustomContextService(deps.Repo.CustomContextMenu)
 	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role)
@@ -69,18 +71,19 @@ func NewServices(deps *Deps) *Services {
 		Session:    session,
 		Permission: permission,
 
-		Realm:           realm,
-		Accesses:        accesses,
-		Section:         section,
-		Columns:         columns,
-		CreateForm:      createForm,
-		Instrument:      instrument,
-		Document:        document,
-		VerificationDoc: verificationDoc,
-		Verification:    verification,
-		SI:              si,
-		ContextMenu:     contextMenu,
-		ToolsMenu:       toolsMenu,
-		Repair:          repair,
+		Realm:              realm,
+		Accesses:           accesses,
+		Section:            section,
+		Columns:            columns,
+		CreateForm:         createForm,
+		Instrument:         instrument,
+		Document:           document,
+		VerificationDoc:    verificationDoc,
+		Verification:       verification,
+		SI:                 si,
+		ContextMenu:        contextMenu,
+		ToolsMenu:          toolsMenu,
+		Repair:             repair,
+		VerificationFields: verificationFields,
 	}
 }

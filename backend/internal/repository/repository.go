@@ -57,6 +57,9 @@ type ToolsMenu interface {
 type Repair interface {
 	postgres.Repair
 }
+type VerificationFields interface {
+	postgres.VerificationFields
+}
 
 type Repository struct {
 	RuleItem
@@ -77,6 +80,7 @@ type Repository struct {
 	CustomContextMenu
 	ToolsMenu
 	Repair
+	VerificationFields
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -85,19 +89,20 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Rule:     postgres.NewRuleRepo(db),
 		Role:     postgres.NewRoleRepo(db),
 
-		Realm:             postgres.NewRealmRepo(db),
-		Accesses:          postgres.NewAccessesRepo(db),
-		Section:           postgres.NewSectionRepo(db),
-		Columns:           postgres.NewColumnRepo(db),
-		CreateForm:        postgres.NewCreateFormRepo(db),
-		Instrument:        postgres.NewInstrumentRepo(db),
-		Document:          postgres.NewDocumentRepo(db),
-		Verification:      postgres.NewVerificationRepo(db),
-		VerificationDoc:   postgres.NewVerificationDocRepo(db),
-		SI:                postgres.NewSIRepo(db),
-		ContextMenu:       postgres.NewContextRepo(db),
-		CustomContextMenu: postgres.NewCustomContextRepo(db),
-		ToolsMenu:         postgres.NewToolsMenuRepo(db),
-		Repair:            postgres.NewRepairRepo(db),
+		Realm:              postgres.NewRealmRepo(db),
+		Accesses:           postgres.NewAccessesRepo(db),
+		Section:            postgres.NewSectionRepo(db),
+		Columns:            postgres.NewColumnRepo(db),
+		CreateForm:         postgres.NewCreateFormRepo(db),
+		Instrument:         postgres.NewInstrumentRepo(db),
+		Document:           postgres.NewDocumentRepo(db),
+		Verification:       postgres.NewVerificationRepo(db),
+		VerificationDoc:    postgres.NewVerificationDocRepo(db),
+		SI:                 postgres.NewSIRepo(db),
+		ContextMenu:        postgres.NewContextRepo(db),
+		CustomContextMenu:  postgres.NewCustomContextRepo(db),
+		ToolsMenu:          postgres.NewToolsMenuRepo(db),
+		Repair:             postgres.NewRepairRepo(db),
+		VerificationFields: postgres.NewVerificationFieldRepo(db),
 	}
 }

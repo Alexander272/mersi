@@ -48,7 +48,7 @@ func Register(api *gin.RouterGroup, services *services.Services, middleware *mid
 
 	instruments.Register(si, services.Instrument, middleware)
 	documents.Register(si, services.Document, middleware)
-	verifications.Register(si, services.Verification, middleware)
+	verifications.Register(si, services, middleware)
 }
 
 func (h *Handler) get(c *gin.Context) {
