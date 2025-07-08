@@ -1,6 +1,6 @@
 import type { IVerificationDTO } from '../modules/verification/types/verification'
 import type { IInstrumentDTO } from './instrument'
-import type { ISort, IFilter } from './params'
+import type { ISort, IFilter, ISearch } from './params'
 
 export interface ISI {
 	id: string
@@ -24,6 +24,7 @@ export interface IGetSiDTO {
 	page?: number
 	size?: number
 	sort?: ISort
+	search?: ISearch
 	filters?: IFilter[]
 }
 

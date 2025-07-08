@@ -27,11 +27,12 @@ export const Inputs: FC<Props> = ({ instrumentId }) => {
 			{isFetching && <BoxFallback />}
 
 			{data?.data.map(f => {
-				if (f.type == 'date') return <DateField field={f.field} label={f.label} />
-				if (f.field == 'status') return <StatusField field={f.field} label={f.label} />
-				if (f.field == 'registerLink') return <LinkField field={f.field} label={f.label} />
-				if (f.field == 'notes') return <NotesField field={f.field} label={f.label} />
-				if (f.type == 'file') return <FileField field={f.field} label={f.label} instrumentId={instrumentId} />
+				if (f.type == 'date') return <DateField key={f.id} field={f.field} label={f.label} />
+				if (f.field == 'status') return <StatusField key={f.id} field={f.field} label={f.label} />
+				if (f.field == 'registerLink') return <LinkField key={f.id} field={f.field} label={f.label} />
+				if (f.field == 'notes') return <NotesField key={f.id} field={f.field} label={f.label} />
+				if (f.type == 'file')
+					return <FileField key={f.id} field={f.field} label={f.label} instrumentId={instrumentId} />
 			})}
 		</Stack>
 	)

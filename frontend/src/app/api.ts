@@ -21,6 +21,8 @@ export const API = {
 		verification: {
 			base: 'si/verifications' as const,
 			all: 'si/verifications/all' as const,
+			last: 'si/verification/last' as const,
+			fields: 'si/verification/fields' as const,
 		},
 		location: {
 			base: 'si/locations' as const,
@@ -31,6 +33,7 @@ export const API = {
 		context: 'context-menu' as const,
 		tools: 'tools-menu' as const,
 		repair: 'repair' as const,
+		preservation: 'preservation' as const,
 	},
 	departments: '/departments' as const,
 	employees: '/employees' as const,

@@ -2,24 +2,20 @@ import { FC, useState } from 'react'
 import { Button, Divider, IconButton, Stack, Typography, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
-import type { IVerificationDTO } from '../../types/verification'
+import type { IPreservationDTO } from '../../types/preservation'
 import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
-import { useCreateVerificationMutation } from '../../verificationApiSlice'
+import {
+	useCreatePreservationMutation,
+	useGetLastPreservationQuery,
+	useUpdatePreservationMutation,
+} from '../../preservationApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
 import { Inputs } from './Inputs'
-
-const def = {
-	verificationDate: dayjs().unix(),
-	registerLink: '',
-	status: 'work',
-	notes: '',
-}
 
 type Props = {
 	ids: string[]
@@ -31,16 +27,19 @@ export const Create: FC<Props> = ({ ids }) => {
 
 	const dispatch = useAppDispatch()
 
+	const methods = useForm<IPreservationDTO>()
+
 	const { data, isFetching } = useGetInstrumentByIdQuery(ids?.length ? ids[active] : '', {
 		skip: !ids?.length || !ids[active],
 	})
-	// const { data: ver, isLoading } = useGetLastVerificationQuery(instrument?.data.id || '', { skip: !instrument?.data.id })
-	const [create, { isLoading }] = useCreateVerificationMutation()
-
-	const methods = useForm<IVerificationDTO>({ defaultValues: def })
+	const { data: last } = useGetLastPreservationQuery(ids?.length ? ids[active] : '', {
+		skip: !ids?.length || !ids[active],
+	})
+	const [create, { isLoading }] = useCreatePreservationMutation()
+	const [update, { isLoading: isUpdating }] = useUpdatePreservationMutation()
 
 	const closeHandler = () => {
-		dispatch(changeDialogIsOpen({ variant: 'NewVerification', isOpen: false }))
+		dispatch(changeDialogIsOpen({ variant: 'AddPreservation', isOpen: false }))
 	}
 
 	const activeHandler = (type: 'prev' | 'next') => () => {
@@ -49,17 +48,21 @@ export const Create: FC<Props> = ({ ids }) => {
 	}
 
 	const saveHandler = methods.handleSubmit(async form => {
-		if (!data) return
 		console.log('save', form, methods.formState.dirtyFields)
 
-		form.instrumentId = data.data.id
-		form.nextVerificationDate = dayjs(form.verificationDate * 1000)
-			.add(+(data.data.interVerificationInterval || 0), 'month')
-			.unix()
+		form.instrumentId = ids?.length ? ids[active] : ''
 
 		try {
-			await create(form).unwrap()
-			toast.success('Данные о поверке добавлены')
+			if (!last?.data.dateStart || !!last?.data.dateEnd) {
+				await create(form).unwrap()
+			} else {
+				form.id = last.data.id
+				form.dateStart = last.data.dateStart
+				form.notesStart = last.data.notesStart
+				await update(form).unwrap()
+			}
+
+			toast.success('Данные о консервации добавлены')
 			closeHandler()
 		} catch (error) {
 			const fetchError = error as IFetchError
@@ -68,10 +71,9 @@ export const Create: FC<Props> = ({ ids }) => {
 	})
 
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
-	// if (var?.data.notVerified) return <Typography>Инструмент отмечен как не нуждающийся в поверках</Typography>
 	return (
 		<Stack position={'relative'} mt={-2.5}>
-			{isFetching || isLoading ? <BoxFallback /> : null}
+			{isFetching || isLoading || isUpdating ? <BoxFallback /> : null}
 
 			<Stack spacing={2} direction={'row'} paddingX={3}>
 				{ids.length > 1 && (
@@ -100,7 +102,10 @@ export const Create: FC<Props> = ({ ids }) => {
 
 			<Stack mt={2} component={'form'} onSubmit={saveHandler}>
 				<FormProvider {...methods}>
-					<Inputs instrumentId={ids?.length ? ids[active] : ''} />
+					<Inputs
+						isThisPreservation={!last?.data.dateStart || !!last?.data.dateEnd}
+						min={last?.data.dateEnd || last?.data.dateStart}
+					/>
 				</FormProvider>
 
 				<Divider sx={{ width: '50%', alignSelf: 'center' }} />

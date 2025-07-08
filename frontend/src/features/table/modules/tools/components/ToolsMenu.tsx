@@ -10,6 +10,7 @@ import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { CreateRepairDialog } from '../../repair/components/Dialogs/Create'
 import { CreateVerificationDialog } from '../../verification/components/Dialogs/Create'
 import { MenuItems } from './ToolsMenuItem'
+import { CreatePreservationDialog } from '../../preservation/components/Dialogs/Create'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
@@ -76,6 +77,7 @@ export const ToolsMenu = () => {
 
 				{data?.data.map(d => {
 					const item = MenuItems.get(d.name)
+					if (item) item.label = d.label
 					const Elem = item?.el
 					if (!Elem) return null
 					return <Elem key={d.id} item={d} onClick={item.action ? menuHandler(item.action) : undefined} />
@@ -83,7 +85,8 @@ export const ToolsMenu = () => {
 			</Menu>
 
 			<CreateRepairDialog />
-			<CreateVerificationDialog />
+			<CreateVerificationDialog title={MenuItems.get('verification')?.label || ''} />
+			<CreatePreservationDialog />
 		</>
 	)
 }

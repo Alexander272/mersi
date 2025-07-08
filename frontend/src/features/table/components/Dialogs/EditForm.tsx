@@ -60,6 +60,8 @@ export const EditForm: FC<Props> = ({ id }) => {
 			return
 		}
 
+		//TODO при обновлении если нет файла (свидетельства о поверке), то на сервер передается массив с пустым объектом и это вызывает ошибки
+
 		if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval != '') {
 			form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
 				.add(+form.instrument.interVerificationInterval, 'month')

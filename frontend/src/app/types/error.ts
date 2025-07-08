@@ -11,6 +11,7 @@ export interface IBaseFetchError {
 			message: string
 			code: string
 		}
+		status: number
 	}
 	status: number
 }

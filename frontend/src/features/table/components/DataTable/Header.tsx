@@ -6,6 +6,8 @@ import { PlusIcon } from '@/components/Icons/PlusIcon'
 import { CreateDialog } from '../Dialogs/CreateDialog'
 import { ActiveSection } from '@/features/sections/components/Active/Active'
 import { ToolsMenu } from '../../modules/tools/components/ToolsMenuLazy'
+import { Search } from '../Search/Search'
+import { Filters } from '../Filters/Filters'
 
 export const Header = () => {
 	const { palette } = useTheme()
@@ -27,12 +29,13 @@ export const Header = () => {
 				</Button>
 			</Stack>
 
-			{/* <Search /> */}
+			<Search />
 
-			<Stack direction={'row'} alignItems={'center'} spacing={2}>
+			<Stack direction={'row'} spacing={2}>
 				{/* <Setting />
 				FastSelect
-				<Filters /> */}
+				 */}
+				<Filters />
 
 				<ToolsMenu />
 			</Stack>

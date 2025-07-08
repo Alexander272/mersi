@@ -1,7 +1,7 @@
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit'
 
 import type { IContextMenu, ISelect } from './types/table'
-import type { IFilter, ISort } from './types/params'
+import type { IFilter, ISearch, ISort } from './types/params'
 import { Size } from '@/constants/defaultValues'
 import { RootState } from '@/app/store'
 import { localKeys } from './constants/storage'
@@ -11,7 +11,7 @@ interface ITableSlice {
 	size: number
 	sort: ISort
 	filters: IFilter[]
-	// search: ISearch
+	search: ISearch
 	selected: ISelect
 	contextMenu?: IContextMenu
 	hidden: ISelect
@@ -22,10 +22,10 @@ const initialState: ITableSlice = {
 	size: +(localStorage.getItem(localKeys.size) || Size),
 	sort: {},
 	filters: [],
-	// search: {
-	// 	value: '',
-	// 	fields: ['name', 'uname'],
-	// },
+	search: {
+		value: '',
+		fields: ['name', 'factoryNumber'],
+	},
 	selected: {},
 	hidden: JSON.parse(localStorage.getItem(localKeys.hidden) || '{}'),
 }
@@ -59,12 +59,12 @@ const tableSlice = createSlice({
 			state.filters = action.payload
 		},
 
-		// setSearch: (state, action: PayloadAction<string>) => {
-		// 	state.search.value = action.payload
-		// },
-		// setSearchFields: (state, action: PayloadAction<string[]>) => {
-		// 	state.search.fields = action.payload
-		// },
+		setSearch: (state, action: PayloadAction<string>) => {
+			state.search.value = action.payload
+		},
+		setSearchFields: (state, action: PayloadAction<string[]>) => {
+			state.search.fields = action.payload
+		},
 
 		setSelected: (state, action: PayloadAction<string | string[] | undefined>) => {
 			if (action.payload) {
@@ -98,7 +98,7 @@ export const getTablePage = (state: RootState) => state.table.page
 export const getTableSize = (state: RootState) => state.table.size
 export const getSort = (state: RootState) => state.table.sort
 export const getFilters = (state: RootState) => state.table.filters
-// export const getSearch = (state: RootState) => state.table.search
+export const getSearch = (state: RootState) => state.table.search
 export const getSelected = (state: RootState) => state.table.selected
 export const getContextMenu = (state: RootState) => state.table.contextMenu
 export const getHidden = (state: RootState) => state.table.hidden
@@ -111,8 +111,8 @@ export const {
 	setSize,
 	setSort,
 	setFilters,
-	// setSearch,
-	// setSearchFields,
+	setSearch,
+	setSearchFields,
 	setSelected,
 	setContextMenu,
 	setHidden,

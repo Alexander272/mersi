@@ -16,7 +16,7 @@ import { FileDownloadIcon } from '@/components/Icons/FileDownloadIcon'
 import { StarIcon } from '@/components/Icons/StarIcon'
 
 type Props = { onClick?: () => void; item: IToolsMenu; label?: string }
-type MenuItem = { el: FC<Props>; action?: DialogVariants }
+type MenuItem = { el: FC<Props>; action?: DialogVariants; label?: string }
 
 export const Icons = new Map<string, JSX.Element>([
 	['graphic', <DocumentCheckIcon fontSize={20} fill={'#757575'} />],

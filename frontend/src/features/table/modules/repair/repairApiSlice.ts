@@ -29,7 +29,10 @@ const repairApiSlice = apiSlice.injectEndpoints({
 				method: 'POST',
 				body,
 			}),
-			invalidatesTags: [{ type: 'SI', id: 'Repair' }],
+			invalidatesTags: [
+				{ type: 'SI', id: 'Repair' },
+				{ type: 'SI', id: 'ALL' },
+			],
 		}),
 	}),
 })
