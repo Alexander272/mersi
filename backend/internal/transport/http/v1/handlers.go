@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/columns"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/context_menu"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/forms"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/preservation"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/realm"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/repair"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sections"
@@ -53,4 +54,5 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	context_menu.Register(secure, h.services.ContextMenu, h.middleware)
 	tools_menu.Register(secure, h.services.ToolsMenu, h.middleware)
 	repair.Register(secure, h.services.Repair, h.middleware)
+	preservation.Register(secure, h.services.Preservation, h.middleware)
 }

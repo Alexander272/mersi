@@ -174,6 +174,14 @@ func (h *Handler) get(c *gin.Context) {
 
 	}
 
+	search := c.QueryMap("search")
+	for key, value := range search {
+		params.Search = &models.Search{
+			Value:  value,
+			Fields: strings.Split(key, ","),
+		}
+	}
+
 	status := c.Query("status")
 	if status == "" {
 		params.Status = models.InstrumentStatusWork

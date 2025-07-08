@@ -27,6 +27,7 @@ type Services struct {
 	ToolsMenu
 	Repair
 	VerificationFields
+	Preservation
 }
 
 type Deps struct {
@@ -61,6 +62,7 @@ func NewServices(deps *Deps) *Services {
 	customContext := NewCustomContextService(deps.Repo.CustomContextMenu)
 	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role)
 	repair := NewRepairService(deps.Repo.Repair)
+	preservation := NewPreservationService(deps.Repo.Preservation)
 
 	return &Services{
 		Role:     role,
@@ -85,5 +87,6 @@ func NewServices(deps *Deps) *Services {
 		ToolsMenu:          toolsMenu,
 		Repair:             repair,
 		VerificationFields: verificationFields,
+		Preservation:       preservation,
 	}
 }

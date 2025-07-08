@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.instruments
     status text COLLATE pg_catalog."default" DEFAULT ''::text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
+    deleted timestamp with time zone,
     CONSTRAINT instruments_pkey PRIMARY KEY (id),
     CONSTRAINT instruments_section_id_fkey FOREIGN KEY (section_id)
         REFERENCES public.sections (id) MATCH SIMPLE

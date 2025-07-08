@@ -19,4 +19,5 @@ const (
 	CustomContextMenuTable  = "public.custom_context_menu"
 	RepairTable             = "public.repair"
 	VerificationFieldsTable = "public.verification_fields"
+	PreservationTable       = "public.preservation"
 )

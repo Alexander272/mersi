@@ -9,4 +9,6 @@ var (
 	ErrNoInstrument  = errors.New("instrument not found")
 
 	ErrSessionEmpty = errors.New("user session not found")
+
+	ErrNotValid = errors.New("data is not valid")
 )

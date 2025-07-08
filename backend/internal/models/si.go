@@ -23,6 +23,9 @@ type SI struct {
 	NextVerificationDate      int    `json:"nextVerificationDate" db:"next_date"`
 	Certificate               string `json:"certificate" db:"certificate"`
 	CertificateId             string `json:"certificateId" db:"certificate_id"`
+	Repair                    string `json:"repairInfo" db:"repair"`
+	Preservation              int    `json:"preservationDate" db:"preservation"`
+	DePreservation            int    `json:"dePreservationDate" db:"de_preservation"`
 	//TODO дописать оставшиеся поля
 
 	Total int `json:"total" db:"total"`
@@ -38,6 +41,7 @@ type GetSiDTO struct {
 	Page      *Page
 	Sort      []*Sort
 	Filters   []*Filter
+	Search    *Search
 	Status    InstrumentStatus
 }
 

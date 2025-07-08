@@ -24,3 +24,8 @@ type Period struct {
 	StartAt  int64 `json:"startAt"`
 	FinishAt int64 `json:"finishAt"`
 }
+
+type Search struct {
+	Value  string
+	Fields []string
+}
