@@ -26,6 +26,8 @@ type SI struct {
 	Repair                    string `json:"repairInfo" db:"repair"`
 	Preservation              int    `json:"preservationDate" db:"preservation"`
 	DePreservation            int    `json:"dePreservationDate" db:"de_preservation"`
+	TransferDate              int    `json:"transferDate" db:"transfer_date"`
+	ReturnDate                int    `json:"returnDate" db:"return_date"`
 	//TODO дописать оставшиеся поля
 
 	Total int `json:"total" db:"total"`

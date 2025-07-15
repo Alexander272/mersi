@@ -47,7 +47,7 @@ func (s *PreservationService) GetLast(ctx context.Context, req *models.GetPreser
 }
 
 func (s *PreservationService) Create(ctx context.Context, dto *models.PreservationDTO) error {
-	candidate, err := s.repo.GetLast(ctx, &models.GetPreservationsDTO{InstrumentId: dto.InstrumentId})
+	candidate, err := s.GetLast(ctx, &models.GetPreservationsDTO{InstrumentId: dto.InstrumentId})
 	if err != nil && !errors.Is(err, models.ErrNoRows) {
 		return err
 	}

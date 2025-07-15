@@ -15,6 +15,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sections"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/tools_menu"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_save"
 	"github.com/gin-gonic/gin"
 )
 
@@ -55,4 +56,5 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	tools_menu.Register(secure, h.services.ToolsMenu, h.middleware)
 	repair.Register(secure, h.services.Repair, h.middleware)
 	preservation.Register(secure, h.services.Preservation, h.middleware)
+	transfer_to_save.Register(secure, h.services.TransferToSave, h.middleware)
 }

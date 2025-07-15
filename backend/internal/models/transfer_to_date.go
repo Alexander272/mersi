@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Preservation struct {
+type TransferToSave struct {
 	Id           string    `json:"id" db:"id"`
 	InstrumentId string    `json:"instrumentId" db:"instrument_id"`
 	DateStart    int64     `json:"dateStart" db:"date_start"`
@@ -12,11 +12,11 @@ type Preservation struct {
 	Created      time.Time `json:"created" db:"created_at"`
 }
 
-type GetPreservationsDTO struct {
+type GetTransferToSaveDTO struct {
 	InstrumentId string `json:"instrumentId"`
 }
 
-type PreservationDTO struct {
+type TransferToSaveDTO struct {
 	Id           string `json:"id" db:"id"`
 	InstrumentId string `json:"instrumentId" db:"instrument_id"`
 	DateStart    int64  `json:"dateStart" db:"date_start"`
@@ -25,6 +25,6 @@ type PreservationDTO struct {
 	NotesEnd     string `json:"notesEnd" db:"notes_end"`
 }
 
-type DeletePreservationDTO struct {
+type DeleteTransferToSaveDTO struct {
 	Id string `json:"id" db:"id"`
 }

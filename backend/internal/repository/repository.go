@@ -63,6 +63,9 @@ type VerificationFields interface {
 type Preservation interface {
 	postgres.Preservation
 }
+type TransferToSave interface {
+	postgres.TransferToSave
+}
 
 type Repository struct {
 	RuleItem
@@ -85,6 +88,7 @@ type Repository struct {
 	Repair
 	VerificationFields
 	Preservation
+	TransferToSave
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -109,5 +113,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Repair:             postgres.NewRepairRepo(db),
 		VerificationFields: postgres.NewVerificationFieldRepo(db),
 		Preservation:       postgres.NewPreservationRepo(db),
+		TransferToSave:     postgres.NewTransferToSaveRepo(db),
 	}
 }
