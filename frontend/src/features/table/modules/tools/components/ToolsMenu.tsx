@@ -11,6 +11,7 @@ import { CreateRepairDialog } from '../../repair/components/Dialogs/Create'
 import { CreateVerificationDialog } from '../../verification/components/Dialogs/Create'
 import { MenuItems } from './ToolsMenuItem'
 import { CreatePreservationDialog } from '../../preservation/components/Dialogs/Create'
+import { CreateTransferToSaveDialog } from '../../transferToSave/components/Dialogs/Create'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
@@ -87,6 +88,7 @@ export const ToolsMenu = () => {
 			<CreateRepairDialog />
 			<CreateVerificationDialog title={MenuItems.get('verification')?.label || ''} />
 			<CreatePreservationDialog />
+			<CreateTransferToSaveDialog />
 		</>
 	)
 }

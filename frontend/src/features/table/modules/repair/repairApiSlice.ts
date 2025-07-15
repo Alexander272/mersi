@@ -1,8 +1,9 @@
-import { apiSlice } from '@/app/apiSlice'
-import { IRepair, IRepairDTO } from './types/repair'
-import { API } from '@/app/api'
-import { IBaseFetchError } from '@/app/types/error'
 import { toast } from 'react-toastify'
+
+import type { IBaseFetchError } from '@/app/types/error'
+import type { IRepair, IRepairDTO } from './types/repair'
+import { apiSlice } from '@/app/apiSlice'
+import { API } from '@/app/api'
 
 const repairApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: false,
