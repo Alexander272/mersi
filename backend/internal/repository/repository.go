@@ -66,6 +66,9 @@ type Preservation interface {
 type TransferToSave interface {
 	postgres.TransferToSave
 }
+type TransferToDepartment interface {
+	postgres.TransferToDepartment
+}
 
 type Repository struct {
 	RuleItem
@@ -89,6 +92,7 @@ type Repository struct {
 	VerificationFields
 	Preservation
 	TransferToSave
+	TransferToDepartment
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -97,22 +101,23 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Rule:     postgres.NewRuleRepo(db),
 		Role:     postgres.NewRoleRepo(db),
 
-		Realm:              postgres.NewRealmRepo(db),
-		Accesses:           postgres.NewAccessesRepo(db),
-		Section:            postgres.NewSectionRepo(db),
-		Columns:            postgres.NewColumnRepo(db),
-		CreateForm:         postgres.NewCreateFormRepo(db),
-		Instrument:         postgres.NewInstrumentRepo(db),
-		Document:           postgres.NewDocumentRepo(db),
-		Verification:       postgres.NewVerificationRepo(db),
-		VerificationDoc:    postgres.NewVerificationDocRepo(db),
-		SI:                 postgres.NewSIRepo(db),
-		ContextMenu:        postgres.NewContextRepo(db),
-		CustomContextMenu:  postgres.NewCustomContextRepo(db),
-		ToolsMenu:          postgres.NewToolsMenuRepo(db),
-		Repair:             postgres.NewRepairRepo(db),
-		VerificationFields: postgres.NewVerificationFieldRepo(db),
-		Preservation:       postgres.NewPreservationRepo(db),
-		TransferToSave:     postgres.NewTransferToSaveRepo(db),
+		Realm:                postgres.NewRealmRepo(db),
+		Accesses:             postgres.NewAccessesRepo(db),
+		Section:              postgres.NewSectionRepo(db),
+		Columns:              postgres.NewColumnRepo(db),
+		CreateForm:           postgres.NewCreateFormRepo(db),
+		Instrument:           postgres.NewInstrumentRepo(db),
+		Document:             postgres.NewDocumentRepo(db),
+		Verification:         postgres.NewVerificationRepo(db),
+		VerificationDoc:      postgres.NewVerificationDocRepo(db),
+		SI:                   postgres.NewSIRepo(db),
+		ContextMenu:          postgres.NewContextRepo(db),
+		CustomContextMenu:    postgres.NewCustomContextRepo(db),
+		ToolsMenu:            postgres.NewToolsMenuRepo(db),
+		Repair:               postgres.NewRepairRepo(db),
+		VerificationFields:   postgres.NewVerificationFieldRepo(db),
+		Preservation:         postgres.NewPreservationRepo(db),
+		TransferToSave:       postgres.NewTransferToSaveRepo(db),
+		TransferToDepartment: postgres.NewTransferToDepRepo(db),
 	}
 }

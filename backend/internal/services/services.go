@@ -29,6 +29,7 @@ type Services struct {
 	VerificationFields
 	Preservation
 	TransferToSave
+	TransferToDepartment
 }
 
 type Deps struct {
@@ -65,6 +66,7 @@ func NewServices(deps *Deps) *Services {
 	repair := NewRepairService(deps.Repo.Repair)
 	preservation := NewPreservationService(deps.Repo.Preservation)
 	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave)
+	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment)
 
 	return &Services{
 		Role:     role,
@@ -75,21 +77,22 @@ func NewServices(deps *Deps) *Services {
 		Session:    session,
 		Permission: permission,
 
-		Realm:              realm,
-		Accesses:           accesses,
-		Section:            section,
-		Columns:            columns,
-		CreateForm:         createForm,
-		Instrument:         instrument,
-		Document:           document,
-		VerificationDoc:    verificationDoc,
-		Verification:       verification,
-		SI:                 si,
-		ContextMenu:        contextMenu,
-		ToolsMenu:          toolsMenu,
-		Repair:             repair,
-		VerificationFields: verificationFields,
-		Preservation:       preservation,
-		TransferToSave:     transferToSave,
+		Realm:                realm,
+		Accesses:             accesses,
+		Section:              section,
+		Columns:              columns,
+		CreateForm:           createForm,
+		Instrument:           instrument,
+		Document:             document,
+		VerificationDoc:      verificationDoc,
+		Verification:         verification,
+		SI:                   si,
+		ContextMenu:          contextMenu,
+		ToolsMenu:            toolsMenu,
+		Repair:               repair,
+		VerificationFields:   verificationFields,
+		Preservation:         preservation,
+		TransferToSave:       transferToSave,
+		TransferToDepartment: transferToDep,
 	}
 }

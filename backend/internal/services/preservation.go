@@ -54,6 +54,7 @@ func (s *PreservationService) Create(ctx context.Context, dto *models.Preservati
 	if candidate != nil && candidate.DateEnd > dto.DateStart {
 		return models.ErrNotValid
 	}
+	//TODO наверное надо еще как-то статус менять или делать что-то подобное, чтобы можно было легко и просто понять нужна ли поверка для инструмента
 
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create preservation. error: %w", err)
