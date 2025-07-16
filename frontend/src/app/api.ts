@@ -21,8 +21,8 @@ export const API = {
 		verification: {
 			base: 'si/verifications' as const,
 			all: 'si/verifications/all' as const,
-			last: 'si/verification/last' as const,
-			fields: 'si/verification/fields' as const,
+			last: 'si/verifications/last' as const,
+			fields: 'si/verifications/fields' as const,
 		},
 		location: {
 			base: 'si/locations' as const,

@@ -4,14 +4,10 @@ import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
-import type { ITransferToSaveDTO } from '../../types/save'
+import type { ITransferToDepartmentDTO } from '../../types/department'
 import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
-import {
-	useCreateTransferToSaveMutation,
-	useGetLastTransferToSaveQuery,
-	useUpdateTransferToSaveMutation,
-} from '../../transferApiSlice'
+import { useCreateTransferToDepartmentMutation } from '../../transferApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
@@ -27,19 +23,15 @@ export const Create: FC<Props> = ({ ids }) => {
 
 	const dispatch = useAppDispatch()
 
-	const methods = useForm<ITransferToSaveDTO>()
+	const methods = useForm<ITransferToDepartmentDTO>()
 
 	const { data, isFetching } = useGetInstrumentByIdQuery(ids?.length ? ids[active] : '', {
 		skip: !ids?.length || !ids[active],
 	})
-	const { data: last } = useGetLastTransferToSaveQuery(ids?.length ? ids[active] : '', {
-		skip: !ids?.length || !ids[active],
-	})
-	const [create, { isLoading }] = useCreateTransferToSaveMutation()
-	const [update, { isLoading: isUpdating }] = useUpdateTransferToSaveMutation()
+	const [create, { isLoading }] = useCreateTransferToDepartmentMutation()
 
 	const closeHandler = () => {
-		dispatch(changeDialogIsOpen({ variant: 'AddTransferToSave', isOpen: false }))
+		dispatch(changeDialogIsOpen({ variant: 'AddTransferToDep', isOpen: false }))
 	}
 
 	const activeHandler = (type: 'prev' | 'next') => () => {
@@ -53,15 +45,8 @@ export const Create: FC<Props> = ({ ids }) => {
 		form.instrumentId = ids?.length ? ids[active] : ''
 
 		try {
-			if (!last?.data.dateStart || !!last?.data.dateEnd) {
-				await create(form).unwrap()
-			} else {
-				form.id = last.data.id
-				form.dateStart = last.data.dateStart
-				form.notesStart = last.data.notesStart
-				await update(form).unwrap()
-			}
-			toast.success('Сведения о передаче на хранение добавлены')
+			await create(form).unwrap()
+			toast.success('Сведения о передаче в другое подразделение добавлены')
 			closeHandler()
 		} catch (error) {
 			const fetchError = error as IFetchError
@@ -72,7 +57,7 @@ export const Create: FC<Props> = ({ ids }) => {
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
 	return (
 		<Stack position={'relative'} mt={-2.5}>
-			{isFetching || isLoading || isUpdating ? <BoxFallback /> : null}
+			{isFetching || isLoading ? <BoxFallback /> : null}
 
 			<Stack spacing={2} direction={'row'} paddingX={3}>
 				{ids.length > 1 && (
@@ -101,10 +86,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 			<Stack mt={2} component={'form'} onSubmit={saveHandler}>
 				<FormProvider {...methods}>
-					<Inputs
-						isThisSave={!last?.data.dateStart || !!last?.data.dateEnd}
-						min={last?.data.dateEnd || last?.data.dateStart}
-					/>
+					<Inputs instrumentId={data?.data.id || ''} />
 				</FormProvider>
 
 				<Divider sx={{ width: '50%', alignSelf: 'center' }} />

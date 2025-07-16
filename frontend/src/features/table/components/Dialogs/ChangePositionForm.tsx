@@ -11,6 +11,7 @@ import { useChangePositionMutation, useGetSIByIdQuery } from '../../siApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { LongRightIcon } from '@/components/Icons/LongRightIcon'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
+import { useGetSI } from '../../hooks/getSI'
 
 type Props = {
 	id: string
@@ -21,6 +22,7 @@ export const ChangePositionForm: FC<Props> = ({ id }) => {
 	const dispatch = useAppDispatch()
 
 	const { data, isFetching } = useGetSIByIdQuery(id, { skip: !id })
+	const { data: si } = useGetSI()
 	const [change, { isLoading }] = useChangePositionMutation()
 
 	const methods = useForm<IChangePositionDTO>({
@@ -78,6 +80,7 @@ export const ChangePositionForm: FC<Props> = ({ id }) => {
 											type: 'number',
 											step: 1,
 											min: 1,
+											max: si?.total,
 										},
 									}}
 								/>
@@ -107,6 +110,7 @@ export const ChangePositionForm: FC<Props> = ({ id }) => {
 											type: 'number',
 											step: 1,
 											min: 1,
+											max: si?.total,
 										},
 									}}
 								/>
