@@ -22,4 +22,5 @@ const (
 	PreservationTable       = "public.preservation"
 	TransferToSaveTable     = "public.transfer_to_save"
 	TransferToDepTable      = "public.transfer_to_department"
+	WriteOffTable           = "public.write_off"
 )

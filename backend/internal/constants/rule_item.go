@@ -23,6 +23,7 @@ const (
 	Preservation         = "preservation"
 	TransferToSave       = "transfer-to-save"
 	TransferToDepartment = "transfer-to-department"
+	WriteOff             = "write-off"
 )
 
 const (

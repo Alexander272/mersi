@@ -17,6 +17,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/tools_menu"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_dep"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_save"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/write_off"
 	"github.com/gin-gonic/gin"
 )
 
@@ -59,4 +60,5 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	preservation.Register(secure, h.services.Preservation, h.middleware)
 	transfer_to_save.Register(secure, h.services.TransferToSave, h.middleware)
 	transfer_to_dep.Register(secure, h.services.TransferToDepartment, h.middleware)
+	write_off.Register(secure, h.services.WriteOff, h.middleware)
 }

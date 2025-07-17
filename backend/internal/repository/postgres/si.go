@@ -119,7 +119,8 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, act_of_entering, act_of_entering_id, notes,
 		v.date, v.next_date, COALESCE(cert, '') AS certificate, COALESCE(cert_id, '') AS certificate_id, COALESCE(repair, '') AS repair,
 		COALESCE(p.date_start, 0) AS preservation, COALESCE(p.date_end, 0) AS de_preservation,
-		COALESCE(ts.date_start, 0) AS transfer_date, COALESCE(ts.date_end, 0) AS return_date, COALESCE(td.doc_name, '') AS transfer_to_dep,
+		COALESCE(ts.date_start, 0) AS transfer_date, COALESCE(ts.date_end, 0) AS return_date, 
+		COALESCE(td.doc_name, '') AS transfer_to_dep, COALESCE(wo.doc_name, '') AS write_off,
 		COUNT(*) OVER() AS total
 		FROM %s AS i
 		LEFT JOIN LATERAL (SELECT id, date, next_date FROM %s WHERE instrument_id=i.id ORDER BY date DESC, created_at DESC LIMIT 1) AS v ON TRUE
@@ -129,8 +130,10 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS p ON TRUE
 		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS ts ON TRUE
 		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS td ON TRUE
+		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS wo ON TRUE
 		WHERE section_id=$1 AND i.status=$2 %s%s%s LIMIT $%d OFFSET $%d`,
 		InstrumentsTable, VerificationTable, VerificationDocsTable, RepairTable, PreservationTable, TransferToSaveTable, TransferToDepTable,
+		WriteOffTable,
 		filter, search, order, count, count+1,
 	)
 	// logger.Debug("get si", logger.StringAttr("query", query))

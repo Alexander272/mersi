@@ -69,6 +69,9 @@ type TransferToSave interface {
 type TransferToDepartment interface {
 	postgres.TransferToDepartment
 }
+type WriteOff interface {
+	postgres.WriteOff
+}
 
 type Repository struct {
 	RuleItem
@@ -93,6 +96,7 @@ type Repository struct {
 	Preservation
 	TransferToSave
 	TransferToDepartment
+	WriteOff
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -119,5 +123,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Preservation:         postgres.NewPreservationRepo(db),
 		TransferToSave:       postgres.NewTransferToSaveRepo(db),
 		TransferToDepartment: postgres.NewTransferToDepRepo(db),
+		WriteOff:             postgres.NewWriteOffRepo(db),
 	}
 }
