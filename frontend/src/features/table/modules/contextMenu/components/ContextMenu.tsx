@@ -19,6 +19,7 @@ import {
 	TransferToDep,
 	TransferToSave,
 	Verification,
+	WriteOff,
 } from './ContextMenuItems'
 
 type ItemProps = { onClick?: () => void; label?: string }
@@ -33,6 +34,7 @@ const ContextMenuItems = new Map<string, MenuItem>([
 	['preservation-info', { el: Preservation, action: 'AddPreservation' }],
 	['transfer-to-save', { el: TransferToSave, action: 'AddTransferToSave' }],
 	['transfer-to-department', { el: TransferToDep, action: 'AddTransferToDep' }],
+	['write-off', { el: WriteOff, action: 'WriteOff' }],
 	['history', { el: History, action: 'History' }],
 ])
 

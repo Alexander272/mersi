@@ -34,7 +34,7 @@ export const LayoutHeader = () => {
 				{token && (
 					<Stack direction={'row'} spacing={3} minHeight={'100%'}>
 						<NavButton>
-							<ActiveRealm />
+							<ActiveRealm sx={{ mr: -0.5 }} />
 						</NavButton>
 						{showRealmsSetting && <NavLink to={AppRoutes.Realm}>Области</NavLink>}
 						<NavButton onClick={signOutHandler}>Выйти</NavButton>

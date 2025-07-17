@@ -36,6 +36,7 @@ export const API = {
 		preservation: 'preservation' as const,
 		transferToSave: 'transfer-to-save' as const,
 		transferToDep: 'transfer-to-department' as const,
+		writeOff: 'write-off' as const,
 	},
 	departments: '/departments' as const,
 	employees: '/employees' as const,

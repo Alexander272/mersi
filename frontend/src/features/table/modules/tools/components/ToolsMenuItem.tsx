@@ -14,6 +14,7 @@ import { ProductReturn } from '@/components/Icons/ProductReturn'
 import { DocumentCheckIcon } from '@/components/Icons/DocumentCheckIcon'
 import { FileDownloadIcon } from '@/components/Icons/FileDownloadIcon'
 import { StarIcon } from '@/components/Icons/StarIcon'
+import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
 
 type Props = { onClick?: () => void; item: IToolsMenu; label?: string }
 type MenuItem = { el: FC<Props>; action?: DialogVariants; label?: string }
@@ -26,6 +27,7 @@ export const Icons = new Map<string, JSX.Element>([
 	['preservation-info', <ToolboxIcon fontSize={18} fill={'#757575'} />],
 	['transfer-to-save', <ProductReplace fontSize={18} fill={'#757575'} />],
 	['transfer-to-department', <ProductReturn fontSize={18} fill={'#757575'} />],
+	['write-off', <FileDeleteIcon fontSize={20} fill={'#757575'} />],
 ])
 
 export const ToolsItem: FC<Props> = ({ onClick, item, label }) => {
@@ -75,4 +77,5 @@ export const MenuItems = new Map<string, MenuItem>([
 	['preservation-info', { el: ToolsItem, action: 'AddPreservation' }],
 	['transfer-to-save', { el: ToolsItem, action: 'AddTransferToSave' }],
 	['transfer-to-department', { el: ToolsItem, action: 'AddTransferToDep' }],
+	['write-off', { el: ToolsItem, action: 'WriteOff' }],
 ])

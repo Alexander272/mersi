@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { MenuItem, Select, SelectChangeEvent, useTheme } from '@mui/material'
+import { FC, useEffect } from 'react'
+import { MenuItem, Select, SelectChangeEvent, SxProps, Theme, useTheme } from '@mui/material'
 import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
@@ -9,7 +9,11 @@ import { setPage } from '@/features/table/tableSlice'
 import { useChooseRealmMutation, useGetRealmsByUserQuery } from '../realmsApiSlice'
 import { getRealm, setRealm } from '../realmSlice'
 
-export const ActiveRealm = () => {
+type Props = {
+	sx?: SxProps<Theme>
+}
+
+export const ActiveRealm: FC<Props> = ({ sx }) => {
 	const { palette } = useTheme()
 
 	const realm = useAppSelector(getRealm)
@@ -60,6 +64,7 @@ export const ActiveRealm = () => {
 					border: 0,
 				},
 				'.MuiOutlinedInput-input': { padding: '6.5px 10px' },
+				...sx,
 			}}
 		>
 			<MenuItem value='' disabled>

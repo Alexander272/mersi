@@ -9,6 +9,7 @@ import { ToolboxIcon } from '@/components/Icons/ToolboxIcon'
 import { ProductReplace } from '@/components/Icons/ProductReplace'
 import { ProductReturn } from '@/components/Icons/ProductReturn'
 import { HistoryIcon } from '@/components/Icons/HistoryIcon'
+import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
 
 type Props = {
 	onClick?: () => void
@@ -75,6 +76,15 @@ export const TransferToDep: FC<Props> = ({ onClick, label }) => (
 			<ProductReturn fontSize={18} fill={'#757575'} />
 		</ListItemIcon>
 		{label ? label : 'Добавить сведения о передаче другому подразделению'}
+	</MenuItem>
+)
+
+export const WriteOff: FC<Props> = ({ onClick, label }) => (
+	<MenuItem onClick={onClick}>
+		<ListItemIcon>
+			<FileDeleteIcon fontSize={18} fill={'#757575'} />
+		</ListItemIcon>
+		{label ? label : 'Списать'}
 	</MenuItem>
 )
 
