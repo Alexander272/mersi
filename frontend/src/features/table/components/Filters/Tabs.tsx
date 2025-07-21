@@ -18,6 +18,8 @@ export const Tabs: FC<Props> = ({ value, onChange }) => {
 			variant='scrollable'
 			sx={{
 				mb: 2,
+				borderBottom: 1,
+				borderColor: '#00000014',
 				'.MuiTabs-scrollButtons': { transition: 'all .2s ease-in-out' },
 				'.MuiTabs-scrollButtons.Mui-disabled': {
 					height: 0,

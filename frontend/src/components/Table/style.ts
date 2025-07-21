@@ -60,6 +60,7 @@ export const TableCellContainer = styled.div<CellProps>`
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	text-align: center;
 
 	&:hover {
 		background-color: ${props => props.isActive && '#e0e0e04d'};

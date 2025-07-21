@@ -48,7 +48,6 @@ export const FileField: FC<Props> = ({ data, instrumentId = '' }) => {
 			<UploadButton
 				value={doc}
 				onChange={setDocument}
-				//TODO получать реальные значения
 				instrumentId={instrumentId}
 				group='act'
 				sx={{

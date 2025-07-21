@@ -9,10 +9,10 @@ import { apiSlice } from '@/app/apiSlice'
 const verificationApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: false,
 	endpoints: builder => ({
-		getVerificationFields: builder.query<{ data: IVerificationField[] }, string>({
-			query: section => ({
+		getVerificationFields: builder.query<{ data: IVerificationField[] }, { section: string; group: string }>({
+			query: req => ({
 				url: API.si.verification.fields,
-				params: new URLSearchParams({ section }),
+				params: new URLSearchParams({ section: req.section, group: req.group }),
 			}),
 			providesTags: [{ type: 'Verification', id: 'Fields' }],
 			onQueryStarted: async (_arg, api) => {
@@ -25,6 +25,21 @@ const verificationApiSlice = apiSlice.injectEndpoints({
 			},
 		}),
 
+		getVerifications: builder.query<{ data: IVerification[] }, string>({
+			query: instrument => ({
+				url: API.si.verification.base,
+				params: new URLSearchParams({ instrument }),
+			}),
+			providesTags: [{ type: 'Verification', id: 'ALL' }],
+			onQueryStarted: async (_arg, api) => {
+				try {
+					await api.queryFulfilled
+				} catch (error) {
+					const fetchError = (error as IBaseFetchError).error
+					toast.error(fetchError.data.message, { autoClose: false })
+				}
+			},
+		}),
 		getLastVerification: builder.query<{ data: IVerification }, string>({
 			query: instrument => ({
 				url: API.si.verification.last,
@@ -54,5 +69,9 @@ const verificationApiSlice = apiSlice.injectEndpoints({
 	}),
 })
 
-export const { useGetVerificationFieldsQuery, useGetLastVerificationQuery, useCreateVerificationMutation } =
-	verificationApiSlice
+export const {
+	useGetVerificationFieldsQuery,
+	useGetVerificationsQuery,
+	useGetLastVerificationQuery,
+	useCreateVerificationMutation,
+} = verificationApiSlice

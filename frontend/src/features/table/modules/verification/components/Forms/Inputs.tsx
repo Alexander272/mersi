@@ -20,7 +20,10 @@ type Props = {
 export const Inputs: FC<Props> = ({ instrumentId }) => {
 	const section = useAppSelector(getSection)
 
-	const { data, isFetching } = useGetVerificationFieldsQuery(section?.id || '', { skip: !section?.id })
+	const { data, isFetching } = useGetVerificationFieldsQuery(
+		{ section: section?.id || '', group: 'form' },
+		{ skip: !section?.id }
+	)
 
 	return (
 		<Stack spacing={2} mb={2}>
@@ -124,9 +127,6 @@ const FileField: FC<FieldProps> = ({ label, field, instrumentId = '' }) => {
 	const [doc, setDoc] = useState<IDocument | null>(null)
 
 	const { control, setValue } = useFormContext()
-
-	//TODO надо еще вставлять название файла в поле для ввода и решить что делать если файла не будет, а будет только название
-	// еще наверное надо как-то редактировать название файла при изменении его в поле ввода
 
 	const setDocument = (value: IDocument | null) => {
 		setDoc(value)

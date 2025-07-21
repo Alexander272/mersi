@@ -21,6 +21,7 @@ import {
 	Verification,
 	WriteOff,
 } from './ContextMenuItems'
+import { HistoryDialog } from '../../history/components/Dialog'
 
 type ItemProps = { onClick?: () => void; label?: string }
 type MenuItem = { el: FC<ItemProps>; action?: DialogVariants }
@@ -37,9 +38,6 @@ const ContextMenuItems = new Map<string, MenuItem>([
 	['write-off', { el: WriteOff, action: 'WriteOff' }],
 	['history', { el: History, action: 'History' }],
 ])
-
-//TODO я не знаю стоит ли добавлять все возможные пункты в контекстное меню, поэтому можно сделать
-// в меню инструменты поле для добавления пункта в контекстное меню (что-то типа избранного, сделать звездочку с краю поля)
 
 export const ContextMenu = () => {
 	const section = useAppSelector(getSection)
@@ -101,6 +99,7 @@ export const ContextMenu = () => {
 
 			<EditDialog />
 			<ChangePositionDialog />
+			<HistoryDialog />
 		</>
 	)
 }
