@@ -31,7 +31,7 @@ type Preservation interface {
 
 func (r *PreservationRepo) Get(ctx context.Context, req *models.GetPreservationsDTO) ([]*models.Preservation, error) {
 	query := fmt.Sprintf(`SELECT id, date_start, date_end, notes_start, notes_end, created_at FROM %s WHERE instrument_id=$1
-		ORDER BY date DESC`,
+		ORDER BY date_start DESC`,
 		PreservationTable,
 	)
 	data := []*models.Preservation{}

@@ -24,6 +24,7 @@ const (
 	TransferToSave       = "transfer-to-save"
 	TransferToDepartment = "transfer-to-department"
 	WriteOff             = "write-off"
+	HistoryTypes         = "history-types"
 )
 
 const (

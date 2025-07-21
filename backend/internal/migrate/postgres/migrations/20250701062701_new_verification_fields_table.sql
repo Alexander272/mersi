@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.verification_fields
     label text COLLATE pg_catalog."default" DEFAULT ''::text,
     type text COLLATE pg_catalog."default" DEFAULT 'text'::text,
     "position" integer,
+    "group" text COLLATE pg_catalog."default" DEFAULT 'form'::text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     CONSTRAINT verification_fields_pkey PRIMARY KEY (id),

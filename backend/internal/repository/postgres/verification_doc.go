@@ -41,8 +41,8 @@ func (r *VerificationDocRepo) Get(ctx context.Context, req *models.GetVerificati
 }
 
 func (r *VerificationDocRepo) GetGrouped(ctx context.Context, req *models.GetGroupedVerificationDocsDTO) (*models.GroupedVerificationDocs, error) {
-	query := fmt.Sprintf(`SELECT d.id, verification_id, name, doc_id FROM %s AS d
-		INNER JOIN %s AS v ON v.id=verification_id WHERE instrument_id=$1 ORDER BY verification_id, created_at`,
+	query := fmt.Sprintf(`SELECT d.id, verification_id, name, COALESCE(doc_id::text,'') AS doc_id FROM %s AS d
+		INNER JOIN %s AS v ON v.id=verification_id WHERE instrument_id=$1 ORDER BY verification_id, d.created_at`,
 		VerificationDocsTable, VerificationTable,
 	)
 	tmp := []*pq_models.VerificationDoc{}
@@ -63,7 +63,9 @@ func (r *VerificationDocRepo) GetGrouped(ctx context.Context, req *models.GetGro
 		if exists {
 			data[v.VerificationId].Docs = append(data[v.VerificationId].Docs, t)
 		} else {
-			data[v.VerificationId].Docs = []*models.VerificationDoc{t}
+			data[v.VerificationId] = &models.Groups{
+				Docs: []*models.VerificationDoc{t},
+			}
 		}
 	}
 	return &models.GroupedVerificationDocs{Groups: data}, nil

@@ -31,6 +31,7 @@ type Services struct {
 	TransferToSave
 	TransferToDepartment
 	WriteOff
+	HistoryType
 }
 
 type Deps struct {
@@ -69,6 +70,7 @@ func NewServices(deps *Deps) *Services {
 	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave)
 	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment)
 	writeOff := NewWriteOffService(deps.Repo.WriteOff)
+	historyType := NewHistoryTypeService(deps.Repo.HistoryType)
 
 	return &Services{
 		Role:     role,
@@ -97,5 +99,6 @@ func NewServices(deps *Deps) *Services {
 		TransferToSave:       transferToSave,
 		TransferToDepartment: transferToDep,
 		WriteOff:             writeOff,
+		HistoryType:          historyType,
 	}
 }

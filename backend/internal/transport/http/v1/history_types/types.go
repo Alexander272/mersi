@@ -1,4 +1,4 @@
-package fields
+package history_types
 
 import (
 	"net/http"
@@ -14,23 +14,21 @@ import (
 )
 
 type Handler struct {
-	service services.VerificationFields
+	service services.HistoryType
 }
 
-func NewHandler(service services.VerificationFields) *Handler {
-	return &Handler{
-		service: service,
-	}
+func NewHandler(service services.HistoryType) *Handler {
+	return &Handler{service: service}
 }
 
-func Register(api *gin.RouterGroup, service services.VerificationFields, middleware *middleware.Middleware) {
+func Register(api *gin.RouterGroup, service services.HistoryType, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	fields := api.Group("fields", middleware.CheckPermissions(constants.VerificationFields, constants.Read))
+	types := api.Group("history-types", middleware.CheckPermissions(constants.HistoryTypes, constants.Read))
 	{
-		fields.GET("", handler.get)
+		types.GET("", handler.get)
 
-		write := fields.Group("", middleware.CheckPermissions(constants.VerificationFields, constants.Write))
+		write := types.Group("", middleware.CheckPermissions(constants.HistoryTypes, constants.Write))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)
@@ -45,8 +43,7 @@ func (h *Handler) get(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
-	group := c.Query("group")
-	req := &models.GetVerFieldsDTO{SectionId: section, Group: group}
+	req := &models.GetHistoryTypesDTO{SectionId: section}
 
 	data, err := h.service.Get(c, req)
 	if err != nil {
@@ -58,7 +55,7 @@ func (h *Handler) get(c *gin.Context) {
 }
 
 func (h *Handler) create(c *gin.Context) {
-	dto := &models.VerificationFieldDTO{}
+	dto := &models.HistoryTypeDTO{}
 	if err := c.BindJSON(dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
@@ -69,7 +66,7 @@ func (h *Handler) create(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusCreated, response.IdResponse{Message: "Поле создано"})
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные сохранены"})
 }
 
 func (h *Handler) update(c *gin.Context) {
@@ -78,8 +75,7 @@ func (h *Handler) update(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
-
-	dto := &models.VerificationFieldDTO{}
+	dto := &models.HistoryTypeDTO{}
 	if err := c.BindJSON(dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
@@ -91,7 +87,7 @@ func (h *Handler) update(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Поле обновлено"})
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные сохранены"})
 }
 
 func (h *Handler) delete(c *gin.Context) {
@@ -100,12 +96,12 @@ func (h *Handler) delete(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
-	dto := &models.DeleteVerFieldDTO{Id: id}
+	dto := &models.DeleteHistoryTypeDTO{Id: id}
 
 	if err := h.service.Delete(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "произошла ошибка: "+err.Error())
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
-	c.JSON(http.StatusNoContent, response.IdResponse{})
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные удалены"})
 }

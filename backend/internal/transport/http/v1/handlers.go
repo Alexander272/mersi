@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/columns"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/context_menu"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/forms"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/history_types"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/preservation"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/realm"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/repair"
@@ -61,4 +62,5 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	transfer_to_save.Register(secure, h.services.TransferToSave, h.middleware)
 	transfer_to_dep.Register(secure, h.services.TransferToDepartment, h.middleware)
 	write_off.Register(secure, h.services.WriteOff, h.middleware)
+	history_types.Register(secure, h.services.HistoryType, h.middleware)
 }
