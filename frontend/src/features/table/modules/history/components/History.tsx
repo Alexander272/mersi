@@ -25,7 +25,7 @@ export const History: FC<Props> = ({ instrumentId }) => {
 	})
 
 	useEffect(() => {
-		if (data?.data) setValue(data.data[0].group)
+		if (data?.data) setValue(data.data[0]?.group)
 	}, [data])
 
 	const tabHandler = (_event: React.SyntheticEvent, newValue: string) => {

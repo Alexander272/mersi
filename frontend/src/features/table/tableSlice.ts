@@ -2,6 +2,7 @@ import { type PayloadAction, createSlice } from '@reduxjs/toolkit'
 
 import type { IContextMenu, ISelect } from './types/table'
 import type { IFilter, ISearch, ISort } from './types/params'
+import type { Status } from './types/si'
 import { Size } from '@/constants/defaultValues'
 import { RootState } from '@/app/store'
 import { localKeys } from './constants/storage'
@@ -9,6 +10,7 @@ import { localKeys } from './constants/storage'
 interface ITableSlice {
 	page: number
 	size: number
+	status: Status
 	sort: ISort
 	filters: IFilter[]
 	search: ISearch
@@ -20,6 +22,7 @@ interface ITableSlice {
 const initialState: ITableSlice = {
 	page: +(localStorage.getItem(localKeys.page) || 1),
 	size: +(localStorage.getItem(localKeys.size) || Size),
+	status: 'work',
 	sort: {},
 	filters: [],
 	search: {
@@ -41,6 +44,9 @@ const tableSlice = createSlice({
 		setSize: (state, action: PayloadAction<number>) => {
 			state.size = action.payload
 			localStorage.setItem(localKeys.size, action.payload.toString())
+		},
+		setStatus: (state, action: PayloadAction<Status>) => {
+			state.status = action.payload
 		},
 
 		setSort: (state, action: PayloadAction<string>) => {
@@ -96,6 +102,7 @@ const tableSlice = createSlice({
 
 export const getTablePage = (state: RootState) => state.table.page
 export const getTableSize = (state: RootState) => state.table.size
+export const getStatus = (state: RootState) => state.table.status
 export const getSort = (state: RootState) => state.table.sort
 export const getFilters = (state: RootState) => state.table.filters
 export const getSearch = (state: RootState) => state.table.search
@@ -109,6 +116,7 @@ export const tableReducer = tableSlice.reducer
 export const {
 	setPage,
 	setSize,
+	setStatus,
 	setSort,
 	setFilters,
 	setSearch,

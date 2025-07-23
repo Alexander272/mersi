@@ -64,6 +64,7 @@ const verificationApiSlice = apiSlice.injectEndpoints({
 			invalidatesTags: [
 				{ type: 'SI', id: 'ALL' },
 				{ type: 'Verification', id: 'Last' },
+				{ type: 'Verification', id: 'ALL' },
 			],
 		}),
 	}),

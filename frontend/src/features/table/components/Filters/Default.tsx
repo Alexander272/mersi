@@ -21,15 +21,28 @@ const months = [
 	'Декабре',
 ]
 
+type ActiveType = 'overdue' | 'month' | 'empty'
+
 export const Default = () => {
-	const [active, setActive] = useState<'overdue' | 'month' | 'empty'>()
+	const [active, setActive] = useState<ActiveType | undefined>(
+		(localStorage.getItem('active') as ActiveType) || undefined
+	)
 	const [month, setMonth] = useState(dayjs().get('month'))
 
 	const { setValue, reset } = useFormContext<{ filters: IFilter[] }>()
 
-	const emptyHandler = () => {
-		setActive(prev => (prev != 'empty' ? 'empty' : undefined))
+	const activeHandler = (value: ActiveType) => {
+		setActive(prev => (prev != value ? value : undefined))
+		if (active != value) localStorage.setItem('active', value)
+		else localStorage.removeItem('active')
 		reset()
+		return active != value
+	}
+
+	const emptyHandler = () => {
+		const isActive = activeHandler('empty')
+		if (!isActive) return
+
 		setValue(`filters.${0}`, {
 			field: 'nextVerificationDate',
 			fieldType: 'date',
@@ -39,8 +52,9 @@ export const Default = () => {
 	}
 
 	const overdueHandler = () => {
-		setActive(prev => (prev != 'overdue' ? 'overdue' : undefined))
-		reset()
+		const isActive = activeHandler('overdue')
+		if (!isActive) return
+
 		setValue(`filters.${0}`, {
 			field: 'nextVerificationDate',
 			fieldType: 'date',
@@ -50,8 +64,9 @@ export const Default = () => {
 	}
 
 	const monthHandler = () => {
-		setActive(prev => (prev != 'month' ? 'month' : undefined))
-		reset()
+		const isActive = activeHandler('month')
+		if (!isActive) return
+
 		const date = dayjs().set('month', month)
 		setValue(`filters.${0}`, {
 			field: 'nextVerificationDate',

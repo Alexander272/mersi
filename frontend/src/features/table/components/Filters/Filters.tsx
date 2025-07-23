@@ -54,13 +54,15 @@ export const Filters = () => {
 		console.log('form', form)
 
 		const groupedMap = new Map<string, IFilter[]>()
-		for (const e of form.filters) {
-			let thisList = groupedMap.get(e.field)
-			if (thisList === undefined) {
-				thisList = []
-				groupedMap.set(e.field, thisList)
+		if (form.filters?.length) {
+			for (const e of form.filters) {
+				let thisList = groupedMap.get(e.field)
+				if (thisList === undefined) {
+					thisList = []
+					groupedMap.set(e.field, thisList)
+				}
+				thisList.push(e)
 			}
-			thisList.push(e)
 		}
 		const filters: IFilter[] = []
 		groupedMap.forEach(v => filters.push(...v))

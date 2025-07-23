@@ -96,6 +96,7 @@ const SIApiSlice = apiSlice.injectEndpoints({
 
 export const {
 	useGetSIQuery,
+	useLazyGetSIQuery,
 	useGetSIByIdQuery,
 	useCreateSiMutation,
 	useUpdateSIMutation,

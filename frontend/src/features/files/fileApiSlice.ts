@@ -27,7 +27,7 @@ const filesApiSlice = apiSlice.injectEndpoints({
 		// 		}
 		// 	},
 		// }),
-		downloadFile: builder.query<null, IDocument>({
+		downloadFile: builder.query<null, { path: string; label: string }>({
 			queryFn: async (doc, _api, _, baseQuery) => {
 				const result = await baseQuery({
 					url: API.si.documents.base,

@@ -63,7 +63,10 @@ export const EditForm: FC<Props> = ({ id }) => {
 		//TODO потенциальная проблема с удалением файлов. Если пользователь удалил файл, но потом передумал и нажал отменить,
 		// то надо будет как-то фиксировать это на сервере (т.к. файл то уже удален)
 
-		//TODO при обновлении если нет файла (свидетельства о поверке), то на сервер передается массив с пустым объектом и это вызывает ошибки
+		if (form?.verification?.docs?.length) {
+			const docs = form.verification.docs.filter(d => d.doc && d.doc != '')
+			form.verification.docs = docs
+		}
 
 		if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval != '') {
 			form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)

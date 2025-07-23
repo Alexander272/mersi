@@ -8,6 +8,8 @@ import { ActiveSection } from '@/features/sections/components/Active/Active'
 import { ToolsMenu } from '../../modules/tools/components/ToolsMenuLazy'
 import { Search } from '../Search/Search'
 import { Filters } from '../Filters/Filters'
+import { FastSelect } from '../Select/FastSelect'
+import { Status } from '../Status/Status'
 
 export const Header = () => {
 	const { palette } = useTheme()
@@ -23,6 +25,7 @@ export const Header = () => {
 				<ActiveSection />
 
 				{/* active list */}
+				<Status />
 
 				<Button onClick={createHandler} variant='outlined'>
 					<PlusIcon fontSize={12} mr={1} fill={palette.primary.main} /> Добавить
@@ -32,9 +35,8 @@ export const Header = () => {
 			<Search />
 
 			<Stack direction={'row'} spacing={2}>
-				{/* <Setting />
-				FastSelect
-				 */}
+				{/* <Setting />*/}
+				<FastSelect />
 				<Filters />
 
 				<ToolsMenu />

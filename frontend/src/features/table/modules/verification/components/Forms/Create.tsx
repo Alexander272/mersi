@@ -8,7 +8,7 @@ import type { IFetchError } from '@/app/types/error'
 import type { IVerificationDTO } from '../../types/verification'
 import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
-import { useCreateVerificationMutation } from '../../verificationApiSlice'
+import { useCreateVerificationMutation, useGetLastVerificationQuery } from '../../verificationApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
@@ -34,7 +34,9 @@ export const Create: FC<Props> = ({ ids }) => {
 	const { data, isFetching } = useGetInstrumentByIdQuery(ids?.length ? ids[active] : '', {
 		skip: !ids?.length || !ids[active],
 	})
-	// const { data: ver, isLoading } = useGetLastVerificationQuery(instrument?.data.id || '', { skip: !instrument?.data.id })
+	const { data: ver, isFetching: isVerFetching } = useGetLastVerificationQuery(data?.data.id || '', {
+		skip: !data?.data.id,
+	})
 	const [create, { isLoading }] = useCreateVerificationMutation()
 
 	const methods = useForm<IVerificationDTO>({ defaultValues: def })
@@ -57,6 +59,9 @@ export const Create: FC<Props> = ({ ids }) => {
 			.add(+(data.data.interVerificationInterval || 0), 'month')
 			.unix()
 
+		form.docs = form.docs?.filter(d => d.doc && d.doc != '')
+		console.log('form', form)
+
 		try {
 			await create(form).unwrap()
 			toast.success('Данные о поверке добавлены')
@@ -68,10 +73,10 @@ export const Create: FC<Props> = ({ ids }) => {
 	})
 
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
-	// if (var?.data.notVerified) return <Typography>Инструмент отмечен как не нуждающийся в поверках</Typography>
+	if (ver?.data.notVerified) return <Typography>Инструмент отмечен как не нуждающийся в поверках</Typography>
 	return (
 		<Stack position={'relative'} mt={-2.5}>
-			{isFetching || isLoading ? <BoxFallback /> : null}
+			{isFetching || isLoading || isVerFetching ? <BoxFallback /> : null}
 
 			<Stack spacing={2} direction={'row'} paddingX={3}>
 				{ids.length > 1 && (

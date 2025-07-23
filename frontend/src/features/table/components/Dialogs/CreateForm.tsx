@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react'
-import { Button, Divider, Stack, Tooltip } from '@mui/material'
+import { Box, Button, Divider, Stack, Tooltip } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import dayjs from 'dayjs'
@@ -17,7 +17,6 @@ import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { Step, Stepper } from '@/components/Stepper/Stepper'
 import { RefreshIcon } from '@/components/Icons/RefreshIcon'
 import { Form as FormFields } from '../Form/Form'
-
 type Props = {
 	id: string
 }
@@ -39,7 +38,10 @@ export const CreateForm: FC<Props> = () => {
 		setSteps(newSteps)
 	}, [data])
 
-	const methods = useForm<ISiForm>({ values: JSON.parse(localStorage.getItem(localKeys.form) || '{}') })
+	const methods = useForm<ISiForm>({
+		defaultValues: {},
+		values: JSON.parse(localStorage.getItem(localKeys.form) || '{}'),
+	})
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'CreateTableItem', isOpen: false }))
@@ -59,17 +61,21 @@ export const CreateForm: FC<Props> = () => {
 
 		form.instrument.sectionId = section?.id || ''
 		form.instrument.position = (si?.total || 0) + 1
-		if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval != '') {
+		if (form?.verification?.verificationDate != 0 && form.instrument.interVerificationInterval != '') {
 			form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
 				.add(+form.instrument.interVerificationInterval, 'month')
 				.unix()
 		}
 
+		if (form?.verification.docs?.length) {
+			form.verification.docs = form.verification.docs.filter(d => d.doc && d.doc != '')
+		}
+
 		try {
 			await create(form).unwrap()
 			toast.success('Данные добавлены')
+			methods.reset({ instrument: {}, verification: undefined })
 			localStorage.removeItem(localKeys.form)
-			methods.reset()
 			setActiveStep(0)
 		} catch (error) {
 			const fetchError = error as IFetchError
@@ -79,8 +85,8 @@ export const CreateForm: FC<Props> = () => {
 
 	const deleteHandler = () => {
 		console.log('delete')
+		methods.reset({ instrument: {}, verification: undefined })
 		localStorage.removeItem(localKeys.form)
-		methods.reset()
 	}
 
 	return (
@@ -91,11 +97,11 @@ export const CreateForm: FC<Props> = () => {
 				{steps.length > 1 ? <Stepper steps={steps} active={activeStep} sx={{ width: '100%' }} /> : null}
 
 				<Tooltip title='Очистить' enterDelay={600}>
-					<span>
+					<Box ml={'auto'}>
 						<Button variant='outlined' color='inherit' onClick={deleteHandler}>
 							<RefreshIcon fontSize={18} />
 						</Button>
-					</span>
+					</Box>
 				</Tooltip>
 			</Stack>
 
