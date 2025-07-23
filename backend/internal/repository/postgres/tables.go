@@ -24,4 +24,5 @@ const (
 	TransferToDepTable      = "public.transfer_to_department"
 	WriteOffTable           = "public.write_off"
 	HistoryTypesTable       = "public.history_types"
+	FiltersTable            = "public.filters"
 )

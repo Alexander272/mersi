@@ -68,7 +68,7 @@ func NewServices(deps *Deps) *Services {
 	repair := NewRepairService(deps.Repo.Repair)
 	preservation := NewPreservationService(deps.Repo.Preservation)
 	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave)
-	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment)
+	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment, instrument)
 	writeOff := NewWriteOffService(deps.Repo.WriteOff)
 	historyType := NewHistoryTypeService(deps.Repo.HistoryType)
 

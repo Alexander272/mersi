@@ -1,31 +1,27 @@
 package models
 
-type Page struct {
-	Limit  int
-	Offset int
+type SavedFilter struct {
+	Id          string `json:"id" db:"id"`
+	Name        string `json:"name" db:"name"`
+	CompareType string `json:"compareType" db:"compare_type"`
+	Value       string `json:"value" db:"value"`
 }
 
-type Sort struct {
-	Field string `json:"field"`
-	Type  string `json:"type"`
+type GetSavedFiltersDTO struct {
+	UserId    string
+	SectionId string
 }
 
-type Filter struct {
-	Field     string         `json:"field"`
-	FieldType string         `json:"fieldType"`
-	Values    []*FilterValue `json:"values"`
-}
-type FilterValue struct {
-	CompareType string `json:"compareType"`
-	Value       string `json:"value"`
-}
-
-type Period struct {
-	StartAt  int64 `json:"startAt"`
-	FinishAt int64 `json:"finishAt"`
+type SavedFilterDTO struct {
+	Id          string `json:"id" db:"id"`
+	UserId      string `json:"userId" db:"user_id"`
+	SectionId   string `json:"sectionId" db:"section_id"`
+	Name        string `json:"name" db:"name"`
+	CompareType string `json:"compareType" db:"compare_type"`
+	Value       string `json:"value" db:"value"`
 }
 
-type Search struct {
-	Value  string
-	Fields []string
+type DeleteSavedFiltersDTO struct {
+	UserId    string
+	SectionId string
 }

@@ -3,6 +3,8 @@ package models
 type VerificationDoc struct {
 	Id    string `json:"id" db:"id"`
 	Name  string `json:"doc" db:"name"`
+	Type  string `json:"type" db:"type"`
+	Path  string `json:"path" db:"path"`
 	DocId string `json:"docId" db:"doc_id"`
 }
 

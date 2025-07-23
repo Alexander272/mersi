@@ -3,11 +3,12 @@ package models
 type InstrumentStatus string
 
 const (
-	InstrumentStatusWork   InstrumentStatus = "work"
-	InstrumentStatusRepair InstrumentStatus = "repair"
-	InstrumentStatusDec    InstrumentStatus = "decommissioning"
-	InstrumentDeleted      InstrumentStatus = "deleted"
-	InstrumentDraft        InstrumentStatus = "draft"
+	InstrumentStatusWork        InstrumentStatus = "work"
+	InstrumentStatusRepair      InstrumentStatus = "repair"
+	InstrumentStatusDec         InstrumentStatus = "decommissioning"
+	InstrumentStatusTransferred InstrumentStatus = "transferred"
+	InstrumentDeleted           InstrumentStatus = "deleted"
+	InstrumentDraft             InstrumentStatus = "draft"
 )
 
 type Instrument struct {

@@ -31,7 +31,9 @@ type VerificationDoc interface {
 }
 
 func (r *VerificationDocRepo) Get(ctx context.Context, req *models.GetVerificationDocsDTO) ([]*models.VerificationDoc, error) {
-	query := fmt.Sprintf(`SELECT id, name, COALESCE(doc_id::text,'') AS doc_id FROM %s WHERE verification_id=$1 ORDER BY created_at DESC`, VerificationDocsTable)
+	query := fmt.Sprintf(`SELECT id, name, COALESCE(doc_id::text,'') AS doc_id FROM %s WHERE verification_id=$1 ORDER BY created_at DESC`,
+		VerificationDocsTable,
+	)
 	data := []*models.VerificationDoc{}
 
 	if err := r.db.SelectContext(ctx, &data, query, req.VerificationId); err != nil {
@@ -41,9 +43,12 @@ func (r *VerificationDocRepo) Get(ctx context.Context, req *models.GetVerificati
 }
 
 func (r *VerificationDocRepo) GetGrouped(ctx context.Context, req *models.GetGroupedVerificationDocsDTO) (*models.GroupedVerificationDocs, error) {
-	query := fmt.Sprintf(`SELECT d.id, verification_id, name, COALESCE(doc_id::text,'') AS doc_id FROM %s AS d
-		INNER JOIN %s AS v ON v.id=verification_id WHERE instrument_id=$1 ORDER BY verification_id, d.created_at`,
-		VerificationDocsTable, VerificationTable,
+	query := fmt.Sprintf(`SELECT d.id, verification_id, name, COALESCE(doc_id::text,'') AS doc_id, COALESCE(dc.type,'') AS type, 
+		COALESCE(dc.path, '') AS path FROM %s AS d
+		INNER JOIN %s AS v ON v.id=verification_id 
+		LEFT JOIN %s AS dc ON doc_id=dc.id
+		WHERE v.instrument_id=$1 ORDER BY verification_id, d.created_at`,
+		VerificationDocsTable, VerificationTable, DocumentsTable,
 	)
 	tmp := []*pq_models.VerificationDoc{}
 
@@ -57,6 +62,8 @@ func (r *VerificationDocRepo) GetGrouped(ctx context.Context, req *models.GetGro
 			Id:    v.Id,
 			Name:  v.Name,
 			DocId: v.DocId,
+			Type:  v.Type,
+			Path:  v.Path,
 		}
 
 		_, exists := data[v.VerificationId]

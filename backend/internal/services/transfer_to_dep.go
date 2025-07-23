@@ -9,11 +9,15 @@ import (
 )
 
 type TransferToDepService struct {
-	repo repository.TransferToDepartment
+	repo       repository.TransferToDepartment
+	instrument Instrument
 }
 
-func NewTransferToDepService(repo repository.TransferToDepartment) *TransferToDepService {
-	return &TransferToDepService{repo: repo}
+func NewTransferToDepService(repo repository.TransferToDepartment, instrument Instrument) *TransferToDepService {
+	return &TransferToDepService{
+		repo:       repo,
+		instrument: instrument,
+	}
 }
 
 type TransferToDepartment interface {
@@ -35,7 +39,15 @@ func (s *TransferToDepService) Create(ctx context.Context, dto *models.TransferT
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create transfer to department. error: %w", err)
 	}
-	//TODO надо еще как-то статус менять или делать что-то подобное
+
+	status := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatusTransferred,
+	}
+	if err := s.instrument.ChangeStatus(ctx, status); err != nil {
+		return fmt.Errorf("failed to change instrument status. error: %w", err)
+	}
+
 	return nil
 }
 

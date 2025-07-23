@@ -75,6 +75,9 @@ type WriteOff interface {
 type HistoryType interface {
 	postgres.HistoryType
 }
+type Filters interface {
+	postgres.Filters
+}
 
 type Repository struct {
 	RuleItem
@@ -101,6 +104,7 @@ type Repository struct {
 	TransferToDepartment
 	WriteOff
 	HistoryType
+	Filters
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -129,5 +133,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 		TransferToDepartment: postgres.NewTransferToDepRepo(db),
 		WriteOff:             postgres.NewWriteOffRepo(db),
 		HistoryType:          postgres.NewHistoryTypeRepo(db),
+		Filters:              postgres.NewFilterRepo(db),
 	}
 }

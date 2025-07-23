@@ -115,7 +115,8 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 
 	params = append(params, req.Page.Limit, req.Page.Offset)
 
-	query := fmt.Sprintf(`SELECT i.id, position, name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register,
+	// TODO брать статус из таблицы с перемещениями
+	query := fmt.Sprintf(`SELECT i.id, position, name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register, i.status,
 		country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, act_of_entering, act_of_entering_id, notes,
 		v.date, v.next_date, COALESCE(cert, '') AS certificate, COALESCE(cert_id, '') AS certificate_id, COALESCE(repair, '') AS repair,
 		COALESCE(p.date_start, 0) AS preservation, COALESCE(p.date_end, 0) AS de_preservation,
@@ -132,8 +133,8 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS td ON TRUE
 		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS wo ON TRUE
 		WHERE section_id=$1 AND i.status=$2 %s%s%s LIMIT $%d OFFSET $%d`,
-		InstrumentsTable, VerificationTable, VerificationDocsTable, RepairTable, PreservationTable, TransferToSaveTable, TransferToDepTable,
-		WriteOffTable,
+		InstrumentsTable, VerificationTable, VerificationDocsTable, RepairTable, PreservationTable,
+		TransferToSaveTable, TransferToDepTable, WriteOffTable,
 		filter, search, order, count, count+1,
 	)
 	// logger.Debug("get si", logger.StringAttr("query", query))

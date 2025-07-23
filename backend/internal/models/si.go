@@ -30,6 +30,8 @@ type SI struct {
 	ReturnDate                int    `json:"returnDate" db:"return_date"`
 	TransferToDepartment      string `json:"transferToDepartment" db:"transfer_to_dep"`
 	WriteOff                  string `json:"writeOffDetails" db:"write_off"`
+	// Bg                        string `json:"bg" db:"bg"`
+	Status InstrumentStatus `json:"status" db:"status"`
 	//TODO дописать оставшиеся поля
 
 	Total int `json:"total" db:"total"`

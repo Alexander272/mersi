@@ -5,4 +5,6 @@ type VerificationDoc struct {
 	VerificationId string `db:"verification_id"`
 	Name           string `db:"name"`
 	DocId          string `db:"doc_id"`
+	Type           string `db:"type"`
+	Path           string `db:"path"`
 }
