@@ -19,7 +19,7 @@ func NewSortingService(repo repository.Sorting) *SortingService {
 }
 
 type Sorting interface {
-	Get(ctx context.Context, req *models.GetSortingDTO) (models.SortingMap, error)
+	Get(ctx context.Context, req *models.GetSortingDTO) ([]*models.Sorting, error)
 	Create(ctx context.Context, dto *models.SortingDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.SortingDTO) error
 	Update(ctx context.Context, dto *models.SortingDTO) error
@@ -28,7 +28,7 @@ type Sorting interface {
 	DeleteAll(ctx context.Context, dto *models.DeleteSortingDTO) error
 }
 
-func (s *SortingService) Get(ctx context.Context, req *models.GetSortingDTO) (models.SortingMap, error) {
+func (s *SortingService) Get(ctx context.Context, req *models.GetSortingDTO) ([]*models.Sorting, error) {
 	data, err := s.repo.Get(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sorting. error: %w", err)

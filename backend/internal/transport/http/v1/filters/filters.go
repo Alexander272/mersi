@@ -63,8 +63,14 @@ func (h *Handler) get(c *gin.Context) {
 }
 
 func (h *Handler) create(c *gin.Context) {
+	section := c.Query("section")
+	if err := uuid.Validate(section); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+
 	dto := []*models.SavedFilterDTO{}
-	if err := c.ShouldBindJSON(&dto); err != nil {
+	if err := c.BindJSON(&dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
 	}
@@ -76,8 +82,9 @@ func (h *Handler) create(c *gin.Context) {
 	}
 	user := u.(models.User)
 
-	for _, filter := range dto {
-		filter.UserId = user.ID
+	for i := range dto {
+		dto[i].UserId = user.ID
+		dto[i].SectionId = section
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
@@ -89,8 +96,15 @@ func (h *Handler) create(c *gin.Context) {
 }
 
 func (h *Handler) change(c *gin.Context) {
-	dto := []*models.SavedFilterDTO{}
-	if err := c.ShouldBindJSON(&dto); err != nil {
+	// section := c.Query("section")
+	// if err := uuid.Validate(section); err != nil {
+	// 	response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+	// 	return
+	// }
+
+	dto := &models.ChangeFillersDTO{}
+	// dto := []*models.SavedFilterDTO{}
+	if err := c.BindJSON(&dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
 	}
@@ -102,14 +116,23 @@ func (h *Handler) change(c *gin.Context) {
 	}
 	user := u.(models.User)
 
-	for _, filter := range dto {
-		filter.UserId = user.ID
+	for i := range dto.Filters {
+		dto.Filters[i].UserId = user.ID
+		dto.Filters[i].SectionId = dto.SectionId
 	}
 
-	if err := h.service.Change(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
-		return
+	if len(dto.Filters) == 0 {
+		if err := h.service.Delete(c, &models.DeleteSavedFiltersDTO{UserId: user.ID, SectionId: dto.SectionId}); err != nil {
+			response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+			error_bot.Send(c, err.Error(), dto)
+			return
+		}
+	} else {
+		if err := h.service.Change(c, dto.Filters); err != nil {
+			response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+			error_bot.Send(c, err.Error(), dto)
+			return
+		}
 	}
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Фильтры успешно сохранены"})
 }

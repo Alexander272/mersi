@@ -16,6 +16,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/repair"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sections"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sorting"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/tools_menu"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_dep"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_save"
@@ -65,4 +66,5 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	write_off.Register(secure, h.services.WriteOff, h.middleware)
 	history_types.Register(secure, h.services.HistoryType, h.middleware)
 	filters.Register(secure, h.services.Filters, h.middleware)
+	sorting.Register(secure, h.services.Sorting, h.middleware)
 }

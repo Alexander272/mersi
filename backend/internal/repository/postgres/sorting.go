@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
-	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -21,7 +20,7 @@ func NewSortingRepo(db *sqlx.DB) *SortingRepo {
 }
 
 type Sorting interface {
-	Get(ctx context.Context, req *models.GetSortingDTO) (models.SortingMap, error)
+	Get(ctx context.Context, req *models.GetSortingDTO) ([]*models.Sorting, error)
 	Create(ctx context.Context, dto *models.SortingDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.SortingDTO) error
 	Update(ctx context.Context, dto *models.SortingDTO) error
@@ -29,24 +28,24 @@ type Sorting interface {
 	DeleteAll(ctx context.Context, dto *models.DeleteSortingDTO) error
 }
 
-func (r *SortingRepo) Get(ctx context.Context, req *models.GetSortingDTO) (models.SortingMap, error) {
-	query := fmt.Sprintf(`SELECT id, name, order_type FROM %s WHERE user_id=$1 AND section_id=$2 ORDER BY created_at`, SortingTable)
+func (r *SortingRepo) Get(ctx context.Context, req *models.GetSortingDTO) ([]*models.Sorting, error) {
+	query := fmt.Sprintf(`SELECT id, name, order_type, count FROM %s WHERE sso_id=$1 AND section_id=$2 ORDER BY count`, SortingTable)
 
-	tmp := []*pq_models.Sorting{}
-	if err := r.db.SelectContext(ctx, &tmp, query, req.UserId, req.SectionId); err != nil {
+	data := []*models.Sorting{}
+	if err := r.db.SelectContext(ctx, &data, query, req.UserId, req.SectionId); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 
-	data := make(map[string]string, 0)
-	for _, v := range tmp {
-		data[v.Name] = v.OrderType
-	}
+	// data := make(map[string]string, 0)
+	// for _, v := range tmp {
+	// 	data[v.Name] = v.OrderType
+	// }
 	return data, nil
 }
 
 func (r *SortingRepo) Create(ctx context.Context, dto *models.SortingDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, user_id, section_id, name, order_type) 
-		VALUES (:id, :user_id, :section_id, :name, :order_type)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, sso_id, section_id, name, order_type, count) 
+		VALUES (:id, :sso_id, :section_id, :name, :order_type, :count)`,
 		SortingTable,
 	)
 	dto.Id = uuid.NewString()
@@ -59,8 +58,8 @@ func (r *SortingRepo) Create(ctx context.Context, dto *models.SortingDTO) error 
 }
 
 func (r *SortingRepo) CreateSeveral(ctx context.Context, dto []*models.SortingDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, user_id, section_id, name, order_type) 
-		VALUES (:id, :user_id, :section_id, :name, :order_type)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, sso_id, section_id, name, order_type, count) 
+		VALUES (:id, :sso_id, :section_id, :name, :order_type, :count)`,
 		SortingTable,
 	)
 	for i := range dto {
@@ -74,7 +73,7 @@ func (r *SortingRepo) CreateSeveral(ctx context.Context, dto []*models.SortingDT
 }
 
 func (r *SortingRepo) Update(ctx context.Context, dto *models.SortingDTO) error {
-	query := fmt.Sprintf(`UPDATE %s SET order_type=:order_type WHERE name=:name AND user_id=:user_id AND section_id=:section_id`, SortingTable)
+	query := fmt.Sprintf(`UPDATE %s SET order_type=:order_type WHERE name=:name AND sso_id=:sso_id AND section_id=:section_id`, SortingTable)
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
@@ -83,7 +82,7 @@ func (r *SortingRepo) Update(ctx context.Context, dto *models.SortingDTO) error 
 }
 
 func (r *SortingRepo) Delete(ctx context.Context, dto *models.DeleteSortingDTO) error {
-	query := fmt.Sprintf(`DELETE FROM %s WHERE name=:name AND user_id=:user_id AND section_id=:section_id`, SortingTable)
+	query := fmt.Sprintf(`DELETE FROM %s WHERE name=:name AND sso_id=:sso_id AND section_id=:section_id`, SortingTable)
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
@@ -92,7 +91,7 @@ func (r *SortingRepo) Delete(ctx context.Context, dto *models.DeleteSortingDTO) 
 }
 
 func (r *SortingRepo) DeleteAll(ctx context.Context, dto *models.DeleteSortingDTO) error {
-	query := fmt.Sprintf(`DELETE FROM %s WHERE user_id=:user_id AND section_id=:section_id`, SortingTable)
+	query := fmt.Sprintf(`DELETE FROM %s WHERE sso_id=:sso_id AND section_id=:section_id`, SortingTable)
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)

@@ -27,7 +27,7 @@ type Filters interface {
 }
 
 func (r *FilterRepo) Get(ctx context.Context, dto *models.GetSavedFiltersDTO) ([]*models.SavedFilter, error) {
-	query := fmt.Sprintf(`SELECT id, name, compare_type, value FROM %s WHERE sso_id=$1 AND section_id=$2`, FiltersTable)
+	query := fmt.Sprintf(`SELECT id, name, field_type, compare_type, value FROM %s WHERE sso_id=$1 AND section_id=$2`, FiltersTable)
 	data := []*models.SavedFilter{}
 
 	if err := r.db.SelectContext(ctx, &data, query, dto.UserId, dto.SectionId); err != nil {
@@ -37,8 +37,8 @@ func (r *FilterRepo) Get(ctx context.Context, dto *models.GetSavedFiltersDTO) ([
 }
 
 func (r *FilterRepo) CreateOne(ctx context.Context, dto *models.SavedFilterDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, sso_id, section_id, name, compare_type, value)
-		VALUES (:id, :sso_id, :section_id, :name, :compare_type, :value)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, sso_id, section_id, name, field_type, compare_type, value)
+		VALUES (:id, :sso_id, :section_id, :name, :field_type, :compare_type, :value)`,
 		FiltersTable,
 	)
 	dto.Id = uuid.NewString()
@@ -50,8 +50,8 @@ func (r *FilterRepo) CreateOne(ctx context.Context, dto *models.SavedFilterDTO) 
 }
 
 func (r *FilterRepo) Create(ctx context.Context, dto []*models.SavedFilterDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, sso_id, section_id, name, compare_type, value)
-		VALUES (:id, :sso_id, :section_id, :name, :compare_type, :value)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, sso_id, section_id, name, field_type, compare_type, value)
+		VALUES (:id, :sso_id, :section_id, :name, :field_type, :compare_type, :value)`,
 		FiltersTable,
 	)
 	for i := range dto {

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS public.filters
     id uuid NOT NULL,
     sso_id uuid NOT NULL,
     name text COLLATE pg_catalog."default" NOT NULL,
+    field_type text COLLATE pg_catalog."default" NOT NULL,
     compare_type text COLLATE pg_catalog."default" NOT NULL,
     value text COLLATE pg_catalog."default" NOT NULL,
     section_id uuid NOT NULL,

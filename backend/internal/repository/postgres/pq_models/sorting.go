@@ -5,4 +5,5 @@ type Sorting struct {
 	SectionId string `json:"sectionId" db:"section_id"`
 	Name      string `json:"name" db:"name"`
 	OrderType string `json:"orderType" db:"order_type"`
+	Count     int    `json:"count" db:"count"`
 }

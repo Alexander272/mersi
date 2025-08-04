@@ -88,6 +88,12 @@ func (h *Handler) create(c *gin.Context) {
 }
 
 func (h *Handler) createSeveral(c *gin.Context) {
+	section := c.Query("section")
+	if err := uuid.Validate(section); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+
 	dto := []*models.SortingDTO{}
 	if err := c.BindJSON(&dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
@@ -137,8 +143,14 @@ func (h *Handler) update(c *gin.Context) {
 }
 
 func (h *Handler) change(c *gin.Context) {
+	section := c.Query("section")
+	if err := uuid.Validate(section); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+
 	dto := []*models.SortingDTO{}
-	if err := c.BindJSON(dto); err != nil {
+	if err := c.BindJSON(&dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
 	}
@@ -152,12 +164,21 @@ func (h *Handler) change(c *gin.Context) {
 
 	for i := range dto {
 		dto[i].UserId = user.ID
+		dto[i].SectionId = section
 	}
 
-	if err := h.service.Change(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
-		return
+	if len(dto) == 0 {
+		if err := h.service.DeleteAll(c, &models.DeleteSortingDTO{UserId: user.ID, SectionId: section}); err != nil {
+			response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+			error_bot.Send(c, err.Error(), dto)
+			return
+		}
+	} else {
+		if err := h.service.Change(c, dto); err != nil {
+			response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+			error_bot.Send(c, err.Error(), dto)
+			return
+		}
 	}
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Фильтры успешно сохранены"})
 }

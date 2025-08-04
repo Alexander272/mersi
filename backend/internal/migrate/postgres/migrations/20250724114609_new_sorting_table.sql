@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.sorting
     section_id uuid NOT NULL,
     name text COLLATE pg_catalog."default" NOT NULL,
     order_type text COLLATE pg_catalog."default" DEFAULT 'ASC'::text NOT NULL,
+    count integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     CONSTRAINT sorting_pkey PRIMARY KEY (id)
