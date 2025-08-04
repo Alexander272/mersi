@@ -78,6 +78,9 @@ type HistoryType interface {
 type Filters interface {
 	postgres.Filters
 }
+type Sorting interface {
+	postgres.Sorting
+}
 
 type Repository struct {
 	RuleItem
@@ -105,6 +108,7 @@ type Repository struct {
 	WriteOff
 	HistoryType
 	Filters
+	Sorting
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -134,5 +138,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 		WriteOff:             postgres.NewWriteOffRepo(db),
 		HistoryType:          postgres.NewHistoryTypeRepo(db),
 		Filters:              postgres.NewFilterRepo(db),
+		Sorting:              postgres.NewSortingRepo(db),
 	}
 }

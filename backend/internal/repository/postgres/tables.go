@@ -25,4 +25,5 @@ const (
 	WriteOffTable           = "public.write_off"
 	HistoryTypesTable       = "public.history_types"
 	FiltersTable            = "public.filters"
+	SortingTable            = "public.sorting"
 )

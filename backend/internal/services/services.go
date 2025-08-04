@@ -32,6 +32,8 @@ type Services struct {
 	TransferToDepartment
 	WriteOff
 	HistoryType
+	Filters
+	Sorting
 }
 
 type Deps struct {
@@ -72,6 +74,9 @@ func NewServices(deps *Deps) *Services {
 	writeOff := NewWriteOffService(deps.Repo.WriteOff)
 	historyType := NewHistoryTypeService(deps.Repo.HistoryType)
 
+	filters := NewFilterService(deps.Repo.Filters)
+	sorting := NewSortingService(deps.Repo.Sorting)
+
 	return &Services{
 		Role:     role,
 		RuleItem: ruleItem,
@@ -100,5 +105,7 @@ func NewServices(deps *Deps) *Services {
 		TransferToDepartment: transferToDep,
 		WriteOff:             writeOff,
 		HistoryType:          historyType,
+		Filters:              filters,
+		Sorting:              sorting,
 	}
 }
