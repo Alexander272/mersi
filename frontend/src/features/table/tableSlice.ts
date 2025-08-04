@@ -49,6 +49,9 @@ const tableSlice = createSlice({
 			state.status = action.payload
 		},
 
+		setDefaultSorting: (state, action: PayloadAction<ISort>) => {
+			state.sort = action.payload
+		},
 		setSort: (state, action: PayloadAction<string>) => {
 			if (!state.sort[action.payload]) {
 				state.sort = { ...(state.sort || {}), [action.payload]: 'ASC' }
@@ -117,6 +120,7 @@ export const {
 	setPage,
 	setSize,
 	setStatus,
+	setDefaultSorting,
 	setSort,
 	setFilters,
 	setSearch,

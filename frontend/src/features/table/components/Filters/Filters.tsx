@@ -13,6 +13,11 @@ import { CheckIcon } from '@/components/Icons/CheckSimpleIcon'
 import { Tabs } from './Tabs'
 import { Default } from './Default'
 import { Custom } from './Custom'
+import { useSaveFiltersMutation } from '../../filtersApiSlice'
+import { IFetchError } from '@/app/types/error'
+import { toast } from 'react-toastify'
+import { BoxFallback } from '@/components/Fallback/BoxFallback'
+import { getSection } from '@/features/sections/sectionSlice'
 
 const defaultValue = {
 	field: 'name',
@@ -29,7 +34,10 @@ export const Filters = () => {
 	const { palette } = useTheme()
 
 	const filters = useAppSelector(getFilters)
+	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
+
+	const [save, { isLoading }] = useSaveFiltersMutation()
 
 	const methods = useForm<{ filters: IFilter[] }>()
 	const fieldsMethods = useFieldArray({ control: methods.control, name: 'filters' })
@@ -40,17 +48,24 @@ export const Filters = () => {
 		setFiler(value as 'default')
 	}
 
-	const resetHandler = () => {
+	const resetHandler = async () => {
 		fieldsMethods.remove()
-		dispatch(setFilters([]))
-		toggleHandler()
+		try {
+			await save({ filters: [], section: section?.id || '' }).unwrap()
+			dispatch(setFilters([]))
+		} catch (error) {
+			const fetchError = error as IFetchError
+			toast.error(fetchError.data.message, { autoClose: false })
+		} finally {
+			toggleHandler()
+		}
 	}
 
 	const addNewHandler = () => {
 		fieldsMethods.append(defaultValue)
 	}
 
-	const applyHandler = methods.handleSubmit(form => {
+	const applyHandler = methods.handleSubmit(async form => {
 		console.log('form', form)
 
 		const groupedMap = new Map<string, IFilter[]>()
@@ -67,8 +82,15 @@ export const Filters = () => {
 		const filters: IFilter[] = []
 		groupedMap.forEach(v => filters.push(...v))
 
-		dispatch(setFilters(filters))
-		toggleHandler()
+		try {
+			await save({ filters: filters, section: section?.id || '' }).unwrap()
+			dispatch(setFilters(filters))
+		} catch (error) {
+			const fetchError = error as IFetchError
+			toast.error(fetchError.data.message, { autoClose: false })
+		} finally {
+			toggleHandler()
+		}
 	})
 
 	return (
@@ -108,6 +130,8 @@ export const Filters = () => {
 				}}
 			>
 				<Box>
+					{isLoading && <BoxFallback />}
+
 					<Stack direction={'row'} mb={0.5} justifyContent={'space-between'} alignItems={'center'}>
 						<Typography fontSize={'1.1rem'}>Фильтр</Typography>
 

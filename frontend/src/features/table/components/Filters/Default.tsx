@@ -20,12 +20,13 @@ const months = [
 	'Ноябре',
 	'Декабре',
 ]
+const localKey = 'filters/active'
 
 type ActiveType = 'overdue' | 'month' | 'empty'
 
 export const Default = () => {
 	const [active, setActive] = useState<ActiveType | undefined>(
-		(localStorage.getItem('active') as ActiveType) || undefined
+		(localStorage.getItem(localKey) as ActiveType) || undefined
 	)
 	const [month, setMonth] = useState(dayjs().get('month'))
 
@@ -33,8 +34,8 @@ export const Default = () => {
 
 	const activeHandler = (value: ActiveType) => {
 		setActive(prev => (prev != value ? value : undefined))
-		if (active != value) localStorage.setItem('active', value)
-		else localStorage.removeItem('active')
+		if (active != value) localStorage.setItem(localKey, value)
+		else localStorage.removeItem(localKey)
 		reset()
 		return active != value
 	}

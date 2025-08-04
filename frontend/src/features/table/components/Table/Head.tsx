@@ -1,8 +1,16 @@
-import { JSX } from 'react'
+import { JSX, useEffect, useRef } from 'react'
+import { toast } from 'react-toastify'
 
+import type { IFetchError } from '@/app/types/error'
+import type { ISort } from '../../types/params'
+import { ColWidth, RowHeight } from '../../constants/defaultValues'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useDebounceFunc } from '@/hooks/useDebounceFunc'
+import { useCalcWidth } from '../../utils/calcWidth'
 import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
+import { useGetFiltersQuery, useGetSortQuery, useSaveSortMutation } from '../../filtersApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
+import { getHidden, getSort, setDefaultSorting, setFilters, setSort } from '../../tableSlice'
 import { IColumn } from '@/features/sections/modules/columns/types/columns'
 import { TableCell } from '@/components/Table/TableCell'
 import { TableHead } from '@/components/Table/TableHead'
@@ -12,24 +20,48 @@ import { CellText } from '@/components/CellText/CellText'
 import { Badge } from '@/components/Badge/Badge'
 import { Fallback } from '@/components/Fallback/Fallback'
 import { SortUpIcon } from '@/components/Icons/SortUpIcon'
-import { ColWidth, RowHeight } from '../../constants/defaultValues'
-import { getHidden, getSort, setSort } from '../../tableSlice'
-import { useCalcWidth } from '../../utils/calcWidth'
 
 export const Head = () => {
+	const saving = useRef(false)
 	const section = useAppSelector(getSection)
 	const sort = useAppSelector(getSort)
 	const hidden = useAppSelector(getHidden)
+	const dispatch = useAppDispatch()
 
 	const { data, isFetching } = useGetColumnsQuery(section?.id || '', { skip: !section?.id })
+	const { data: filters } = useGetFiltersQuery(section?.id || '', { skip: !section?.id })
+	const { data: sorting } = useGetSortQuery(section?.id || '', { skip: !section?.id })
+	const [save] = useSaveSortMutation()
+
+	useEffect(() => {
+		if (filters) dispatch(setFilters(filters.data))
+	}, [dispatch, filters])
+	useEffect(() => {
+		if (sorting)
+			dispatch(setDefaultSorting(sorting.data.reduce((acc, v) => ({ ...acc, [v.name]: v.orderType }), {})))
+	}, [dispatch, sorting])
 
 	const { width, hasFewRows } = useCalcWidth(data?.data || [])
 	const height = (hasFewRows ? 2 : 1) * RowHeight
 
-	const dispatch = useAppDispatch()
+	const saveSort = useDebounceFunc(async sort => {
+		const data = Object.keys(sort as ISort).map((k, i) => ({ name: k, orderType: (sort as ISort)[k], count: i }))
+		try {
+			await save({ sort: data, section: section?.id || '' }).unwrap()
+		} catch (error) {
+			const fetchError = error as IFetchError
+			toast.error(fetchError.data.message, { autoClose: false })
+		}
+	}, 5 * 1000)
+	useEffect(() => {
+		if (!saving.current) return
+		saveSort(sort)
+		saving.current = false
+	}, [saveSort, sort])
 
 	const setSortHandler = (field: string) => () => {
 		dispatch(setSort(field))
+		saving.current = true
 	}
 
 	const getCell = (c: IColumn) => {

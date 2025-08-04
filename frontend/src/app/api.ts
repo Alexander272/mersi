@@ -44,6 +44,7 @@ export const API = {
 	responsible: '/responsible' as const,
 	channels: '/channels' as const,
 	filters: '/filters' as const,
+	sorting: '/sorting' as const,
 	users: {
 		base: '/users' as const,
 		sync: '/users/sync' as const,

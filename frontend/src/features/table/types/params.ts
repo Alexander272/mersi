@@ -23,3 +23,9 @@ export interface ISearch {
 	value: string
 	fields: string[]
 }
+
+export interface ISortDTO {
+	name: string
+	orderType: 'ASC' | 'DESC'
+	count: number
+}
