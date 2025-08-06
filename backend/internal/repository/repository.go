@@ -81,6 +81,18 @@ type Filters interface {
 type Sorting interface {
 	postgres.Sorting
 }
+type Department interface {
+	postgres.Department
+}
+type Employee interface {
+	postgres.Employee
+}
+type Responsible interface {
+	postgres.Responsible
+}
+type Users interface {
+	postgres.User
+}
 
 type Repository struct {
 	RuleItem
@@ -109,6 +121,10 @@ type Repository struct {
 	HistoryType
 	Filters
 	Sorting
+	Department
+	Employee
+	Responsible
+	Users
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
@@ -139,5 +155,9 @@ func NewRepository(db *sqlx.DB) *Repository {
 		HistoryType:          postgres.NewHistoryTypeRepo(db),
 		Filters:              postgres.NewFilterRepo(db),
 		Sorting:              postgres.NewSortingRepo(db),
+		Department:           postgres.NewDepartmentRepo(db),
+		Employee:             postgres.NewEmployeeRepo(db),
+		Responsible:          postgres.NewResponsibleRepo(db),
+		Users:                postgres.NewUserRepo(db),
 	}
 }

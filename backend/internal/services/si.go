@@ -31,6 +31,7 @@ func NewSiService(deps *SiDeps) *SIService {
 type SI interface {
 	Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, error)
 	GetById(ctx context.Context, req *models.GetSiByIdDTO) (*models.BaseSI, error)
+	GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error)
 	Create(ctx context.Context, dto *models.SiDTO) error
 	Update(ctx context.Context, dto *models.SiDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
@@ -56,6 +57,14 @@ func (s *SIService) GetById(ctx context.Context, req *models.GetSiByIdDTO) (*mod
 	data := &models.BaseSI{
 		Instrument:   instrument,
 		Verification: verification,
+	}
+	return data, nil
+}
+
+func (s *SIService) GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error) {
+	data, err := s.repo.GetVerification(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get si verification. error: %w", err)
 	}
 	return data, nil
 }

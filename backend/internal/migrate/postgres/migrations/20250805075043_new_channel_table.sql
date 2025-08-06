@@ -1,23 +1,22 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE IF NOT EXISTS public.sections
+CREATE TABLE IF NOT EXISTS public.channels
 (
     id uuid NOT NULL,
-    realm_id uuid NOT NULL,
     name text COLLATE pg_catalog."default" NOT NULL,
-    position integer,
-    bid_type text COLLATE pg_catalog."default" DEFAULT ''::text,
+    description text COLLATE pg_catalog."default" DEFAULT ''::text,
+    most_channel_id text COLLATE pg_catalog."default" NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
-    CONSTRAINT sections_pkey PRIMARY KEY (id)
+    CONSTRAINT channels_pkey PRIMARY KEY (id)
 )
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.sections
+ALTER TABLE IF EXISTS public.channels
     OWNER to postgres;
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS public.sections;
+DROP TABLE IF EXISTS public.channels;
 -- +goose StatementEnd

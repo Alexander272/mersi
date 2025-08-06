@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
+	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -21,6 +22,7 @@ func NewSIRepo(db *sqlx.DB) *SIRepo {
 
 type SI interface {
 	Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, error)
+	GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error)
 }
 
 func (r *SIRepo) formatField(field string) string {
@@ -142,5 +144,54 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 	if err := r.db.SelectContext(ctx, &data, query, params...); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
+	return data, nil
+}
+
+func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error) {
+	query := fmt.Sprintf(`SELECT i.id, i.name, type, factory_number, year_of_issue, state_register, measurement_limits, date, next_date, 
+		notification_channel, bid_type
+		FROM %s AS i
+		LEFT JOIN %s AS s ON s.id=section_id
+		LEFT JOIN %s AS r ON r.id=realm_id
+		LEFT JOIN LATERAL (SELECT date, next_date FROM %s WHERE instrument_id=i.id ORDER BY date DESC, created_at DESC LIMIT 1) AS v ON TRUE
+		LEFT JOIN LATERAL (SELECT date AS write_off FROM %s WHERE instrument_id=i.id) AS w ON TRUE
+		LEFT JOIN LATERAL (SELECT date_start AS preservation FROM %s WHERE instrument_id=i.id AND date_end=0) AS p ON TRUE 
+		LEFT JOIN LATERAL (SELECT date_start AS transferred FROM %s WHERE instrument_id=i.id AND date_end=0) AS t ON TRUE
+ 		WHERE is_active=true AND expiration_notice=true AND notification_channel!='' AND 
+		deleted IS NULL AND write_off IS NULL AND preservation IS NULL AND transferred IS NULL
+		ORDER BY notification_channel, i.position`,
+		InstrumentsTable, SectionTable, RealmTable, VerificationTable, WriteOffTable, PreservationTable, TransferToSaveTable,
+	)
+
+	tmp := []*pq_models.SI{}
+	if err := r.db.SelectContext(ctx, &tmp, query); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+
+	data := []*models.SiVerification{}
+	for i, s := range tmp {
+		si := &models.SI{
+			Id:                   s.Id,
+			Name:                 s.Name,
+			Type:                 s.Type,
+			FactoryNumber:        s.FactoryNumber,
+			YearOfIssue:          s.YearOfIssue,
+			StateRegister:        s.StateRegister,
+			MeasurementLimits:    s.MeasurementLimits,
+			VerificationDate:     s.VerificationDate,
+			NextVerificationDate: s.NextVerificationDate,
+		}
+
+		if i == 0 || data[len(data)-1].NotificationChannel != s.NotificationChannel {
+			data = append(data, &models.SiVerification{
+				NotificationChannel: s.NotificationChannel,
+				BidType:             s.BidType,
+				SI:                  []*models.SI{si},
+			})
+		} else {
+			data[len(data)-1].SI = append(data[len(data)-1].SI, si)
+		}
+	}
+
 	return data, nil
 }

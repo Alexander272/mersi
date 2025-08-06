@@ -34,6 +34,13 @@ type Services struct {
 	HistoryType
 	Filters
 	Sorting
+	Most
+	File
+	Notification
+	Scheduler
+	Department
+	Employee
+	Responsible
 }
 
 type Deps struct {
@@ -47,7 +54,7 @@ func NewServices(deps *Deps) *Services {
 	ruleItem := NewRuleItemService(deps.Repo.RuleItem)
 	rule := NewRuleService(deps.Repo.Rule, ruleItem)
 
-	user := NewUserService(role)
+	user := NewUserService(&UsersDeps{Repo: deps.Repo.Users, Keycloak: deps.Keycloak, Role: role})
 	session := NewSessionService(deps.Keycloak, user)
 	permission := NewPermissionService("configs/privacy.conf", rule, role)
 
@@ -76,6 +83,17 @@ func NewServices(deps *Deps) *Services {
 
 	filters := NewFilterService(deps.Repo.Filters)
 	sorting := NewSortingService(deps.Repo.Sorting)
+
+	department := NewDepartmentService(deps.Repo.Department)
+	employee := NewEmployeeService(deps.Repo.Employee)
+	responsible := NewResponsibleService(deps.Repo.Responsible)
+
+	file := NewFileService()
+	most := NewMostService(deps.BotUrl)
+	notification := NewNotificationService(&NotificationDeps{SI: si})
+	scheduler := NewSchedulerService(&SchedulerDeps{
+		//TODO добавить зависимости
+	})
 
 	return &Services{
 		Role:     role,
@@ -107,5 +125,13 @@ func NewServices(deps *Deps) *Services {
 		HistoryType:          historyType,
 		Filters:              filters,
 		Sorting:              sorting,
+		Department:           department,
+		Employee:             employee,
+		Responsible:          responsible,
+
+		File:         file,
+		Most:         most,
+		Notification: notification,
+		Scheduler:    scheduler,
 	}
 }

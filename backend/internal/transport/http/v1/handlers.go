@@ -8,18 +8,22 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/auth"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/columns"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/context_menu"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/departments"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/employees"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/filters"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/forms"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/history_types"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/preservation"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/realm"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/repair"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/responsible"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sections"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sorting"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/tools_menu"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_dep"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_save"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/user"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/write_off"
 	"github.com/gin-gonic/gin"
 )
@@ -67,4 +71,8 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	history_types.Register(secure, h.services.HistoryType, h.middleware)
 	filters.Register(secure, h.services.Filters, h.middleware)
 	sorting.Register(secure, h.services.Sorting, h.middleware)
+	departments.Register(secure, h.services.Department, h.middleware)
+	employees.Register(secure, h.services.Employee, h.middleware)
+	responsible.Register(secure, h.services.Responsible, h.middleware)
+	user.Register(secure, h.services.User, h.middleware)
 }

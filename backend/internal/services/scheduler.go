@@ -78,7 +78,7 @@ func (s *SchedulerService) Stop() error {
 func (s *SchedulerService) job() {
 	logger.Info("job was started")
 
-	// // принудительное получение инструмента, который не принимают более 20 дней
+	// принудительное получение инструмента, который не принимают больше 20 дней
 	// if err := s.location.ForcedReceiptMany(context.Background()); err != nil {
 	// 	logger.Error("location forced receipt error:", logger.ErrAttr(err))
 	// 	error_bot.Send(nil, err.Error(), nil)

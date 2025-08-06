@@ -26,4 +26,9 @@ const (
 	HistoryTypesTable       = "public.history_types"
 	FiltersTable            = "public.filters"
 	SortingTable            = "public.sorting"
+	ChannelTable            = "public.channels"
+	DepartmentTable         = "public.departments"
+	EmployeeTable           = "public.employee"
+	UserTable               = "public.users"
+	ResponsibleTable        = "public.responsible"
 )

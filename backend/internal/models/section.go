@@ -7,6 +7,7 @@ type Section struct {
 	RealmID   string    `json:"realmId" db:"realm_id"`
 	Name      string    `json:"name" db:"name"`
 	Position  int       `json:"position" db:"position" binding:"required"`
+	BidType   string    `json:"bidType" db:"bid_type"`
 	CreatedAt time.Time `json:"created" db:"created_at"`
 }
 
@@ -28,6 +29,7 @@ type SectionDTO struct {
 	Name        string `json:"name" db:"name" binding:"required"`
 	Position    int    `json:"position" db:"position" binding:"required"`
 	MaxPosition int    `json:"maxPosition" db:"max_position"`
+	BidType     string `json:"bidType" db:"bid_type"`
 	RealmID     string `json:"realmId" db:"realm_id" binding:"required"`
 }
 
