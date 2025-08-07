@@ -4,7 +4,7 @@ type SI struct {
 	Id                        string           `json:"id" db:"id"`
 	Position                  int              `json:"position" db:"position"`
 	Name                      string           `json:"name" db:"name"`
-	DateOfReceipt             int              `json:"dateOfReceipt" db:"date_of_receipt"`
+	DateOfReceipt             int64            `json:"dateOfReceipt" db:"date_of_receipt"`
 	Type                      string           `json:"type" db:"type"`
 	FactoryNumber             string           `json:"factoryNumber" db:"factory_number"`
 	MeasurementLimits         string           `json:"measurementLimits" db:"measurement_limits"`
@@ -19,15 +19,15 @@ type SI struct {
 	ActOfEntering             string           `json:"actOfEntering" db:"act_of_entering"`
 	ActOfEnteringId           string           `json:"actOfEnteringId" db:"act_of_entering_id"`
 	Notes                     string           `json:"notes" db:"notes"`
-	VerificationDate          int              `json:"verificationDate" db:"date"`
-	NextVerificationDate      int              `json:"nextVerificationDate" db:"next_date"`
+	VerificationDate          int64            `json:"verificationDate" db:"date"`
+	NextVerificationDate      int64            `json:"nextVerificationDate" db:"next_date"`
 	Certificate               string           `json:"certificate" db:"certificate"`
 	CertificateId             string           `json:"certificateId" db:"certificate_id"`
 	Repair                    string           `json:"repairInfo" db:"repair"`
-	Preservation              int              `json:"preservationDate" db:"preservation"`
-	DePreservation            int              `json:"dePreservationDate" db:"de_preservation"`
-	TransferDate              int              `json:"transferDate" db:"transfer_date"`
-	ReturnDate                int              `json:"returnDate" db:"return_date"`
+	Preservation              int64            `json:"preservationDate" db:"preservation"`
+	DePreservation            int64            `json:"dePreservationDate" db:"de_preservation"`
+	TransferDate              int64            `json:"transferDate" db:"transfer_date"`
+	ReturnDate                int64            `json:"returnDate" db:"return_date"`
 	TransferToDepartment      string           `json:"transferToDepartment" db:"transfer_to_dep"`
 	WriteOff                  string           `json:"writeOffDetails" db:"write_off"`
 	Status                    InstrumentStatus `json:"status" db:"status"`

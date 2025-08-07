@@ -149,7 +149,7 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 
 func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error) {
 	query := fmt.Sprintf(`SELECT i.id, i.name, type, factory_number, year_of_issue, state_register, measurement_limits, date, next_date, 
-		notification_channel, bid_type
+		inter_verification_interval, manufacturer, notes, notification_channel, bid_type
 		FROM %s AS i
 		LEFT JOIN %s AS s ON s.id=section_id
 		LEFT JOIN %s AS r ON r.id=realm_id
@@ -157,29 +157,33 @@ func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*mo
 		LEFT JOIN LATERAL (SELECT date AS write_off FROM %s WHERE instrument_id=i.id) AS w ON TRUE
 		LEFT JOIN LATERAL (SELECT date_start AS preservation FROM %s WHERE instrument_id=i.id AND date_end=0) AS p ON TRUE 
 		LEFT JOIN LATERAL (SELECT date_start AS transferred FROM %s WHERE instrument_id=i.id AND date_end=0) AS t ON TRUE
- 		WHERE is_active=true AND expiration_notice=true AND notification_channel!='' AND 
+ 		WHERE next_date>=$1 AND next_date<=$2 AND (CASE WHEN $3!='' THEN section_id::text=$3 ELSE true END) AND 
+		is_active=true AND expiration_notice=true AND notification_channel!='' AND 
 		deleted IS NULL AND write_off IS NULL AND preservation IS NULL AND transferred IS NULL
 		ORDER BY notification_channel, i.position`,
 		InstrumentsTable, SectionTable, RealmTable, VerificationTable, WriteOffTable, PreservationTable, TransferToSaveTable,
 	)
 
 	tmp := []*pq_models.SI{}
-	if err := r.db.SelectContext(ctx, &tmp, query); err != nil {
+	if err := r.db.SelectContext(ctx, &tmp, query, req.StartAt, req.FinishAt, req.SectionId); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 
 	data := []*models.SiVerification{}
 	for i, s := range tmp {
 		si := &models.SI{
-			Id:                   s.Id,
-			Name:                 s.Name,
-			Type:                 s.Type,
-			FactoryNumber:        s.FactoryNumber,
-			YearOfIssue:          s.YearOfIssue,
-			StateRegister:        s.StateRegister,
-			MeasurementLimits:    s.MeasurementLimits,
-			VerificationDate:     s.VerificationDate,
-			NextVerificationDate: s.NextVerificationDate,
+			Id:                        s.Id,
+			Name:                      s.Name,
+			Type:                      s.Type,
+			FactoryNumber:             s.FactoryNumber,
+			YearOfIssue:               s.YearOfIssue,
+			StateRegister:             s.StateRegister,
+			MeasurementLimits:         s.MeasurementLimits,
+			VerificationDate:          s.VerificationDate,
+			NextVerificationDate:      s.NextVerificationDate,
+			InterVerificationInterval: s.InterVerificationInterval,
+			Manufacturer:              s.Manufacturer,
+			Notes:                     s.Notes,
 		}
 
 		if i == 0 || data[len(data)-1].NotificationChannel != s.NotificationChannel {

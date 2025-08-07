@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/config"
+	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/go-co-op/gocron/v2"
 )
@@ -87,12 +89,16 @@ func (s *SchedulerService) job() {
 
 	// s.notification.CheckUsedSI()
 	// s.notification.CheckSentSI()
-	// s.notification.CheckVerification()
 
-	// // Синхронизация пользователей с keycloak
-	// if err := s.user.Sync(context.Background()); err != nil {
-	// 	logger.Error("user sync error:", logger.ErrAttr(err))
-	// 	error_bot.Send(nil, err.Error(), nil)
-	// 	return
-	// }
+	if err := s.notification.CheckVerification(); err != nil {
+		logger.Error("notification check verification error:", logger.ErrAttr(err))
+		error_bot.Send(nil, err.Error(), nil)
+	}
+
+	// Синхронизация пользователей с keycloak
+	if err := s.user.Sync(context.Background()); err != nil {
+		logger.Error("user sync error:", logger.ErrAttr(err))
+		error_bot.Send(nil, err.Error(), nil)
+		return
+	}
 }

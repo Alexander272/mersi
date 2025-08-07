@@ -10,6 +10,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/context_menu"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/departments"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/employees"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/export"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/filters"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/forms"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/history_types"
@@ -17,6 +18,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/realm"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/repair"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/responsible"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/roles"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sections"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sorting"
@@ -75,4 +77,6 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	employees.Register(secure, h.services.Employee, h.middleware)
 	responsible.Register(secure, h.services.Responsible, h.middleware)
 	user.Register(secure, h.services.User, h.middleware)
+	roles.Register(secure, h.services.Role, h.middleware)
+	export.Register(secure, h.services.Export, h.middleware)
 }

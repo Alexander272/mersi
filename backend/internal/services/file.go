@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/gomutex/godocx"
 	"github.com/xuri/excelize/v2"
@@ -20,7 +22,7 @@ func NewFileService() *FileService {
 type File interface {
 	Export(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error)
 	MakeDocSchedule(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error)
-	MakeVerificationSchedule(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error)
+	MakeVerificationSchedule(ctx context.Context, dto *models.SiVerification) (*bytes.Buffer, error)
 }
 
 var headerStyle = &excelize.Style{
@@ -95,26 +97,28 @@ func (s *FileService) MakeDocSchedule(ctx context.Context, dto []*models.SI) (*b
 	titles := []string{"№ п/п", "Наименование СИ", "Вид (тип, марка) СИ", "Зав. №", "Комплект СИ, штук", "Комплект СИ, набор", "Год выпуска СИ", "№ Госреестра (рег. номер в ФИФ)", "Метрологические характеристики  (диапазон измерений, разряд, погрешность, класс точности)", "Запрос на поверку СИ в качестве эталона с предоставлением протокола поверки", "Вид поверки"}
 
 	document.AddHeading("Поверка", 1)
+	document.AddEmptyParagraph()
 	table := document.AddTable()
+	table.Style("TableGrid")
 	header := table.AddRow()
 	for _, t := range titles {
-		header.AddCell().AddParagraph(t)
+		header.AddCell().AddParagraph(t).Justification("center")
 	}
 
 	for i, item := range dto {
 		row := table.AddRow()
 
-		row.AddCell().AddParagraph(fmt.Sprintf("%d", i+1))
-		row.AddCell().AddParagraph(item.Name)
-		row.AddCell().AddParagraph(item.Type)
-		row.AddCell().AddParagraph(item.FactoryNumber)
-		row.AddCell().AddParagraph("1")
-		row.AddCell().AddParagraph("-")
-		row.AddCell().AddParagraph(strconv.Itoa(item.YearOfIssue))
-		row.AddCell().AddParagraph(item.StateRegister)
-		row.AddCell().AddParagraph(item.MeasurementLimits)
-		row.AddCell().AddParagraph("Нет")
-		row.AddCell().AddParagraph("Периодическая")
+		row.AddCell().AddParagraph(fmt.Sprintf("%d", i+1)).Justification("center")
+		row.AddCell().AddParagraph(item.Name).Justification("center")
+		row.AddCell().AddParagraph(item.Type).Justification("center")
+		row.AddCell().AddParagraph(item.FactoryNumber).Justification("center")
+		row.AddCell().AddParagraph("1").Justification("center")
+		row.AddCell().AddParagraph("-").Justification("center")
+		row.AddCell().AddParagraph(strconv.Itoa(item.YearOfIssue)).Justification("center")
+		row.AddCell().AddParagraph(item.StateRegister).Justification("center")
+		row.AddCell().AddParagraph(item.MeasurementLimits).Justification("center")
+		row.AddCell().AddParagraph("Нет").Justification("center")
+		row.AddCell().AddParagraph("Периодическая").Justification("center")
 	}
 
 	buffer := new(bytes.Buffer)
@@ -124,7 +128,7 @@ func (s *FileService) MakeDocSchedule(ctx context.Context, dto []*models.SI) (*b
 	return buffer, nil
 }
 
-func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error) {
+func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.SiVerification) (*bytes.Buffer, error) {
 	file := excelize.NewFile()
 	sheetName := file.GetSheetName(file.GetActiveSheetIndex())
 
@@ -138,10 +142,25 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto []*model
 		return nil, fmt.Errorf("failed to create main style. error: %w", err)
 	}
 
-	columnNames := []string{
-		"№ п/п", "Наименование", "Заводской номер", "Диапазон измерений", "Периодичность поверки", "Дата последней поверки",
-		"Дата следующей поверки", "Примечание",
+	columnNames := make([]string, 0, 10)
+	switch dto.BidType {
+	case "ointo_si":
+		columnNames = []string{
+			"№ п/п", "Наименование", "Заводской номер", "Производитель", "Метрологические характеристики СИ", "Периодичность поверки",
+			"Дата последней поверки", "Дата следующей поверки", "Примечание",
+		}
+	case "ointo_eq":
+		columnNames = []string{
+			"№ п/п", "Наименование", "Заводской номер", "Производитель", "Периодичность аттестации",
+			"Дата последней аттестации", "Дата следующей аттестации", "Примечание",
+		}
+	default:
+		columnNames = []string{
+			"№ п/п", "Наименование", "Заводской номер", "Диапазон измерений", "Периодичность поверки", "Дата последней поверки",
+			"Дата следующей поверки", "Примечание",
+		}
 	}
+
 	if err := file.SetSheetRow(sheetName, "A1", &columnNames); err != nil {
 		return nil, fmt.Errorf("failed to set header row. error: %w", err)
 	}
@@ -158,10 +177,27 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto []*model
 		return nil, fmt.Errorf("failed to set header style. error: %w", err)
 	}
 
-	for i, d := range dto {
-		values := []interface{}{
-			i + 1, d.Name, d.FactoryNumber, d.MeasurementLimits, d.InterVerificationInterval,
-			d.VerificationDate, d.NextVerificationDate, d.Notes,
+	for i, d := range dto.SI {
+		values := make([]interface{}, 0, len(columnNames))
+		date := time.Unix(d.VerificationDate, 0).Format(constants.DateFormat)
+		nextDate := time.Unix(d.NextVerificationDate, 0).Format(constants.DateFormat)
+
+		switch dto.BidType {
+		case "ointo_si":
+			values = []interface{}{
+				i + 1, d.Name, d.FactoryNumber, d.Manufacturer, d.MeasurementLimits, d.InterVerificationInterval,
+				date, nextDate, d.Notes,
+			}
+		case "ointo_eq":
+			values = []interface{}{
+				i + 1, d.Name, d.FactoryNumber, d.Manufacturer, d.InterVerificationInterval,
+				date, nextDate, d.Notes,
+			}
+		default:
+			values = []interface{}{
+				i + 1, d.Name, d.FactoryNumber, d.MeasurementLimits, d.InterVerificationInterval,
+				date, nextDate, d.Notes,
+			}
 		}
 
 		if err := file.SetSheetRow(sheetName, fmt.Sprintf("A%d", i+2), &values); err != nil {

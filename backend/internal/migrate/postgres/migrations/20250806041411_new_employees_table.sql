@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS public.employee
     sso_id text COLLATE pg_catalog."default" DEFAULT ''::text,
     channel_id text COLLATE pg_catalog."default" DEFAULT ''::text,
     notes text COLLATE pg_catalog."default" DEFAULT ''::text,
-    CONSTRAINT users_pkey PRIMARY KEY (id),
-    CONSTRAINT users_department_id_fkey FOREIGN KEY (department_id)
+    CONSTRAINT employee_pkey PRIMARY KEY (id),
+    CONSTRAINT employee_department_id_fkey FOREIGN KEY (department_id)
         REFERENCES public.departments (id) MATCH SIMPLE
         ON UPDATE CASCADE
         ON DELETE CASCADE

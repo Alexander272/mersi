@@ -42,7 +42,8 @@ type GetInstrumentByIdDTO struct {
 }
 
 type GetUniqueDTO struct {
-	Field string `json:"field"`
+	Field     string `json:"field"`
+	SectionId string `json:"sectionId" db:"section_id"`
 }
 
 type InstrumentDTO struct {

@@ -2,7 +2,9 @@ package services
 
 import (
 	"github.com/Alexander272/mersi/backend/internal/repository"
+	"github.com/Alexander272/mersi/backend/internal/services/most"
 	"github.com/Alexander272/mersi/backend/pkg/auth"
+	"github.com/Alexander272/mersi/backend/pkg/mattermost"
 )
 
 type Services struct {
@@ -34,19 +36,22 @@ type Services struct {
 	HistoryType
 	Filters
 	Sorting
-	Most
 	File
 	Notification
 	Scheduler
 	Department
 	Employee
 	Responsible
+	Most *most.MostService
+	Export
 }
 
 type Deps struct {
-	Repo     *repository.Repository
-	Keycloak *auth.KeycloakClient
-	BotUrl   string
+	Repo       *repository.Repository
+	Keycloak   *auth.KeycloakClient
+	MostClient *mattermost.Client
+	BotName    string
+	// BotUrl   string
 }
 
 func NewServices(deps *Deps) *Services {
@@ -89,11 +94,15 @@ func NewServices(deps *Deps) *Services {
 	responsible := NewResponsibleService(deps.Repo.Responsible)
 
 	file := NewFileService()
-	most := NewMostService(deps.BotUrl)
-	notification := NewNotificationService(&NotificationDeps{SI: si})
+	// most := NewMostService(deps.MostClient)
+	most := most.NewMostService(most.MostDeps{Client: deps.MostClient})
+	notification := NewNotificationService(&NotificationDeps{SI: si, File: file, Most: most})
 	scheduler := NewSchedulerService(&SchedulerDeps{
+		Notification: notification,
+		User:         user,
 		//TODO добавить зависимости
 	})
+	export := NewExportService(file, si)
 
 	return &Services{
 		Role:     role,
@@ -130,8 +139,9 @@ func NewServices(deps *Deps) *Services {
 		Responsible:          responsible,
 
 		File:         file,
-		Most:         most,
 		Notification: notification,
 		Scheduler:    scheduler,
+		Most:         most,
+		Export:       export,
 	}
 }

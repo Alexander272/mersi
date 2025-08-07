@@ -21,8 +21,9 @@ type FilterValue struct {
 }
 
 type Period struct {
-	StartAt  int64 `json:"startAt"`
-	FinishAt int64 `json:"finishAt"`
+	StartAt   int64  `json:"startAt"`
+	FinishAt  int64  `json:"finishAt"`
+	SectionId string `json:"sectionId"`
 }
 
 type Search struct {

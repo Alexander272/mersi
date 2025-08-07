@@ -19,6 +19,7 @@ import (
 	"github.com/Alexander272/mersi/backend/pkg/auth"
 	"github.com/Alexander272/mersi/backend/pkg/database/postgres"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
+	"github.com/Alexander272/mersi/backend/pkg/mattermost"
 	_ "github.com/lib/pq"
 	"github.com/subosito/gotenv"
 )
@@ -60,20 +61,33 @@ func main() {
 		log.Fatalf("failed to migrate: %s", err.Error())
 	}
 
+	mattermostConf := mattermost.Config{
+		ServerLink: conf.Bot.Server,
+		Token:      conf.Bot.Token,
+		Name:       conf.Bot.BotName,
+	}
+	mostClient := mattermost.NewMattermostClient(mattermostConf)
+
+	_, _, err = mostClient.Http.GetPing()
+	if err != nil {
+		log.Fatalf("failed to ping most. error: %s", err.Error())
+	}
+
 	//* Services, Repos & API Handlers
 	repo := repository.NewRepository(db)
 	services := services.NewServices(&services.Deps{
-		Repo:     repo,
-		Keycloak: keycloak,
-		BotUrl:   conf.Bot.Url,
+		Repo:       repo,
+		Keycloak:   keycloak,
+		MostClient: mostClient,
+		// BotUrl:   conf.Bot.Url,
 	})
 
 	handlers := transport.NewHandler(services, keycloak)
 
 	//* HTTP Server
-	// if err := services.Scheduler.Start(&conf.Scheduler); err != nil {
-	// 	log.Fatalf("failed to start scheduler. error: %s\n", err.Error())
-	// }
+	if err := services.Scheduler.Start(&conf.Scheduler); err != nil {
+		log.Fatalf("failed to start scheduler. error: %s\n", err.Error())
+	}
 
 	srv := server.NewServer(conf, handlers.Init(conf))
 	go func() {
@@ -93,9 +107,9 @@ func main() {
 	ctx, shutdown := context.WithTimeout(context.Background(), timeout)
 	defer shutdown()
 
-	// if err := services.Scheduler.Stop(); err != nil {
-	// 	logger.Error("failed to stop scheduler.", logger.ErrAttr(err))
-	// }
+	if err := services.Scheduler.Stop(); err != nil {
+		logger.Error("failed to stop scheduler.", logger.ErrAttr(err))
+	}
 
 	if err := srv.Stop(ctx); err != nil {
 		logger.Error("failed to stop server:", logger.ErrAttr(err))

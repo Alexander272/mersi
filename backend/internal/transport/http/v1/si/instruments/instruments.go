@@ -68,7 +68,14 @@ func (h *Handler) getUnique(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, "field is empty", "Отправлены некорректные данные")
 		return
 	}
-	req := &models.GetUniqueDTO{Field: field}
+	section := c.Query("section")
+	err := uuid.Validate(section)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Отправлены некорректные данные")
+		return
+	}
+
+	req := &models.GetUniqueDTO{Field: field, SectionId: section}
 
 	data, err := h.service.GetUniqueData(c, req)
 	if err != nil {

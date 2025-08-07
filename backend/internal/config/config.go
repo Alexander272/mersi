@@ -89,8 +89,9 @@ type (
 	}
 
 	BotConfig struct {
-		ReserveChannelId string `yaml:"reserve_channel_id" env:"RESERVE_CHANNEL_ID"`
-		Url              string `yaml:"bot_url" env:"BOT_URL"`
+		Server  string `env:"MOST_SERVER"`
+		Token   string `env:"MOST_TOKEN"`
+		BotName string `env:"BOT_NAME"`
 	}
 )
 
@@ -101,9 +102,9 @@ func Init(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config file. error: %w", err)
 	}
 
-	if err := cleanenv.ReadEnv(&conf); err != nil {
-		return nil, fmt.Errorf("failed to read env file. error: %w", err)
-	}
+	// if err := cleanenv.ReadEnv(&conf); err != nil {
+	// 	return nil, fmt.Errorf("failed to read env file. error: %w", err)
+	// }
 
 	return &conf, nil
 }

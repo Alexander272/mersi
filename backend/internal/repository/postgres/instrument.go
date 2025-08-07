@@ -62,10 +62,12 @@ func (r *InstrumentRepo) GetUniqueData(ctx context.Context, req *models.GetUniqu
 		return nil, fmt.Errorf("field is not allowed")
 	}
 
-	query := fmt.Sprintf(`SELECT DISTINCT(%s) AS item FROM %s`, req.Field, InstrumentsTable)
+	query := fmt.Sprintf(`SELECT DISTINCT(%s) AS item FROM %s WHERE %s!='' AND %s IS NOT NULL AND section_id=$1`,
+		req.Field, InstrumentsTable, req.Field, req.Field,
+	)
 	tmp := []pq_models.UniqueData{}
 
-	if err := r.db.SelectContext(ctx, &tmp, query); err != nil {
+	if err := r.db.SelectContext(ctx, &tmp, query, req.SectionId); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 
