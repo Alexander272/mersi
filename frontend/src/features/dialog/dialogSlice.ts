@@ -15,9 +15,6 @@ export type DialogVariants =
 	| 'CreateDepartment'
 	| 'EditDepartment'
 	| 'Confirm'
-	| 'ViewLocationHistory'
-	| 'ViewVerificationHistory'
-	| 'Period'
 	| 'Documents'
 	| 'Receive'
 	| 'Access'
@@ -30,6 +27,7 @@ export type DialogVariants =
 	| 'AddTransferToDep'
 	| 'History'
 	| 'WriteOff'
+	| 'Schedule'
 
 interface IDialogOptions {
 	isOpen: boolean

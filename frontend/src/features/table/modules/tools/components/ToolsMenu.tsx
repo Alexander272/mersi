@@ -14,6 +14,7 @@ import { CreatePreservationDialog } from '../../preservation/components/Dialogs/
 import { CreateTransferToSaveDialog } from '../../transferToSave/components/Dialogs/Create'
 import { CreateTransferToDepartmentDialog } from '../../transferToDep/components/Dialogs/Create'
 import { CreateWriteOffDialog } from '../../writeOff/components/Dialogs/Create'
+import { ScheduleDialog } from '../../export/components/ScheduleDialog'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
@@ -93,6 +94,7 @@ export const ToolsMenu = () => {
 			<CreateTransferToSaveDialog />
 			<CreateTransferToDepartmentDialog />
 			<CreateWriteOffDialog />
+			<ScheduleDialog />
 		</>
 	)
 }

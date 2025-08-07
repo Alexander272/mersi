@@ -47,11 +47,11 @@ export const AccessesTable: FC<Props> = ({ realm }) => {
 	}
 
 	const updateHandler = (item: IAccesses) => {
-		dispatch(changeDialogIsOpen({ variant: 'Access', isOpen: true, content: { item, realm } }))
+		dispatch(changeDialogIsOpen({ variant: 'Access', isOpen: true, context: { item, realm } }))
 	}
 
 	const addHandler = () => {
-		dispatch(changeDialogIsOpen({ variant: 'Access', isOpen: true, content: { realm } }))
+		dispatch(changeDialogIsOpen({ variant: 'Access', isOpen: true, context: { realm } }))
 	}
 
 	return (

@@ -1,18 +1,30 @@
-import { FC } from 'react'
+import { FC, useState } from 'react'
 import { Autocomplete, TextField } from '@mui/material'
 import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ICreateFormField } from '@/features/sections/modules/form/types/create'
-import { useGetUniqueInstrumentDataQuery } from '../../instrumentApiSlice'
+import { useAppSelector } from '@/hooks/redux'
+import { useLazyGetUniqueInstrumentDataQuery } from '../../instrumentApiSlice'
+import { getSection } from '@/features/sections/sectionSlice'
 
 type Props = {
 	data: ICreateFormField
 }
 
 export const AutocompleteField: FC<Props> = ({ data }) => {
+	const [options, setOptions] = useState<string[]>([])
+	const section = useAppSelector(getSection)
 	const { control } = useFormContext()
 
-	const { data: options, isFetching } = useGetUniqueInstrumentDataQuery(data.field, { skip: !data.field })
+	// const { data: options, isFetching } = useGetUniqueInstrumentDataQuery(data.field, { skip: !data.field })
+
+	const [getUnique, { isLoading }] = useLazyGetUniqueInstrumentDataQuery()
+
+	const focusHandler = async () => {
+		if (!section) return
+		const res = await getUnique({ field: data.field, section: section?.id || '' }).unwrap()
+		setOptions(res.data || [])
+	}
 
 	return (
 		<Controller
@@ -25,12 +37,14 @@ export const AutocompleteField: FC<Props> = ({ data }) => {
 					freeSolo
 					disableClearable
 					autoComplete
-					options={options?.data || []}
-					loading={isFetching}
-					// TODO maybe I have to add icon
+					options={options}
+					loading={isLoading}
+					loadingText='Поиск похожих значений...'
+					noOptionsText='Ничего не найдено'
 					onChange={(_event, value) => {
 						onChange(value)
 					}}
+					onFocus={focusHandler}
 					renderInput={params => (
 						<TextField
 							{...params}

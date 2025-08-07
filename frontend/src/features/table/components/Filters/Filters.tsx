@@ -1,11 +1,16 @@
 import { useRef, useState } from 'react'
 import { Badge, Box, Button, Stack, Tooltip, Typography, useTheme } from '@mui/material'
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form'
+import { toast } from 'react-toastify'
 
+import type { IFetchError } from '@/app/types/error'
 import type { IFilter } from '../../types/params'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { getFilters, setFilters } from '../../tableSlice'
+import { useSaveFiltersMutation } from '../../filtersApiSlice'
+import { getSection } from '@/features/sections/sectionSlice'
+import { getFilters, setFilters, setPage } from '../../tableSlice'
 import { Popover } from '@/components/Popover/Popover'
+import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { FilterIcon } from '@/components/Icons/FilterIcon'
 import { PlusIcon } from '@/components/Icons/PlusIcon'
 import { TimesIcon } from '@/components/Icons/TimesIcon'
@@ -13,11 +18,6 @@ import { CheckIcon } from '@/components/Icons/CheckSimpleIcon'
 import { Tabs } from './Tabs'
 import { Default } from './Default'
 import { Custom } from './Custom'
-import { useSaveFiltersMutation } from '../../filtersApiSlice'
-import { IFetchError } from '@/app/types/error'
-import { toast } from 'react-toastify'
-import { BoxFallback } from '@/components/Fallback/BoxFallback'
-import { getSection } from '@/features/sections/sectionSlice'
 
 const defaultValue = {
 	field: 'name',
@@ -28,7 +28,7 @@ const defaultValue = {
 
 export const Filters = () => {
 	const [open, setOpen] = useState(false)
-	const [filter, setFiler] = useState<'default' | 'custom'>('default')
+	const [filter, setFilter] = useState<'default' | 'custom'>('default')
 	const anchor = useRef(null)
 
 	const { palette } = useTheme()
@@ -45,7 +45,7 @@ export const Filters = () => {
 	const toggleHandler = () => setOpen(prev => !prev)
 
 	const filterHandler = (value: string) => {
-		setFiler(value as 'default')
+		setFilter(value as 'default')
 	}
 
 	const resetHandler = async () => {
@@ -53,6 +53,7 @@ export const Filters = () => {
 		try {
 			await save({ filters: [], section: section?.id || '' }).unwrap()
 			dispatch(setFilters([]))
+			dispatch(setPage(1))
 		} catch (error) {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })
@@ -85,6 +86,7 @@ export const Filters = () => {
 		try {
 			await save({ filters: filters, section: section?.id || '' }).unwrap()
 			dispatch(setFilters(filters))
+			dispatch(setPage(1))
 		} catch (error) {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })

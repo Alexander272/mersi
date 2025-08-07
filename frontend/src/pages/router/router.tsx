@@ -1,11 +1,12 @@
 import { createBrowserRouter, RouteObject } from 'react-router'
 
+import { AppRoutes } from './routes'
 import { Layout } from '@/components/Layout/Layout'
 import { NotFound } from '@/pages/notFound/NotFoundLazy'
 import { Auth } from '@/pages/auth/AuthLazy'
 import { Home } from '@/pages/home/HomeLazy'
 import { Sections } from '@/pages/sections/SectionLazy'
-import { AppRoutes } from './routes'
+import { Realms } from '@/pages//realms/RealmsLazy'
 import PrivateRoute from './PrivateRoute'
 
 const config: RouteObject[] = [
@@ -33,10 +34,10 @@ const config: RouteObject[] = [
 					// 	path: AppRoutes.PLACES,
 					// 	element: <Places />,
 					// },
-					// {
-					// 	path: AppRoutes.REALMS,
-					// 	element: <Realms />,
-					// },
+					{
+						path: AppRoutes.Realm,
+						element: <Realms />,
+					},
 					{
 						path: AppRoutes.Sections,
 						element: <Sections />,

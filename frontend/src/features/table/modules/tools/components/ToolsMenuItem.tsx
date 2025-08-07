@@ -71,7 +71,7 @@ export const ToolsItem: FC<Props> = ({ onClick, item, label }) => {
 
 export const MenuItems = new Map<string, MenuItem>([
 	['export', { el: ToolsItem }],
-	['graphic', { el: ToolsItem }],
+	['graphic', { el: ToolsItem, action: 'Schedule' }],
 	['verification', { el: ToolsItem, action: 'NewVerification' }],
 	['repair-info', { el: ToolsItem, action: 'AddRepair' }],
 	['preservation-info', { el: ToolsItem, action: 'AddPreservation' }],

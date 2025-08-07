@@ -24,6 +24,7 @@ export const TextField: FC<Props> = ({ data }) => {
 						label={data.fieldName}
 						fullWidth
 						error={Boolean(error)}
+						multiline
 						// multiline={NotesField.multiline}
 						// minRows={NotesField.minRows}
 					/>

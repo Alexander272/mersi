@@ -38,8 +38,8 @@ export const AccessDialog = () => {
 
 	return (
 		<Dialog
-			title={(modal?.content as Context)?.item ? 'Редактировать доступ' : 'Добавить доступ'}
-			body={<Form {...(modal?.content as Context)} />}
+			title={(modal?.context as Context)?.item ? 'Редактировать доступ' : 'Добавить доступ'}
+			body={<Form {...(modal?.context as Context)} />}
 			open={modal?.isOpen || false}
 			onClose={closeHandler}
 			maxWidth='xs'

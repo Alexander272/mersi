@@ -20,9 +20,10 @@ const instrumentApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
-		getUniqueInstrumentData: builder.query<{ data: string[] }, string>({
-			query: field => ({
-				url: `${API.si.instruments.unique}/${field}`,
+		getUniqueInstrumentData: builder.query<{ data: string[] }, { field: string; section: string }>({
+			query: data => ({
+				url: `${API.si.instruments.unique}/${data.field}`,
+				params: new URLSearchParams({ section: data.section }),
 			}),
 			providesTags: [{ type: 'Instrument', id: 'Unique' }],
 			onQueryStarted: async (_arg, api) => {
@@ -37,5 +38,9 @@ const instrumentApiSlice = apiSlice.injectEndpoints({
 	}),
 })
 
-export const { useGetInstrumentByIdQuery, useLazyGetInstrumentByIdQuery, useGetUniqueInstrumentDataQuery } =
-	instrumentApiSlice
+export const {
+	useGetInstrumentByIdQuery,
+	useLazyGetInstrumentByIdQuery,
+	useGetUniqueInstrumentDataQuery,
+	useLazyGetUniqueInstrumentDataQuery,
+} = instrumentApiSlice
