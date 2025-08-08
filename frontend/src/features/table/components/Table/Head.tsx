@@ -2,6 +2,7 @@ import { JSX, useEffect, useRef } from 'react'
 import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
+import type { IColumn } from '@/features/sections/modules/columns/types/columns'
 import type { ISort } from '../../types/params'
 import { ColWidth, RowHeight } from '../../constants/defaultValues'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
@@ -10,8 +11,7 @@ import { useCalcWidth } from '../../utils/calcWidth'
 import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
 import { useGetFiltersQuery, useGetSortQuery, useSaveSortMutation } from '../../filtersApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
-import { getHidden, getSort, setDefaultSorting, setFilters, setSort } from '../../tableSlice'
-import { IColumn } from '@/features/sections/modules/columns/types/columns'
+import { getSort, setChangedColumns, setDefaultSorting, setFilters, setSort } from '../../tableSlice'
 import { TableCell } from '@/components/Table/TableCell'
 import { TableHead } from '@/components/Table/TableHead'
 import { TableRow } from '@/components/Table/TableRow'
@@ -20,15 +20,15 @@ import { CellText } from '@/components/CellText/CellText'
 import { Badge } from '@/components/Badge/Badge'
 import { Fallback } from '@/components/Fallback/Fallback'
 import { SortUpIcon } from '@/components/Icons/SortUpIcon'
+import { localKeys } from '@/constants/localKeys'
 
 export const Head = () => {
 	const saving = useRef(false)
 	const section = useAppSelector(getSection)
 	const sort = useAppSelector(getSort)
-	const hidden = useAppSelector(getHidden)
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetColumnsQuery(section?.id || '', { skip: !section?.id })
+	const { data, isFetching } = useGetColumnsQuery({ section: section?.id || '' }, { skip: !section?.id })
 	const { data: filters } = useGetFiltersQuery(section?.id || '', { skip: !section?.id })
 	const { data: sorting } = useGetSortQuery(section?.id || '', { skip: !section?.id })
 	const [save] = useSaveSortMutation()
@@ -40,6 +40,11 @@ export const Head = () => {
 		if (sorting)
 			dispatch(setDefaultSorting(sorting.data.reduce((acc, v) => ({ ...acc, [v.name]: v.orderType }), {})))
 	}, [dispatch, sorting])
+	useEffect(() => {
+		if (!section) return
+		const columns = localStorage.getItem(localKeys.changedColumns(section.id))
+		dispatch(setChangedColumns(columns ? JSON.parse(columns) : undefined))
+	}, [dispatch, section])
 
 	const { width, hasFewRows } = useCalcWidth(data?.data || [])
 	const height = (hasFewRows ? 2 : 1) * RowHeight
@@ -94,12 +99,12 @@ export const Head = () => {
 		const header: JSX.Element[] = []
 
 		data?.data.forEach(c => {
-			if (c.children) {
+			if (c.children && !c?.hidden) {
 				let width = 0
 				const subhead: JSX.Element[] = []
 
 				c.children.forEach(c => {
-					if (!hidden[c.field]) {
+					if (!c?.hidden) {
 						width += c.width || ColWidth
 
 						subhead.push(getCell(c))
@@ -118,7 +123,7 @@ export const Head = () => {
 						</TableGroup>
 					)
 				}
-			} else if (!hidden[c.field]) {
+			} else if (!c?.hidden) {
 				header.push(getCell(c))
 			}
 		})

@@ -49,3 +49,12 @@ export interface ISIFilterValue {
 	compareType: CompareTypes
 	value: string
 }
+
+export interface IChangedColumnData {
+	id: string
+	width: number
+	hidden?: boolean
+}
+export interface IChangedColumns {
+	[id: string]: IChangedColumnData
+}

@@ -9,6 +9,7 @@ export interface IColumn {
 	parentId: string
 	allowSort: boolean
 	allowFilter: boolean
+	hidden?: boolean
 	created: Date
 	children?: IColumn[]
 }

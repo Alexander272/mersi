@@ -4,6 +4,7 @@ import { useFormContext } from 'react-hook-form'
 import dayjs from 'dayjs'
 
 import type { IFilter } from '../../types/params'
+import { localKeys } from '@/constants/localKeys'
 import { Checkbox } from '@/components/Checkbox/Checkbox'
 
 const months = [
@@ -20,13 +21,12 @@ const months = [
 	'Ноябре',
 	'Декабре',
 ]
-const localKey = 'filters/active'
 
 type ActiveType = 'overdue' | 'month' | 'empty'
 
 export const Default = () => {
 	const [active, setActive] = useState<ActiveType | undefined>(
-		(localStorage.getItem(localKey) as ActiveType) || undefined
+		(localStorage.getItem(localKeys.activeFilters) as ActiveType) || undefined
 	)
 	const [month, setMonth] = useState(dayjs().get('month'))
 
@@ -34,8 +34,8 @@ export const Default = () => {
 
 	const activeHandler = (value: ActiveType) => {
 		setActive(prev => (prev != value ? value : undefined))
-		if (active != value) localStorage.setItem(localKey, value)
-		else localStorage.removeItem(localKey)
+		if (active != value) localStorage.setItem(localKeys.activeFilters, value)
+		else localStorage.removeItem(localKeys.activeFilters)
 		reset()
 		return active != value
 	}

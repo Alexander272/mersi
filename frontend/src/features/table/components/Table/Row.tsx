@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
 import { getRealm } from '@/features/realms/realmSlice'
-import { getContextMenu, getHidden, getSelected, getStatus, setContextMenu, setSelected } from '../../tableSlice'
+import { getContextMenu, getSelected, getStatus, setContextMenu, setSelected } from '../../tableSlice'
 import { TableRow } from '@/components/Table/TableRow'
 import { TableCell } from '@/components/Table/TableCell'
 import { CellText } from '@/components/CellText/CellText'
@@ -34,13 +34,12 @@ export const Row: FC<Props> = ({ item, sx }) => {
 	const realm = useAppSelector(getRealm)
 	const selected = useAppSelector(getSelected)
 	const status = useAppSelector(getStatus)
-	const hidden = useAppSelector(getHidden)
 	const contextMenu = useAppSelector(getContextMenu)
 	const dispatch = useAppDispatch()
 
 	const { palette } = useTheme()
 
-	const { data } = useGetColumnsQuery(section?.id || '', { skip: !section?.id })
+	const { data } = useGetColumnsQuery({ section: section?.id || '' }, { skip: !section?.id })
 
 	const selectHandler = () => {
 		dispatch(setSelected(item.id))
@@ -58,9 +57,6 @@ export const Row: FC<Props> = ({ item, sx }) => {
 	const getStyles = () => {
 		const styles = { background: '' }
 		if (status != 'work') return styles
-
-		if (selected[item.id]) styles.background = palette.rowActive.light
-		if (contextMenu?.active == item.id) styles.background = palette.rowActive.main
 
 		if (item.status == 'moved') styles.background = RowColors.moved
 
@@ -83,6 +79,9 @@ export const Row: FC<Props> = ({ item, sx }) => {
 		if (item.preservationDate && !item.dePreservationDate) styles.background = RowColors.preservation
 		if (item.transferDate && !item.returnDate) styles.background = RowColors.save
 
+		if (selected[item.id]) styles.background = palette.rowActive.light
+		if (contextMenu?.active == item.id) styles.background = palette.rowActive.main
+
 		return styles
 	}
 
@@ -94,10 +93,12 @@ export const Row: FC<Props> = ({ item, sx }) => {
 			sx={{ padding: '0 6px', ...sx, ...getStyles() }}
 		>
 			{data?.data.map(c => {
-				if (hidden[c.field]) return null
+				if (c?.hidden) return null
 				if (c.children) {
-					if (hidden[c.field]) return null
-					return c.children.map(c => <Cell key={c.id} item={item} col={c} />)
+					return c.children.map(c => {
+						if (c?.hidden) return null
+						return <Cell key={c.id} item={item} col={c} />
+					})
 				}
 				return <Cell key={c.id} item={item} col={c} />
 			})}

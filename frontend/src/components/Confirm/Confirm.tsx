@@ -1,4 +1,4 @@
-import { FC, MouseEvent, useRef, useState } from 'react'
+import { FC, JSX, MouseEvent, useRef, useState } from 'react'
 import { Box, Button, Popover, Stack, Typography, useTheme } from '@mui/material'
 import { WarningIcon } from '../Icons/WarningIcon'
 

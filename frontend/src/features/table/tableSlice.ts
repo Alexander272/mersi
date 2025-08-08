@@ -1,11 +1,13 @@
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit'
 
-import type { IContextMenu, ISelect } from './types/table'
+import type { IChangedColumns, IContextMenu, ISelect } from './types/table'
 import type { IFilter, ISearch, ISort } from './types/params'
 import type { Status } from './types/si'
 import { Size } from '@/constants/defaultValues'
 import { RootState } from '@/app/store'
 import { localKeys } from './constants/storage'
+import { setSection } from '../sections/sectionSlice'
+import { setRealm } from '../realms/realmSlice'
 
 interface ITableSlice {
 	page: number
@@ -16,6 +18,7 @@ interface ITableSlice {
 	search: ISearch
 	selected: ISelect
 	contextMenu?: IContextMenu
+	changeColumns?: IChangedColumns
 	hidden: ISelect
 }
 
@@ -95,11 +98,36 @@ const tableSlice = createSlice({
 			else state.hidden = {}
 			localStorage.setItem(localKeys.hidden, JSON.stringify(state.hidden))
 		},
+		setChangedColumns: (state, action: PayloadAction<IChangedColumns | undefined>) => {
+			state.changeColumns = action.payload
+		},
 
 		resetTable: () => {
 			localStorage.removeItem(localKeys.page)
 			return initialState
 		},
+	},
+	extraReducers: builder => {
+		builder.addCase(setFilters, state => {
+			state.page = 1
+			state.selected = {}
+		})
+		builder.addCase(setSearch, state => {
+			state.page = 1
+			state.selected = {}
+		})
+		builder.addCase(setStatus, state => {
+			state.page = 1
+			state.selected = {}
+		})
+		builder.addCase(setSection, state => {
+			state.page = 1
+			state.selected = {}
+		})
+		builder.addCase(setRealm, state => {
+			state.page = 1
+			state.selected = {}
+		})
 	},
 })
 
@@ -111,6 +139,7 @@ export const getFilters = (state: RootState) => state.table.filters
 export const getSearch = (state: RootState) => state.table.search
 export const getSelected = (state: RootState) => state.table.selected
 export const getContextMenu = (state: RootState) => state.table.contextMenu
+export const getChangedColumns = (state: RootState) => state.table.changeColumns
 export const getHidden = (state: RootState) => state.table.hidden
 
 export const tablePath = tableSlice.name
@@ -127,6 +156,7 @@ export const {
 	setSearchFields,
 	setSelected,
 	setContextMenu,
+	setChangedColumns,
 	setHidden,
 	resetTable,
 } = tableSlice.actions

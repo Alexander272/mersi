@@ -7,6 +7,8 @@ import dayjs from 'dayjs'
 import type { IFilter } from '../../types/params'
 import { useGetUniqueInstrumentDataQuery } from '../../instrumentApiSlice'
 import { DateTextField } from '@/components/DatePicker/DatePicker'
+import { useAppSelector } from '@/hooks/redux'
+import { getSection } from '@/features/sections/sectionSlice'
 
 type Props = {
 	index: number
@@ -174,11 +176,15 @@ const DateFilter: FC<Props> = ({ index }) => {
 }
 
 const AutocompleteFilter: FC<Props> = ({ index }) => {
+	const section = useAppSelector(getSection)
 	const { control, setValue, watch } = useFormContext<{ filters: IFilter[] }>()
 	const field = watch(`filters.${index}.field`)
 	const value = watch(`filters.${index}.value`)
 
-	const { data: options, isFetching } = useGetUniqueInstrumentDataQuery(field, { skip: !field })
+	const { data: options, isFetching } = useGetUniqueInstrumentDataQuery(
+		{ field, section: section?.id || '' },
+		{ skip: !field || !section?.id }
+	)
 
 	useEffect(() => {
 		if (options?.data.length && value == '') setValue(`filters.${index}.value`, options?.data[0])

@@ -5,10 +5,11 @@ import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
 import type { IFilter } from '../../types/params'
+import { localKeys } from '@/constants/localKeys'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useSaveFiltersMutation } from '../../filtersApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
-import { getFilters, setFilters, setPage } from '../../tableSlice'
+import { getFilters, setFilters } from '../../tableSlice'
 import { Popover } from '@/components/Popover/Popover'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { FilterIcon } from '@/components/Icons/FilterIcon'
@@ -52,8 +53,8 @@ export const Filters = () => {
 		fieldsMethods.remove()
 		try {
 			await save({ filters: [], section: section?.id || '' }).unwrap()
+			localStorage.removeItem(localKeys.activeFilters)
 			dispatch(setFilters([]))
-			dispatch(setPage(1))
 		} catch (error) {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })
@@ -86,7 +87,6 @@ export const Filters = () => {
 		try {
 			await save({ filters: filters, section: section?.id || '' }).unwrap()
 			dispatch(setFilters(filters))
-			dispatch(setPage(1))
 		} catch (error) {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })

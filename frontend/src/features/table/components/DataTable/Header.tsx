@@ -10,6 +10,7 @@ import { Search } from '../Search/Search'
 import { Filters } from '../Filters/Filters'
 import { FastSelect } from '../Select/FastSelect'
 import { Status } from '../Status/Status'
+import { Setting } from '../Setting/SettingLazy'
 
 export const Header = () => {
 	const { palette } = useTheme()
@@ -35,7 +36,7 @@ export const Header = () => {
 			<Search />
 
 			<Stack direction={'row'} spacing={2}>
-				{/* <Setting />*/}
+				<Setting />
 				<FastSelect />
 				<Filters />
 

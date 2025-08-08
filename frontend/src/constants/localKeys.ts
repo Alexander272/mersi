@@ -1,14 +1,16 @@
 export const localKeys = Object.freeze({
-	page: 'si_accounting/page' as const,
-	size: 'si_accounting/size' as const,
-	sort: 'si_accounting/sort' as const,
-	filter: 'si_accounting/filter' as const,
-	hidden: 'si_accounting/hidden' as const,
-	columns: 'si_accounting/columns' as const,
+	page: 'mersi/page' as const,
+	size: 'mersi/size' as const,
+	sort: 'mersi/sort' as const,
+	filter: 'mersi/filter' as const,
+	hidden: 'mersi/hidden' as const,
+	columns: 'mersi/columns' as const,
+	activeFilters: 'mersi/filters/active' as const,
+	changedColumns: (key: string) => `mersi/changedColumns/${key}` as const,
 
-	instrument: 'si_accounting/new/instrument' as const,
-	verification: 'si_accounting/new/verification' as const,
-	location: 'si_accounting/new/location' as const,
+	instrument: 'mersi/new/instrument' as const,
+	verification: 'mersi/new/verification' as const,
+	location: 'mersi/new/location' as const,
 })
 
 export const DraftKey = 'draft'

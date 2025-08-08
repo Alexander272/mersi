@@ -63,7 +63,7 @@ const defaultValues: IColumnDTO = {
 	field: '',
 	position: 0,
 	width: 200,
-	type: '',
+	type: 'text',
 	allowSort: true,
 	allowFilter: true,
 }

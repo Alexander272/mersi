@@ -23,7 +23,7 @@ type Props = {
 export const Columns: FC<Props> = ({ section }) => {
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetColumnsQuery(section, { skip: !section })
+	const { data, isFetching } = useGetColumnsQuery({ section, original: true }, { skip: !section })
 	const [updateColumns, { isLoading }] = useUpdateColumnPositionsMutation()
 
 	const methods = useForm<{ data: IColumn[] }>({ values: { data: data?.data || [] } })

@@ -17,7 +17,7 @@ export const Body = () => {
 	const size = useAppSelector(getTableSize)
 
 	const { data, isFetching, isLoading } = useGetSI()
-	const { data: columns } = useGetColumnsQuery(section?.id || '', { skip: !section?.id })
+	const { data: columns } = useGetColumnsQuery({ section: section?.id || '' }, { skip: !section?.id })
 
 	const { width } = useCalcWidth(columns?.data || [])
 

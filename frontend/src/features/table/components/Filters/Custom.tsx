@@ -68,7 +68,7 @@ const FilterItem: FC<FilterItemProps> = ({ index, remove }) => {
 	const methods = useFormContext<{ filters: IFilter[] }>()
 	const type = methods.watch(`filters.${index}.fieldType`)
 
-	const { data } = useGetColumnsQuery(section?.id || '', { skip: !section?.id })
+	const { data } = useGetColumnsQuery({ section: section?.id || '', original: true }, { skip: !section?.id })
 
 	const removeHandler = () => remove(index)
 
