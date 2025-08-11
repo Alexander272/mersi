@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -20,7 +22,7 @@ func NewFileService() *FileService {
 }
 
 type File interface {
-	Export(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error)
+	Export(ctx context.Context, dto *models.ExportDTO) (*bytes.Buffer, error)
 	MakeDocSchedule(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error)
 	MakeVerificationSchedule(ctx context.Context, dto *models.SiVerification) (*bytes.Buffer, error)
 }
@@ -50,19 +52,31 @@ var cellStyle = &excelize.Style{
 	},
 }
 
-func (s *FileService) Export(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error) {
-	// file := excelize.NewFile()
-	// sheetName := file.GetSheetName(file.GetActiveSheetIndex())
+func (s *FileService) Export(ctx context.Context, dto *models.ExportDTO) (buffer *bytes.Buffer, err error) {
+	//TODO похоже придется делать через reflect
+	/*
+		// Get reflect.Value of the struct
+		v := reflect.ValueOf(p)
 
-	// headerStyle, err := file.NewStyle(headerStyle)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to create header style. error: %w", err)
-	// }
+		// Get reflect.Value of the field by name
+		field := v.FieldByName(fieldName)
 
-	// mainStyle, err := file.NewStyle(cellStyle)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to create main style. error: %w", err)
-	// }
+		// Check if the field was found
+		if field.IsValid() {}
+	*/
+
+	file := excelize.NewFile()
+	sheetName := file.GetSheetName(file.GetActiveSheetIndex())
+
+	headerStyle, err := file.NewStyle(headerStyle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create header style. error: %w", err)
+	}
+
+	mainStyle, err := file.NewStyle(cellStyle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create main style. error: %w", err)
+	}
 
 	// //TODO колонки же зависят от области
 	// columnNames := []string{
@@ -72,20 +86,103 @@ func (s *FileService) Export(ctx context.Context, dto []*models.SI) (*bytes.Buff
 	// if err := file.SetSheetRow(sheetName, "A1", &columnNames); err != nil {
 	// 	return nil, fmt.Errorf("failed to set header row. error: %w", err)
 	// }
+	flatColumns := []*models.Column{}
+	columnNames := []string{}
+	for _, column := range dto.Columns {
+		if len(column.Children) > 0 {
+			for _, child := range column.Children {
+				columnNames = append(columnNames, child.Name)
+				flatColumns = append(flatColumns, child)
+			}
+			continue
+		}
+		columnNames = append(columnNames, column.Name)
+		flatColumns = append(flatColumns, column)
+	}
+	if err := file.SetSheetRow(sheetName, "A1", &columnNames); err != nil {
+		return nil, fmt.Errorf("failed to set header row. error: %w", err)
+	}
 
-	// endColumn, err := excelize.ColumnNumberToName(len(columnNames))
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to get column name. error: %w", err)
-	// }
+	endColumn, err := excelize.ColumnNumberToName(len(columnNames))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get column name. error: %w", err)
+	}
 
-	// if err := file.SetColWidth(sheetName, "A", endColumn, 25); err != nil {
-	// 	return nil, fmt.Errorf("failed to set column width. error: %w", err)
-	// }
-	// if err = file.SetCellStyle(sheetName, "A1", endColumn+"1", headerStyle); err != nil {
-	// 	return nil, fmt.Errorf("failed to set header style. error: %w", err)
-	// }
+	if err := file.SetColWidth(sheetName, "A", endColumn, 25); err != nil {
+		return nil, fmt.Errorf("failed to set column width. error: %w", err)
+	}
+	if err = file.SetCellStyle(sheetName, "A1", endColumn+"1", headerStyle); err != nil {
+		return nil, fmt.Errorf("failed to set header style. error: %w", err)
+	}
 
-	return nil, fmt.Errorf("not implemented")
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("unexpected error: %v", r)
+		}
+	}()
+
+	for i, d := range dto.SI {
+		values := []interface{}{}
+		data := reflect.ValueOf(d)
+
+		if data.Kind() == reflect.Ptr {
+			data = data.Elem() // Dereference the pointer
+		}
+
+		for _, c := range flatColumns {
+			// if len(c.Children) > 0 {
+			// 	for _, child := range c.Children {
+			// 		field := data.FieldByName(child.Field)
+
+			// 		if field.IsValid() {
+			// 			values = append(values, field.Interface())
+			// 		} else {
+			// 			return nil, fmt.Errorf("field %s not found", child.Field)
+			// 		}
+			// 	}
+			// 	continue
+			// }
+
+			field := strings.ToUpper(c.Field[:1]) + c.Field[1:]
+			value := data.FieldByName(field)
+
+			if value.IsValid() {
+				if value.Kind() == reflect.Int64 && c.Type == "date" {
+					newValue := value.Int()
+					if newValue == 0 {
+						values = append(values, "")
+						continue
+					}
+
+					date := time.Unix(newValue, 0).Format(constants.DateFormat)
+					values = append(values, date)
+					continue
+				}
+
+				values = append(values, value.Interface())
+			} else {
+				return nil, fmt.Errorf("field %s not found", field)
+			}
+		}
+
+		// values := []interface{}{
+		// 	d.Name, d.Type, d.FactoryNumber, d.MeasurementLimits, d.Accuracy, d.StateRegister, d.Manufacturer, d.YearOfIssue, d.Date,
+		// 	d.InterVerificationInterval, d.NextDate, d.Place, d.Person, d.Notes,
+		// }
+
+		if err := file.SetSheetRow(sheetName, fmt.Sprintf("A%d", i+2), &values); err != nil {
+			return nil, fmt.Errorf("failed to set header row. error: %w", err)
+		}
+		if err = file.SetCellStyle(sheetName, fmt.Sprintf("A%d", i+2), fmt.Sprintf("%s%d", endColumn, i+2), mainStyle); err != nil {
+			return nil, fmt.Errorf("failed to set style. error: %w", err)
+		}
+	}
+
+	buffer, err = file.WriteToBuffer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to write to buffer. error: %w", err)
+	}
+	return buffer, nil
 }
 
 func (s *FileService) MakeDocSchedule(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error) {

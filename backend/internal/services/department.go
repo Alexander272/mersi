@@ -82,6 +82,9 @@ func (s *DepartmentService) Update(ctx context.Context, department *models.Depar
 }
 
 func (s *DepartmentService) Delete(ctx context.Context, id string) error {
+	//TODO при удалении подразделения надо записать его название в таблицу с перемещениями (чтобы оно сохранилось в истории)
+	// и надо записать фио всех работников в этом подразделении тк они тоже удаляться
+
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete department. error: %w", err)
 	}

@@ -23,13 +23,13 @@ type SI struct {
 	NextVerificationDate      int64            `json:"nextVerificationDate" db:"next_date"`
 	Certificate               string           `json:"certificate" db:"certificate"`
 	CertificateId             string           `json:"certificateId" db:"certificate_id"`
-	Repair                    string           `json:"repairInfo" db:"repair"`
-	Preservation              int64            `json:"preservationDate" db:"preservation"`
-	DePreservation            int64            `json:"dePreservationDate" db:"de_preservation"`
+	RepairInfo                string           `json:"repairInfo" db:"repair"`
+	PreservationDate          int64            `json:"preservationDate" db:"preservation"`
+	DePreservationDate        int64            `json:"dePreservationDate" db:"de_preservation"`
 	TransferDate              int64            `json:"transferDate" db:"transfer_date"`
 	ReturnDate                int64            `json:"returnDate" db:"return_date"`
 	TransferToDepartment      string           `json:"transferToDepartment" db:"transfer_to_dep"`
-	WriteOff                  string           `json:"writeOffDetails" db:"write_off"`
+	WriteOff                  string           `json:"writeOff" db:"write_off"`
 	Status                    InstrumentStatus `json:"status" db:"status"`
 	//TODO дописать оставшиеся поля
 

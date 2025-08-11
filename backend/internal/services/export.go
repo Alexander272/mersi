@@ -3,24 +3,52 @@ package services
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 )
 
 type ExportService struct {
-	file File
-	si   SI
+	file    File
+	si      SI
+	columns Columns
 }
 
-func NewExportService(file File, si SI) *ExportService {
+type ExportDeps struct {
+	File    File
+	SI      SI
+	Columns Columns
+}
+
+func NewExportService(deps *ExportDeps) *ExportService {
 	return &ExportService{
-		file: file,
-		si:   si,
+		file:    deps.File,
+		si:      deps.SI,
+		columns: deps.Columns,
 	}
 }
 
 type Export interface {
+	Export(ctx context.Context, req *models.GetSiDTO) (*bytes.Buffer, error)
 	MakeScheduler(ctx context.Context, req *models.Period) (*bytes.Buffer, error)
+}
+
+func (s *ExportService) Export(ctx context.Context, req *models.GetSiDTO) (*bytes.Buffer, error) {
+	columns, err := s.columns.Get(ctx, &models.GetColumnsDTO{SectionID: req.SectionId})
+	if err != nil {
+		return nil, err
+	}
+
+	si, err := s.si.Get(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer, err := s.file.Export(ctx, &models.ExportDTO{Columns: columns, SI: si})
+	if err != nil {
+		return nil, fmt.Errorf("failed to export. error: %w", err)
+	}
+	return buffer, nil
 }
 
 func (s *ExportService) MakeScheduler(ctx context.Context, req *models.Period) (*bytes.Buffer, error) {

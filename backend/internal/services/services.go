@@ -102,7 +102,11 @@ func NewServices(deps *Deps) *Services {
 		User:         user,
 		//TODO добавить зависимости
 	})
-	export := NewExportService(file, si)
+	export := NewExportService(&ExportDeps{
+		File:    file,
+		SI:      si,
+		Columns: columns,
+	})
 
 	return &Services{
 		Role:     role,
