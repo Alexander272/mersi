@@ -85,50 +85,6 @@ const filesApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
-
-		// export: builder.query<null, ISIParams>({
-		// 	queryFn: async (params, _api, _, baseQuery) => {
-		// 		const filename = `Список инструментов от ${dayjs().format('DD-MM-YYYY')}.xlsx`
-		// 		const result = await baseQuery({
-		// 			url: API.si.export,
-		// 			params: buildSiUrlParams(params),
-		// 			cache: 'no-cache',
-		// 			responseHandler: response => (response.status === HttpCodes.OK ? response.blob() : response.json()),
-		// 		})
-
-		// 		if (result.error) {
-		// 			console.log(result.error)
-		// 			const fetchError = result.error as IFetchError
-		// 			toast.error(fetchError.data.message, { autoClose: false })
-		// 		}
-
-		// 		if (result.data instanceof Blob) saveAs(result.data, filename)
-		// 		return { data: null }
-		// 	},
-		// }),
-		// getVerificationSchedule: builder.query<null, IPeriodForm>({
-		// 	queryFn: async (params, _api, _, baseQuery) => {
-		// 		const filename = `График поверки от ${dayjs().format('DD-MM-YYYY')}.xlsx`
-		// 		const result = await baseQuery({
-		// 			url: API.si.schedule,
-		// 			params: new URLSearchParams({
-		// 				'period[gte]': params.gte.toString(),
-		// 				'period[lte]': params.lte.toString(),
-		// 			}),
-		// 			cache: 'no-cache',
-		// 			responseHandler: response => (response.status === HttpCodes.OK ? response.blob() : response.json()),
-		// 		})
-
-		// 		if (result.error) {
-		// 			console.log(result.error)
-		// 			const fetchError = result.error as IFetchError
-		// 			toast.error(fetchError.data.message, { autoClose: false })
-		// 		}
-
-		// 		if (result.data instanceof Blob) saveAs(result.data, filename)
-		// 		return { data: null }
-		// 	},
-		// }),
 	}),
 })
 
@@ -137,6 +93,4 @@ export const {
 	useUploadFilesMutation,
 	useLazyDownloadFileQuery,
 	useDeleteFileMutation,
-	// useLazyExportQuery,
-	// useLazyGetVerificationScheduleQuery,
 } = filesApiSlice

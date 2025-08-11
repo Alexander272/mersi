@@ -28,6 +28,7 @@ export type DialogVariants =
 	| 'History'
 	| 'WriteOff'
 	| 'Schedule'
+	| 'Export'
 
 interface IDialogOptions {
 	isOpen: boolean

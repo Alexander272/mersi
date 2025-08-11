@@ -15,6 +15,7 @@ import { CreateTransferToSaveDialog } from '../../transferToSave/components/Dial
 import { CreateTransferToDepartmentDialog } from '../../transferToDep/components/Dialogs/Create'
 import { CreateWriteOffDialog } from '../../writeOff/components/Dialogs/Create'
 import { ScheduleDialog } from '../../export/components/ScheduleDialog'
+import { ExportDialog } from '../../export/components/ExportDialog'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
@@ -95,6 +96,7 @@ export const ToolsMenu = () => {
 			<CreateTransferToDepartmentDialog />
 			<CreateWriteOffDialog />
 			<ScheduleDialog />
+			<ExportDialog />
 		</>
 	)
 }
