@@ -20,6 +20,8 @@ type CreatePostDTO struct {
 type UpdatePostDTO struct {
 	PostId      string                   `json:"postId" binding:"required"`
 	Message     string                   `json:"message" binding:"required"`
+	IsPinned    bool                     `json:"isPinned"`
+	FileIds     []string                 `json:"fileIds"`
 	Props       []*Props                 `json:"props"`
 	Actions     []*model.PostAction      `json:"actions"`
 	Attachments []*model.SlackAttachment `json:"attachments"`
@@ -40,6 +42,17 @@ type UploadFileDTO struct {
 type Props struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+type DialogResponse struct {
+	Type       string          `json:"type"`
+	CallbackID string          `json:"callback_id"`
+	State      string          `json:"state"`
+	UserID     string          `json:"user_id"`
+	ChannelID  string          `json:"channel_id"`
+	TeamID     string          `json:"team_id"`
+	Submission map[string]bool `json:"submission"`
+	Cancelled  bool            `json:"cancelled"`
 }
 
 type PostAction struct {

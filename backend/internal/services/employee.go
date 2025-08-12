@@ -127,7 +127,12 @@ func (s *EmployeeService) Update(ctx context.Context, employee *models.WriteEmpl
 }
 
 func (s *EmployeeService) Delete(ctx context.Context, id string) error {
+	// candidate, err := s.GetById(ctx, id)
+	// if err != nil {
+	// 	return err
+	// }
 	//TODO при удалении сотрудника надо записать его фио в таблицу с перемещениями (чтобы оно сохранилось в истории)
+	//TODO надо еще запрещать удалять сотрудника, если у него числится инструмент
 
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete employee. error: %w", err)

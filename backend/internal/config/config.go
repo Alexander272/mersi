@@ -80,7 +80,11 @@ type (
 	NotificationConfig struct {
 		StartTime int           `yaml:"start_time" env-default:"12"` // 12 hours (noon)
 		Interval  time.Duration `yaml:"interval" env-default:"24h"`
+		CheckUsed UsedConfig    `yaml:"check_used"`
 		// Times     []*models.NotificationTime `yaml:"times"`
+	}
+	UsedConfig struct {
+		Times []time.Duration `yaml:"times"`
 	}
 
 	ErrorBotConfig struct {

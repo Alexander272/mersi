@@ -30,6 +30,9 @@ type SI struct {
 	ReturnDate                int64            `json:"returnDate" db:"return_date"`
 	TransferToDepartment      string           `json:"transferToDepartment" db:"transfer_to_dep"`
 	WriteOff                  string           `json:"writeOff" db:"write_off"`
+	Person                    string           `json:"person" db:"person"`
+	Place                     string           `json:"place" db:"place"`
+	LastPlace                 string           `json:"lastPlace" db:"last_place"`
 	Status                    InstrumentStatus `json:"status" db:"status"`
 	//TODO дописать оставшиеся поля
 
@@ -69,4 +72,11 @@ type SiVerification struct {
 	SI                  []*SI
 	NotificationChannel string `json:"notification" db:"notification_channel"`
 	BidType             string `json:"bidType" db:"bid_type"`
+}
+
+type SiReceiving struct {
+	PostId  string
+	Status  string
+	Channel string
+	SI      []*SI
 }

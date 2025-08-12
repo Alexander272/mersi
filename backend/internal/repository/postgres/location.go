@@ -5,9 +5,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type LocationRepo struct {
@@ -20,7 +25,37 @@ func NewLocationRepo(db *sqlx.DB) *LocationRepo {
 	}
 }
 
-type Location interface{}
+type Location interface {
+	Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error)
+	GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
+	SelectByDepartment(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error)
+	Create(ctx context.Context, dto *models.LocationDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.LocationDTO) error
+	Update(ctx context.Context, dto *models.LocationDTO) error
+	Receiving(ctx context.Context, dto *models.ReceivingDTO) error
+	ForcedReceipt(ctx context.Context, dto *models.ForcedReceiptDTO) error
+	ForcedReceiptAll(ctx context.Context) error
+	Delete(ctx context.Context, dto *models.DeleteLocationDTO) error
+}
+
+func (r *LocationRepo) Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, status, date_of_receiving, date_of_issue, need_confirmed, has_confirmed,
+		COALESCE(person, e.name, '') AS person, COALESCE(place, d.name, '') AS place,
+		COALESCE(person_id::text, '') AS person_id, COALESCE(department_id::text, '') AS department_id
+		FROM %s AS l WHERE instrument_id=$1 
+		LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.person_id::uuid=id) AS e ON true
+		LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.department_id::uuid=id) AS d ON true
+		ORDER BY date_of_issue DESC, created_at DESC, id`,
+		LocationTable, EmployeeTable, DepartmentTable,
+	)
+	data := []*models.Location{}
+
+	if err := r.db.SelectContext(ctx, &data, query, dto.InstrumentId); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+
+	return data, nil
+}
 
 func (r *LocationRepo) GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed,
@@ -28,14 +63,183 @@ func (r *LocationRepo) GetLast(ctx context.Context, dto *models.GetLocationDTO) 
 		FROM %s WHERE instrument_id=$1 ORDER BY date_of_issue DESC, created_at DESC LIMIT 1`,
 		LocationTable,
 	)
-	location := &models.Location{}
+	data := &models.Location{}
 
-	if err := r.db.GetContext(ctx, location, query, dto.InstrumentId); err != nil {
+	if err := r.db.GetContext(ctx, data, query, dto.InstrumentId); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRows
 		}
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 
-	return location, nil
+	return data, nil
+}
+
+func (r *LocationRepo) SelectByDepartment(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error) {
+	query := fmt.Sprintf(`SELECT s.instrument_id FROM %s AS m 
+		LEFT JOIN LATERAL (SELECT instrument_id, department_id  FROM %s WHERE instrument_id=m.instrument_id 
+			ORDER BY date_of_issue DESC, created_at DESC LIMIT 1) AS s ON TRUE
+		WHERE s.instrument_id=ANY($1) AND s.department_id=ANY($2) AND status=$3`,
+		LocationTable, LocationTable,
+	)
+	if dto.Status == "" {
+		dto.Status = constants.LocationStatusUsed
+	}
+	data := []*models.Location{}
+
+	if err := r.db.SelectContext(ctx, &data, query, pq.Array(dto.InstrumentIds), pq.Array(dto.DepartmentIds), dto.Status); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+
+	instruments := []string{}
+	for _, l := range data {
+		instruments = append(instruments, l.InstrumentId)
+	}
+	return instruments, nil
+}
+
+func (r *LocationRepo) Create(ctx context.Context, dto *models.LocationDTO) error {
+	query := fmt.Sprintf(`INSERT INTO %s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, 
+		person_id, department_id, last_place_id, user_id)
+		SELECT id::uuid, instrument_id::uuid, date_of_issue::integer, date_of_receiving::integer, status, need_confirmed::boolean, person_id::uuid, 
+			s.department_id::uuid, COALESCE(m.department_id::text, ''), s.user_id::uuid
+		FROM (VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9))
+		AS s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, person_id, department_id, user_id) 
+		LEFT JOIN LATERAL (SELECT place, department_id FROM %s WHERE instrument_id=s.instrument_id::uuid ORDER BY created_at DESC LIMIT 1) AS m ON true`,
+		LocationTable, LocationTable,
+	)
+	dto.Id = uuid.NewString()
+
+	status := dto.Status
+	if status == "" {
+		status = constants.LocationStatusUsed
+	}
+
+	var personId *string = &dto.PersonId
+	if dto.PersonId == "" {
+		personId = nil
+	}
+	var departmentId *string = &dto.DepartmentId
+	if dto.DepartmentId == "" {
+		departmentId = nil
+	}
+
+	args := []interface{}{dto.Id, dto.InstrumentId, dto.DateOfIssue, dto.DateOfReceiving, status, dto.NeedConfirmed, personId, departmentId, dto.UserId}
+	_, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *LocationRepo) CreateSeveral(ctx context.Context, dto []*models.LocationDTO) error {
+	args := make([]interface{}, 0)
+	values := make([]string, 0, len(dto))
+	for i, v := range dto {
+		status := v.Status
+		if status == "" {
+			status = constants.LocationStatusUsed
+		}
+
+		var personId *string = &v.PersonId
+		if v.PersonId == "" {
+			personId = nil
+		}
+		var departmentId *string = &v.DepartmentId
+		if v.DepartmentId == "" {
+			departmentId = nil
+		}
+
+		tmp := []interface{}{v.Id, v.InstrumentId, v.DateOfIssue, v.DateOfReceiving, status, v.NeedConfirmed, personId, departmentId, v.UserId}
+		args = append(args, tmp...)
+		numbers := []string{}
+		for j := range tmp {
+			numbers = append(numbers, fmt.Sprintf("$%d", i*len(tmp)+j+1))
+		}
+		values = append(values, fmt.Sprintf("(%s)", strings.Join(numbers, ",")))
+	}
+
+	query := fmt.Sprintf(`INSERT INTO %s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, 
+		person_id, department_id, last_place_id, user_id)
+		SELECT id::uuid, instrument_id::uuid, date_of_issue::integer, date_of_receiving::integer, status, need_confirmed::boolean, 
+			person_id::uuid, s.department_id::uuid, COALESCE(m.department_id::text, ''), s.user_id::uuid
+		FROM (VALUES %s) AS s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, person_id, department_id, user_id)
+		LEFT JOIN LATERAL (SELECT place, department_id FROM %s WHERE instrument_id=s.instrument_id::uuid ORDER BY created_at DESC LIMIT 1) AS m ON true`,
+		LocationTable, strings.Join(values, ", "), LocationTable,
+	)
+
+	_, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *LocationRepo) Update(ctx context.Context, dto *models.LocationDTO) error {
+	query := fmt.Sprintf(`UPDATE %s SET date_of_issue=:date_of_issue, date_of_receiving=:date_of_receiving, status=:status, 
+		person_id=:person_id, department_id=:department_id WHERE id=:id`,
+		LocationTable,
+	)
+
+	_, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *LocationRepo) Receiving(ctx context.Context, dto *models.ReceivingDTO) error {
+	query := fmt.Sprintf(`UPDATE %s SET status=$1, date_of_receiving=$2, has_confirmed=$3 
+		WHERE ARRAY[instrument_id] <@ $4 AND date_of_receiving=0`,
+		LocationTable,
+	)
+
+	_, err := r.db.ExecContext(ctx, query, dto.Status, time.Now().Unix(), dto.HasConfirmed, pq.Array(dto.InstrumentIds))
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *LocationRepo) ForcedReceipt(ctx context.Context, dto *models.ForcedReceiptDTO) error {
+	query := fmt.Sprintf(`UPDATE %s AS m SET date_of_receiving=$1, status='used' 
+		WHERE instrument_id=$2 AND date_of_receiving=0`,
+		LocationTable,
+	)
+
+	_, err := r.db.ExecContext(ctx, query, time.Now().Unix(), dto.InstrumentId)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *LocationRepo) ForcedReceiptAll(ctx context.Context) error {
+	query := fmt.Sprintf(`UPDATE %s AS m SET date_of_receiving=$1, status=(
+			SELECT CASE WHEN status='used' THEN 'reserve' ELSE 'used' END FROM %s
+			WHERE instrument_id=m.instrument_id AND date_of_receiving!=0 ORDER BY date_of_issue DESC LIMIT 1
+		) WHERE date_of_receiving=0 AND date_of_issue < $2`,
+		LocationTable, LocationTable,
+	)
+
+	limit := time.Now().Add(-time.Hour * 24 * 20).Unix() //20 days ago
+	_, err := r.db.ExecContext(ctx, query, time.Now().Unix(), limit)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *LocationRepo) Delete(ctx context.Context, dto *models.DeleteLocationDTO) error {
+	//? удалить перемещение, если оно не единственное
+	query := fmt.Sprintf(`DELETE FROM %s AS m WHERE id=:id
+		AND (SELECT COUNT(id) FROM %s WHERE instrument_id=m.instrument_id)>1`,
+		LocationTable, LocationTable,
+	)
+
+	_, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
 }

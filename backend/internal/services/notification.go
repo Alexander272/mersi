@@ -3,49 +3,151 @@ package services
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/Alexander272/mersi/backend/internal/config"
+	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/services/most"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
+	"github.com/goccy/go-json"
+	"github.com/goodsign/monday"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 type NotificationService struct {
-	si   SI
-	file File
-	most *most.MostService
+	si        SI
+	file      File
+	most      *most.MostService
+	conf      config.UsedConfig
+	iteration int
 }
 
 type NotificationDeps struct {
 	SI   SI
 	File File
 	Most *most.MostService
+	Conf config.UsedConfig
 }
 
 func NewNotificationService(deps *NotificationDeps) *NotificationService {
 	return &NotificationService{
-		si:   deps.SI,
-		file: deps.File,
-		most: deps.Most,
+		si:        deps.SI,
+		file:      deps.File,
+		most:      deps.Most,
+		conf:      deps.Conf,
+		iteration: 0,
 	}
 }
 
 type Notification interface {
+	CheckSent() error
+	CheckUsed() error
 	CheckVerification() error
+	CheckReceiving(ctx context.Context, dto *models.DialogResponse) error
+}
+
+func (s *NotificationService) CheckSent() error {
+	logger.Info("Check sent")
+
+	data, err := s.si.GetSent(context.Background(), &models.GetSiDTO{})
+	if err != nil {
+		return err
+	}
+
+	for _, d := range data {
+		if d.Channel == "" || len(d.SI) == 0 {
+			continue
+		}
+
+		if err := s.sendInstruments(d); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *NotificationService) CheckUsed() error {
+	logger.Info("Check used")
+	index := s.iteration % len(s.conf.Times)
+
+	now := time.Now()
+	monthEnd := time.Date(now.Year(), now.Month()+1, 0, now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), now.Location())
+	if s.iteration >= len(s.conf.Times) {
+		monthEnd = time.Date(now.Year(), now.Month()+2, 0, now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), now.Location())
+	}
+
+	if monthEnd.Add(-s.conf.Times[len(s.conf.Times)-1]).Before(now) {
+		s.iteration = 0
+	}
+
+	date := monthEnd.Add(-s.conf.Times[s.iteration])
+	if date.After(now) {
+		return nil
+	}
+
+	startAt := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())
+	finishAt := time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location())
+
+	period := &models.Period{
+		StartAt:  startAt.Unix(),
+		FinishAt: finishAt.Unix(),
+	}
+
+	data, err := s.si.GetUsed(context.Background(), period)
+	if err != nil {
+		return err
+	}
+
+	for _, d := range data {
+		table := []string{
+			"| Наименование СИ | зав.№ | Держатель |",
+			"|:--|:--|:--|",
+		}
+
+		for _, si := range d.SI {
+			table = append(table, fmt.Sprintf("|%s|%s|%s|", si.Name, si.FactoryNumber, si.Person))
+		}
+		term := monday.Format(monthEnd.Add(-s.conf.Times[len(s.conf.Times)-1]), "Mon 2 Jan 2006", monday.LocaleRuRU)
+		if s.iteration == len(s.conf.Times)-1 {
+			term += " (Сегодня)"
+		}
+
+		post := &models.CreatePostDTO{
+			ChannelId: d.Channel,
+		}
+		post.Message = "#### Необходимо сдать инструменты до `" + term + "`\n" + strings.Join(table, "\n")
+		post.Props = []*models.Props{
+			{Key: "service", Value: "sia"},
+		}
+
+		if err := s.most.Post.Create(context.Background(), post); err != nil {
+			return err
+		}
+	}
+
+	if s.iteration >= len(s.conf.Times) {
+		s.iteration = index
+	}
+	s.iteration = (index + 1)
+
+	return nil
 }
 
 func (s *NotificationService) CheckVerification() error {
 	logger.Info("Check verification")
 
 	now := time.Now()
+	//TODO может привязать день к realm или section
 	if time.Now().Day() != 5 {
 		return nil
 	}
 
 	dto := &models.Period{
-		StartAt:  time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).Unix(),
-		FinishAt: time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Unix(),
+		StartAt:  time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()).Unix(),
+		FinishAt: time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location()).Unix(),
 	}
 
 	data, err := s.si.GetVerification(context.Background(), dto)
@@ -129,5 +231,161 @@ func (s *NotificationService) sendVerificationTable(dto *models.SiVerification) 
 		return err
 	}
 
+	return nil
+}
+
+func (s *NotificationService) CheckReceiving(ctx context.Context, dto *models.DialogResponse) error {
+	instrumentsDTO := &models.SiReceiving{
+		PostId: "",
+		Status: "",
+	}
+	instruments := []*models.SI{}
+	accept := []*models.SI{}
+	missing := []*models.SI{}
+
+	state := strings.Split(dto.State, "&")
+	for _, s := range state {
+		arr := strings.SplitN(s, ":", 2)
+		switch arr[0] {
+		case "PostId":
+			instrumentsDTO.PostId = arr[1]
+		case "Status":
+			instrumentsDTO.Status = arr[1]
+		case "SI":
+			err := json.Unmarshal([]byte(arr[1]), &instruments)
+			if err != nil {
+				return fmt.Errorf("failed to json unmarshal. error: %w", err)
+			}
+		}
+	}
+
+	//TODO надо проверять
+	for _, v := range instruments {
+		if _, ok := dto.Submission[v.Id]; !ok {
+			missing = append(missing, v)
+		} else {
+			accept = append(accept, v)
+		}
+	}
+
+	instrumentsDTO.SI = accept
+	if err := s.updateInstruments(instrumentsDTO); err != nil {
+		return err
+	}
+
+	if len(missing) > 0 {
+		instrumentsDTO.SI = missing
+		if err := s.sendInstruments(instrumentsDTO); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *NotificationService) sendInstruments(dto *models.SiReceiving) error {
+	post := &models.CreatePostDTO{
+		ChannelId: dto.Channel,
+		IsPinned:  dto.Status == constants.StatusReceiving,
+	}
+
+	columns := []string{"Наименование СИ", "зав.№"}
+	if dto.SI[0].Place != "" {
+		columns = append(columns, "Держатель")
+	}
+	table := []string{
+		fmt.Sprintf("| %s |", strings.Join(columns, "|")),
+		fmt.Sprintf("| %s", strings.Repeat(":--|", len(columns))),
+	}
+
+	instrumentIds := []string{}
+	fields := []models.FormField{}
+
+	for _, si := range dto.SI {
+		instrumentIds = append(instrumentIds, si.Id)
+		row := []string{si.Name, si.FactoryNumber}
+		if dto.SI[0].Place != "" {
+			row = append(row, si.Person)
+		}
+		table = append(table, fmt.Sprintf("|%s|", strings.Join(row, "|")))
+
+		fields = append(fields, models.FormField{
+			Id:       si.Id,
+			Title:    fmt.Sprintf("%s (%s)", si.Name, si.FactoryNumber),
+			Name:     "Инструмент получен",
+			Type:     "bool",
+			Default:  "true",
+			Optional: true,
+		})
+	}
+
+	place := ""
+	if dto.SI[0].Place != "" {
+		place = fmt.Sprintf("(%s)", dto.SI[0].Place)
+	}
+	post.Message = fmt.Sprintf("#### Подтвердите получение инструментов %s\n%s", place, strings.Join(table, "\n"))
+
+	post.Props = []*models.Props{
+		{Key: "service", Value: "sia"},
+		{Key: "data_type", Value: "array"},
+		{Key: "data_id", Value: strings.Join(instrumentIds, ",")},
+	}
+
+	if dto.Status == constants.StatusReceiving {
+		host := os.Getenv("HOST_URL")
+		url := host + "/api/v1/si/locations/receiving/dialog"
+
+		j, err := json.Marshal(dto.SI)
+		if err != nil {
+			return fmt.Errorf("failed to marshal json. error: %w", err)
+		}
+
+		action := &model.PostAction{
+			Id:    constants.StatusReceiving,
+			Name:  "Получить",
+			Style: "primary",
+			Integration: &model.PostActionIntegration{
+				URL: host + "/api/v1/dialogs/open",
+				Context: map[string]interface{}{
+					"url":         url,
+					"title":       "Получение инструментов",
+					"description": "#### Отметьте полученные инструменты",
+					"callbackId":  "receiving_form",
+					"state":       fmt.Sprintf("Status:%s&SI:%s", dto.Status, string(j)),
+					"fields":      fields,
+				},
+			},
+		}
+
+		post.Actions = []*model.PostAction{action}
+	}
+
+	if err := s.most.Post.Create(context.Background(), post); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *NotificationService) updateInstruments(dto *models.SiReceiving) error {
+	post := &models.UpdatePostDTO{
+		PostId:   dto.PostId,
+		IsPinned: false,
+	}
+
+	lines := []string{
+		"| Наименование СИ | зав.№ | Держатель |",
+		"|:--|:--|:--|",
+	}
+
+	for _, si := range dto.SI {
+		lines = append(lines, fmt.Sprintf("|%s|%s|%s|", si.Name, si.FactoryNumber, si.Person))
+	}
+	post.Message = "#### Получены инструменты \n" + strings.Join(lines, "\n")
+	post.Props = []*models.Props{
+		{Key: "service", Value: "sia"},
+	}
+
+	if err := s.most.Post.Update(context.Background(), post); err != nil {
+		return err
+	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/Alexander272/mersi/backend/internal/config"
 	"github.com/Alexander272/mersi/backend/internal/repository"
 	"github.com/Alexander272/mersi/backend/internal/services/most"
 	"github.com/Alexander272/mersi/backend/pkg/auth"
@@ -24,6 +25,7 @@ type Services struct {
 	Document
 	VerificationDoc
 	Verification
+	Location
 	SI
 	ContextMenu
 	ToolsMenu
@@ -47,10 +49,11 @@ type Services struct {
 }
 
 type Deps struct {
-	Repo       *repository.Repository
-	Keycloak   *auth.KeycloakClient
-	MostClient *mattermost.Client
-	BotName    string
+	Repo          *repository.Repository
+	Keycloak      *auth.KeycloakClient
+	MostClient    *mattermost.Client
+	BotName       string
+	CheckUsedConf config.UsedConfig
 	// BotUrl   string
 }
 
@@ -96,16 +99,22 @@ func NewServices(deps *Deps) *Services {
 	file := NewFileService()
 	// most := NewMostService(deps.MostClient)
 	most := most.NewMostService(most.MostDeps{Client: deps.MostClient})
-	notification := NewNotificationService(&NotificationDeps{SI: si, File: file, Most: most})
-	scheduler := NewSchedulerService(&SchedulerDeps{
-		Notification: notification,
-		User:         user,
-		//TODO добавить зависимости
-	})
+	notification := NewNotificationService(&NotificationDeps{SI: si, File: file, Most: most, Conf: deps.CheckUsedConf})
 	export := NewExportService(&ExportDeps{
 		File:    file,
 		SI:      si,
 		Columns: columns,
+	})
+	location := NewLocationService(&LocationDeps{
+		Repo:         deps.Repo.Location,
+		Department:   department,
+		Responsible:  responsible,
+		Notification: notification,
+	})
+	scheduler := NewSchedulerService(&SchedulerDeps{
+		Notification: notification,
+		User:         user,
+		Location:     location,
 	})
 
 	return &Services{
@@ -141,6 +150,7 @@ func NewServices(deps *Deps) *Services {
 		Department:           department,
 		Employee:             employee,
 		Responsible:          responsible,
+		Location:             location,
 
 		File:         file,
 		Notification: notification,

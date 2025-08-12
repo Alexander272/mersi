@@ -16,13 +16,13 @@ type SchedulerService struct {
 	cron         gocron.Scheduler
 	notification Notification
 	user         User
-	// location     Location
+	location     Location
 }
 
 type SchedulerDeps struct {
 	Notification Notification
 	User         User
-	// Location     Location
+	Location     Location
 }
 
 func NewSchedulerService(deps *SchedulerDeps) *SchedulerService {
@@ -35,7 +35,7 @@ func NewSchedulerService(deps *SchedulerDeps) *SchedulerService {
 		cron:         cron,
 		notification: deps.Notification,
 		user:         deps.User,
-		// location:     deps.Location,
+		location:     deps.Location,
 	}
 }
 
@@ -81,15 +81,25 @@ func (s *SchedulerService) job() {
 	logger.Info("job was started")
 
 	// принудительное получение инструмента, который не принимают больше 20 дней
-	// if err := s.location.ForcedReceiptMany(context.Background()); err != nil {
-	// 	logger.Error("location forced receipt error:", logger.ErrAttr(err))
-	// 	error_bot.Send(nil, err.Error(), nil)
-	// 	return
-	// }
+	if err := s.location.ForcedReceiptAll(context.Background()); err != nil {
+		logger.Error("location forced receipt error:", logger.ErrAttr(err))
+		error_bot.Send(nil, err.Error(), nil)
+		return
+	}
 
-	// s.notification.CheckUsedSI()
-	// s.notification.CheckSentSI()
+	// проверка необходимости сдать использующиеся инструменты на поверку
+	if err := s.notification.CheckUsed(); err != nil {
+		logger.Error("notification check used error:", logger.ErrAttr(err))
+		error_bot.Send(nil, err.Error(), nil)
+	}
 
+	// проверка отправленных инструментов и рассылка уведомлений для подтверждения получения
+	if err := s.notification.CheckSent(); err != nil {
+		logger.Error("notification check sent error:", logger.ErrAttr(err))
+		error_bot.Send(nil, err.Error(), nil)
+	}
+
+	// проверка инструментов на необходимость поверки
 	if err := s.notification.CheckVerification(); err != nil {
 		logger.Error("notification check verification error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)

@@ -42,6 +42,9 @@ type Verification interface {
 type VerificationDoc interface {
 	postgres.VerificationDoc
 }
+type Location interface {
+	postgres.Location
+}
 type SI interface {
 	postgres.SI
 }
@@ -108,6 +111,7 @@ type Repository struct {
 	Instrument
 	Verification
 	VerificationDoc
+	Location
 	SI
 	ContextMenu
 	CustomContextMenu
@@ -142,6 +146,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Document:             postgres.NewDocumentRepo(db),
 		Verification:         postgres.NewVerificationRepo(db),
 		VerificationDoc:      postgres.NewVerificationDocRepo(db),
+		Location:             postgres.NewLocationRepo(db),
 		SI:                   postgres.NewSIRepo(db),
 		ContextMenu:          postgres.NewContextRepo(db),
 		CustomContextMenu:    postgres.NewCustomContextRepo(db),

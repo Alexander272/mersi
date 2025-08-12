@@ -53,18 +53,6 @@ var cellStyle = &excelize.Style{
 }
 
 func (s *FileService) Export(ctx context.Context, dto *models.ExportDTO) (buffer *bytes.Buffer, err error) {
-	//TODO похоже придется делать через reflect
-	/*
-		// Get reflect.Value of the struct
-		v := reflect.ValueOf(p)
-
-		// Get reflect.Value of the field by name
-		field := v.FieldByName(fieldName)
-
-		// Check if the field was found
-		if field.IsValid() {}
-	*/
-
 	file := excelize.NewFile()
 	sheetName := file.GetSheetName(file.GetActiveSheetIndex())
 
@@ -78,14 +66,6 @@ func (s *FileService) Export(ctx context.Context, dto *models.ExportDTO) (buffer
 		return nil, fmt.Errorf("failed to create main style. error: %w", err)
 	}
 
-	// //TODO колонки же зависят от области
-	// columnNames := []string{
-	// 	"Наименование", "Тип СИ", "Заводской номер", "Пределы измерений", "Точность, цена деления, погрешность", "Госреестр СИ", "Изготовитель",
-	// 	"Год выпуска", "Дата поверки (калибровки)", "Межповерочный интервал", "Следующая поверка (калибровка)", "Место нахождения", "ФИО Сотрудника", "Примечание",
-	// }
-	// if err := file.SetSheetRow(sheetName, "A1", &columnNames); err != nil {
-	// 	return nil, fmt.Errorf("failed to set header row. error: %w", err)
-	// }
 	flatColumns := []*models.Column{}
 	columnNames := []string{}
 	for _, column := range dto.Columns {

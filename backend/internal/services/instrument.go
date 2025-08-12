@@ -77,6 +77,8 @@ func (s *InstrumentService) ChangeStatus(ctx context.Context, dto *models.Update
 }
 
 func (s *InstrumentService) Delete(ctx context.Context, id string) error {
+	// TODO надо запрещать удалять инструмент если он числится у сотрудника
+
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete instrument. error: %w", err)
 	}

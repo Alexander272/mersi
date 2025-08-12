@@ -37,3 +37,22 @@ type LocationDTO struct {
 type DeleteLocationDTO struct {
 	Id string `json:"id" db:"id"`
 }
+
+type ReceivingDTO struct {
+	InstrumentIds []string `json:"instrumentId" db:"instrument_id"`
+	Status        string   `json:"status" db:"status"` // либо отправляется в резерв, либо к сотруднику
+	UserId        string
+	HasConfirmed  bool
+	// Missing       []SelectedSI
+	// DateOfReceiving string   `json:"dateOfReceiving" db:"date_of_receiving"`
+}
+
+type ForcedReceiptDTO struct {
+	InstrumentId string `json:"instrumentId" binding:"required"`
+}
+
+type SelectByDepsDTO struct {
+	DepartmentIds []string
+	InstrumentIds []string
+	Status        string
+}
