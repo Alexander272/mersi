@@ -12,12 +12,14 @@ type SIService struct {
 	repo         repository.SI
 	instrument   Instrument
 	verification Verification
+	location     Location
 }
 
 type SiDeps struct {
 	Repo         repository.SI
 	Instrument   Instrument
 	Verification Verification
+	Location     Location
 }
 
 func NewSiService(deps *SiDeps) *SIService {
@@ -25,6 +27,7 @@ func NewSiService(deps *SiDeps) *SIService {
 		repo:         deps.Repo,
 		instrument:   deps.Instrument,
 		verification: deps.Verification,
+		location:     deps.Location,
 	}
 }
 
@@ -37,6 +40,7 @@ type SI interface {
 	Create(ctx context.Context, dto *models.SiDTO) error
 	Update(ctx context.Context, dto *models.SiDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
+	Delete(ctx context.Context, dto *models.DeleteSiDTO) error
 }
 
 func (s *SIService) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, error) {
@@ -99,6 +103,12 @@ func (s *SIService) Create(ctx context.Context, dto *models.SiDTO) error {
 			return err
 		}
 	}
+	if dto.Location != nil {
+		if err := s.location.Create(ctx, dto.Location); err != nil {
+			s.instrument.Delete(ctx, dto.Instrument.Id)
+			return err
+		}
+	}
 
 	return nil
 }
@@ -112,12 +122,24 @@ func (s *SIService) Update(ctx context.Context, dto *models.SiDTO) error {
 			return err
 		}
 	}
+	if dto.Location != nil {
+		if err := s.location.Update(ctx, dto.Location); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *SIService) ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error {
 	if err := s.instrument.ChangePosition(ctx, dto); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *SIService) Delete(ctx context.Context, dto *models.DeleteSiDTO) error {
+	if err := s.instrument.Delete(ctx, dto.Id); err != nil {
+		return fmt.Errorf("failed to delete si. error: %w", err)
 	}
 	return nil
 }

@@ -332,7 +332,7 @@ func (s *NotificationService) sendInstruments(dto *models.SiReceiving) error {
 
 	if dto.Status == constants.StatusReceiving {
 		host := os.Getenv("HOST_URL")
-		url := host + "/api/v1/si/locations/receiving/dialog"
+		url := host + "/api/v1/si/locations/receiving/dialogs"
 
 		j, err := json.Marshal(dto.SI)
 		if err != nil {
@@ -344,7 +344,7 @@ func (s *NotificationService) sendInstruments(dto *models.SiReceiving) error {
 			Name:  "Получить",
 			Style: "primary",
 			Integration: &model.PostActionIntegration{
-				URL: host + "/api/v1/dialogs/open",
+				URL: host + "/api/v1/si/locations/receiving/dialogs/open",
 				Context: map[string]interface{}{
 					"url":         url,
 					"title":       "Получение инструментов",

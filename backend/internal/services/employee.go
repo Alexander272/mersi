@@ -10,14 +10,14 @@ import (
 )
 
 type EmployeeService struct {
-	repo repository.Employee
-	// location Location
+	repo     repository.Employee
+	location Location
 }
 
-func NewEmployeeService(repo repository.Employee) *EmployeeService {
+func NewEmployeeService(repo repository.Employee, location Location) *EmployeeService {
 	return &EmployeeService{
-		repo: repo,
-		// location: location,
+		repo:     repo,
+		location: location,
 	}
 }
 
@@ -118,21 +118,23 @@ func (s *EmployeeService) Update(ctx context.Context, employee *models.WriteEmpl
 	if err := s.repo.Update(ctx, employee); err != nil {
 		return fmt.Errorf("failed to update employee. error: %w", err)
 	}
-
-	//TODO
-	// if err := s.location.UpdatePerson(ctx, &models.UpdatePlaceDTO{PersonId: employee.Id}); err != nil {
-	// 	return err
-	// }
 	return nil
 }
 
 func (s *EmployeeService) Delete(ctx context.Context, id string) error {
-	// candidate, err := s.GetById(ctx, id)
-	// if err != nil {
-	// 	return err
-	// }
-	//TODO при удалении сотрудника надо записать его фио в таблицу с перемещениями (чтобы оно сохранилось в истории)
-	//TODO надо еще запрещать удалять сотрудника, если у него числится инструмент
+	// надо еще запрещать удалять сотрудника, если у него числится инструмент
+	locs, err := s.location.GetUsedByHolder(ctx, &models.GetLocationByHolderDTO{PersonId: id})
+	if err != nil {
+		return err
+	}
+	if len(locs) > 0 {
+		return models.ErrHasInstrument
+	}
+
+	// при удалении сотрудника надо записать его фио в таблицу с перемещениями (чтобы оно сохранилось в истории)
+	if err := s.location.SetPerson(ctx, id); err != nil {
+		return err
+	}
 
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete employee. error: %w", err)

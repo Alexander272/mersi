@@ -117,6 +117,7 @@ func (h *Handler) create(c *gin.Context) {
 	}
 	logger.Info("Создан инструмент",
 		logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("username", user.Name),
 		logger.StringAttr("instrument_id", dto.Id),
 		logger.StringAttr("instrument_name", dto.Name),
 		logger.AnyAttr("instrument", dto),
@@ -153,6 +154,7 @@ func (h *Handler) update(c *gin.Context) {
 
 	logger.Info("Инструмент обновлен",
 		logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("username", user.Name),
 		logger.StringAttr("instrument_id", dto.Id),
 		logger.StringAttr("instrument_name", dto.Name),
 		logger.AnyAttr("instrument", dto),

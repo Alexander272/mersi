@@ -1,6 +1,7 @@
 package si
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -10,6 +11,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/documents"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/instruments"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/locations"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/verifications"
 	"github.com/Alexander272/mersi/backend/internal/utils"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
@@ -31,7 +33,7 @@ func NewHandler(service services.SI) *Handler {
 func Register(api *gin.RouterGroup, services *services.Services, middleware *middleware.Middleware) {
 	handler := NewHandler(services.SI)
 
-	si := api.Group("si", middleware.CheckPermissions(constants.SI, constants.Read))
+	si := api.Group("si", middleware.VerifyToken, middleware.CheckPermissions(constants.SI, constants.Read))
 	{
 		si.GET("", handler.get)
 		si.GET("/:id", handler.getById)
@@ -48,6 +50,7 @@ func Register(api *gin.RouterGroup, services *services.Services, middleware *mid
 	instruments.Register(si, services.Instrument, middleware)
 	documents.Register(si, services.Document, middleware)
 	verifications.Register(si, services, middleware)
+	locations.Register(api, services.Location, middleware)
 }
 
 func (h *Handler) get(c *gin.Context) {
@@ -115,6 +118,7 @@ func (h *Handler) create(c *gin.Context) {
 
 	logger.Info("СИ сохранено",
 		logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("username", user.Name),
 		logger.AnyAttr("instrument-dto", dto.Instrument),
 		logger.AnyAttr("verification-dto", dto.Verification),
 		// logger.AnyAttr("location-dto", dto.Location),
@@ -144,6 +148,7 @@ func (h *Handler) update(c *gin.Context) {
 
 	logger.Info("СИ обновлено",
 		logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("username", user.Name),
 		logger.AnyAttr("instrument-dto", dto.Instrument),
 		logger.AnyAttr("verification-dto", dto.Verification),
 	)
@@ -171,6 +176,29 @@ func (h *Handler) delete(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
+	dto := &models.DeleteSiDTO{Id: id}
 
-	response.NewErrorResponse(c, http.StatusNotImplemented, "not implemented", "not implemented")
+	if err := h.service.Delete(c, dto); err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Не удалось удалить инструмент. Нельзя удалить инструмент находящийся у сотрудника.")
+			return
+		}
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+
+	var user models.User
+	u, exists := c.Get(constants.CtxUser)
+	if exists {
+		user = u.(models.User)
+	}
+
+	logger.Info("Инструмент отмечен как удаленный",
+		logger.StringAttr("instrument_id", id),
+		logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("username", user.Name),
+	)
+
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные об инструменте успешно удалены"})
 }

@@ -10,14 +10,14 @@ import (
 )
 
 type DepartmentService struct {
-	repo repository.Department
-	// location Location
+	repo     repository.Department
+	location Location
 }
 
-func NewDepartmentService(repo repository.Department) *DepartmentService {
+func NewDepartmentService(repo repository.Department, location Location) *DepartmentService {
 	return &DepartmentService{
-		repo: repo,
-		// location: location,
+		repo:     repo,
+		location: location,
 	}
 }
 
@@ -72,18 +72,24 @@ func (s *DepartmentService) Update(ctx context.Context, department *models.Depar
 	if err := s.repo.Update(ctx, department); err != nil {
 		return fmt.Errorf("failed to update department. error: %w", err)
 	}
-
-	//TODO
-	// if err := s.location.UpdatePlace(ctx, &models.UpdatePlaceDTO{DepartmentId: department.Id}); err != nil {
-	// 	return err
-	// }
-
 	return nil
 }
 
 func (s *DepartmentService) Delete(ctx context.Context, id string) error {
-	//TODO при удалении подразделения надо записать его название в таблицу с перемещениями (чтобы оно сохранилось в истории)
+	// надо запретить удалять подразделение если у него есть инструменты
+	locs, err := s.location.GetUsedByDepartment(ctx, &models.GetLocationByDepartmentDTO{DepartmentId: id})
+	if err != nil {
+		return err
+	}
+	if len(locs) > 0 {
+		return models.ErrHasInstrument
+	}
+
+	// при удалении подразделения надо записать его название в таблицу с перемещениями (чтобы оно сохранилось в истории)
 	// и надо записать фио всех работников в этом подразделении тк они тоже удаляться
+	if err := s.location.SetDepartment(ctx, id); err != nil {
+		return err
+	}
 
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete department. error: %w", err)

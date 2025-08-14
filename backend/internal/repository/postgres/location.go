@@ -28,10 +28,14 @@ func NewLocationRepo(db *sqlx.DB) *LocationRepo {
 type Location interface {
 	Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error)
 	GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
+	GetUsedByHolder(ctx context.Context, req *models.GetLocationByHolderDTO) ([]*models.Location, error)
+	GetUsedByDepartment(ctx context.Context, req *models.GetLocationByDepartmentDTO) ([]*models.Location, error)
 	SelectByDepartment(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error)
 	Create(ctx context.Context, dto *models.LocationDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.LocationDTO) error
 	Update(ctx context.Context, dto *models.LocationDTO) error
+	SetPerson(ctx context.Context, id string) error
+	SetDepartment(ctx context.Context, id string) error
 	Receiving(ctx context.Context, dto *models.ReceivingDTO) error
 	ForcedReceipt(ctx context.Context, dto *models.ForcedReceiptDTO) error
 	ForcedReceiptAll(ctx context.Context) error
@@ -72,6 +76,33 @@ func (r *LocationRepo) GetLast(ctx context.Context, dto *models.GetLocationDTO) 
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 
+	return data, nil
+}
+
+func (r *LocationRepo) GetUsedByHolder(ctx context.Context, req *models.GetLocationByHolderDTO) ([]*models.Location, error) {
+	query := fmt.Sprintf(`SELECT * FROM (
+			SELECT DISTINCT ON (instrument_id) * FROM %s ORDER BY instrument_id, date_of_issue DESC
+		) locs WHERE person_id=$1`,
+		LocationTable,
+	)
+	data := []*models.Location{}
+
+	if err := r.db.SelectContext(ctx, &data, query, req.PersonId); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+func (r *LocationRepo) GetUsedByDepartment(ctx context.Context, req *models.GetLocationByDepartmentDTO) ([]*models.Location, error) {
+	query := fmt.Sprintf(`SELECT * FROM (
+			SELECT DISTINCT ON (instrument_id) * FROM %s ORDER BY instrument_id, date_of_issue DESC
+		) locs WHERE department_id=$1`,
+		LocationTable,
+	)
+	data := []*models.Location{}
+
+	if err := r.db.SelectContext(ctx, &data, query, req.DepartmentId); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
 	return data, nil
 }
 
@@ -182,6 +213,31 @@ func (r *LocationRepo) Update(ctx context.Context, dto *models.LocationDTO) erro
 	)
 
 	_, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *LocationRepo) SetPerson(ctx context.Context, id string) error {
+	query := fmt.Sprintf(`UPDATE %s AS l SET person=e.name FROM %s AS e WHERE l.person_id=e.id AND l.person_id=$1`,
+		LocationTable, EmployeeTable,
+	)
+
+	_, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+func (r *LocationRepo) SetDepartment(ctx context.Context, id string) error {
+	query := fmt.Sprintf(`UPDATE %s AS l SET department=d.name, person=e.name 
+		FROM %s AS e INNER JOIN %s AS d ON e.department_id=d.id 
+		WHERE l.department_id=d.id AND l.person_id=e.id AND l.department_id=$1`,
+		LocationTable, EmployeeTable, DepartmentTable,
+	)
+
+	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}

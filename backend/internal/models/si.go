@@ -60,6 +60,7 @@ type GetSiByIdDTO struct {
 type SiDTO struct {
 	Instrument   *InstrumentDTO   `json:"instrument" binding:"required"`
 	Verification *VerificationDTO `json:"verification"`
+	Location     *LocationDTO     `json:"location"`
 }
 
 type ChangePositionDTO struct {
@@ -79,4 +80,8 @@ type SiReceiving struct {
 	Status  string
 	Channel string
 	SI      []*SI
+}
+
+type DeleteSiDTO struct {
+	Id string
 }

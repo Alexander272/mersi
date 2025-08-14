@@ -165,6 +165,11 @@ func (h *DepartmentHandlers) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(c, id); err != nil {
+		if errors.Is(err, models.ErrHasInstrument) {
+			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Нельзя удалить подразделение у которого числятся инструменты")
+			return
+		}
+
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), id)
 		return

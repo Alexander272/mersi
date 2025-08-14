@@ -20,6 +20,7 @@ func NewResponsibleService(repo repository.Responsible) *ResponsibleService {
 
 type Responsible interface {
 	Get(ctx context.Context, req *models.GetResponsibleDTO) ([]*models.Responsible, error)
+	GetWithChannel(ctx context.Context, req *models.GetResponsibleDTO) ([]*models.ResponsibleWithChannel, error)
 	GetBySSOId(ctx context.Context, id string) ([]*models.Responsible, error)
 	Change(ctx context.Context, dto *models.ChangeResponsibleDTO) error
 	Create(ctx context.Context, dto *models.ResponsibleDTO) error
@@ -32,6 +33,14 @@ type Responsible interface {
 
 func (s *ResponsibleService) Get(ctx context.Context, req *models.GetResponsibleDTO) ([]*models.Responsible, error) {
 	data, err := s.repo.Get(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get responsible. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *ResponsibleService) GetWithChannel(ctx context.Context, req *models.GetResponsibleDTO) ([]*models.ResponsibleWithChannel, error) {
+	data, err := s.repo.GetWithChannel(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get responsible. error: %w", err)
 	}

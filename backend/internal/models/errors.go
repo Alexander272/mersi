@@ -7,6 +7,7 @@ var (
 	ErrNoChannel     = errors.New("channel not found")
 	ErrNoResponsible = errors.New("responsible not found")
 	ErrNoInstrument  = errors.New("instrument not found")
+	ErrHasInstrument = errors.New("user or department has instrument")
 
 	ErrSessionEmpty = errors.New("user session not found")
 

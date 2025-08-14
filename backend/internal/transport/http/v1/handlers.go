@@ -62,7 +62,7 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	sections.Register(secure, h.services.Section, h.middleware)
 	columns.Register(secure, h.services.Columns, h.middleware)
 	forms.Register(secure, h.services, h.middleware)
-	si.Register(secure, h.services, h.middleware)
+	si.Register(v1, h.services, h.middleware)
 	context_menu.Register(secure, h.services.ContextMenu, h.middleware)
 	tools_menu.Register(secure, h.services.ToolsMenu, h.middleware)
 	repair.Register(secure, h.services.Repair, h.middleware)

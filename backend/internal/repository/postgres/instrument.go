@@ -152,12 +152,24 @@ func (r *InstrumentRepo) ChangeStatus(ctx context.Context, dto *models.UpdateSta
 }
 
 func (r *InstrumentRepo) Delete(ctx context.Context, id string) error {
-	query := fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, InstrumentsTable)
-	// query := fmt.Sprintf(`UPDATE %s SET status='deleted' WHERE id=$1`, InstrumentTable)
+	// query := fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, InstrumentsTable)
+	query := fmt.Sprintf(`UPDATE %s SET status='deleted', deleted=now() WHERE id=$1 AND (
+			SELECT status FROM %s WHERE instrument_id=$1 ORDER BY date_of_issue DESC, created_at DESC LIMIT 1
+		) = 'reserve'`,
+		InstrumentsTable, LocationTable,
+	)
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get number of rows affected. error: %w", err)
+	}
+	if rows == 0 {
+		return models.ErrNoRows
+	}
+
 	return nil
 }

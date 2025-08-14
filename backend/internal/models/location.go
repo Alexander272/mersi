@@ -20,6 +20,13 @@ type GetLocationDTO struct {
 	InstrumentId string `json:"instrumentId" db:"instrument_id"`
 }
 
+type GetLocationByHolderDTO struct {
+	PersonId string `json:"personId" db:"person_id"`
+}
+type GetLocationByDepartmentDTO struct {
+	DepartmentId string `json:"departmentId" db:"department_id"`
+}
+
 type LocationDTO struct {
 	Id           string `json:"id" db:"id"`
 	InstrumentId string `json:"instrumentId" db:"instrument_id"`

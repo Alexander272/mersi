@@ -103,6 +103,7 @@ func (h *Handler) create(c *gin.Context) {
 
 	logger.Info("Добавлена поверка",
 		logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("username", user.Name),
 		logger.StringAttr("instrument_id", dto.InstrumentId),
 		logger.AnyAttr("verification", dto),
 	)
@@ -141,6 +142,7 @@ func (h *Handler) update(c *gin.Context) {
 
 	logger.Info("Поверка обновлена",
 		logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("username", user.Name),
 		logger.StringAttr("instrument_id", dto.InstrumentId),
 		logger.StringAttr("verification_id", dto.Id),
 		logger.AnyAttr("verification", dto),

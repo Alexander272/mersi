@@ -8,41 +8,47 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository"
+	"github.com/Alexander272/mersi/backend/internal/services/most"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 )
 
 type LocationService struct {
 	repo         repository.Location
-	department   Department
 	responsible  Responsible
 	notification Notification
+	most         *most.MostService
 }
 
 type LocationDeps struct {
 	Repo         repository.Location
-	Department   Department
 	Responsible  Responsible
 	Notification Notification
+	Most         *most.MostService
 }
 
 func NewLocationService(deps *LocationDeps) *LocationService {
 	return &LocationService{
 		repo:         deps.Repo,
-		department:   deps.Department,
 		responsible:  deps.Responsible,
 		notification: deps.Notification,
+		most:         deps.Most,
 	}
 }
 
 type Location interface {
 	Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error)
 	GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
+	GetUsedByHolder(ctx context.Context, dto *models.GetLocationByHolderDTO) ([]*models.Location, error)
+	GetUsedByDepartment(ctx context.Context, dto *models.GetLocationByDepartmentDTO) ([]*models.Location, error)
 	SelectByDepartments(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error)
 	Create(ctx context.Context, dto *models.LocationDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.LocationDTO) (bool, error)
 	Update(ctx context.Context, dto *models.LocationDTO) error
+	SetPerson(ctx context.Context, personId string) error
+	SetDepartment(ctx context.Context, departmentId string) error
 	ReceivingFromApp(ctx context.Context, dto *models.ReceivingDTO) error
 	ReceivingFromChannel(ctx context.Context, dto *models.DialogResponse) error
+	ReceivingDialogOpen(ctx context.Context, dto *models.PostAction) error
 	ForcedReceipt(ctx context.Context, dto *models.ForcedReceiptDTO) error
 	ForcedReceiptAll(ctx context.Context) error
 	Delete(ctx context.Context, dto *models.DeleteLocationDTO) error
@@ -64,6 +70,21 @@ func (s *LocationService) GetLast(ctx context.Context, dto *models.GetLocationDT
 	return data, nil
 }
 
+func (s *LocationService) GetUsedByHolder(ctx context.Context, dto *models.GetLocationByHolderDTO) ([]*models.Location, error) {
+	data, err := s.repo.GetUsedByHolder(ctx, dto)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get used by holder. error: %w", err)
+	}
+	return data, nil
+}
+func (s *LocationService) GetUsedByDepartment(ctx context.Context, dto *models.GetLocationByDepartmentDTO) ([]*models.Location, error) {
+	data, err := s.repo.GetUsedByDepartment(ctx, dto)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get used by department. error: %w", err)
+	}
+	return data, nil
+}
+
 func (s *LocationService) SelectByDepartments(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error) {
 	data, err := s.repo.SelectByDepartment(ctx, dto)
 	if err != nil {
@@ -74,20 +95,20 @@ func (s *LocationService) SelectByDepartments(ctx context.Context, dto *models.S
 
 func (s *LocationService) Create(ctx context.Context, dto *models.LocationDTO) error {
 	if dto.Status == constants.LocationStatusMoved && dto.DepartmentId != "" {
-		department, err := s.department.GetById(ctx, &models.GetDepartmentByIdDTO{Id: dto.DepartmentId})
-		if err != nil {
-			return err
-		}
-		if department.ChannelId == "" { //? канал для уведомлений не задан
-			return models.ErrNoChannel
-		}
+		// department, err := s.department.GetById(ctx, &models.GetDepartmentByIdDTO{Id: dto.DepartmentId})
+		// if err != nil {
+		// 	return err
+		// }
 
-		responsible, err := s.responsible.Get(ctx, &models.GetResponsibleDTO{DepartmentId: dto.DepartmentId})
+		responsible, err := s.responsible.GetWithChannel(ctx, &models.GetResponsibleDTO{DepartmentId: dto.DepartmentId})
 		if err != nil {
 			return err
 		}
 		if len(responsible) == 0 { //? ответственное лицо не задано
 			return models.ErrNoResponsible
+		}
+		if responsible[0].ChannelId == "" { //? канал для уведомлений не задан
+			return models.ErrNoChannel
 		}
 	}
 
@@ -153,6 +174,19 @@ func (s *LocationService) CreateSeveral(ctx context.Context, dto []*models.Locat
 func (s *LocationService) Update(ctx context.Context, dto *models.LocationDTO) error {
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update location. error: %w", err)
+	}
+	return nil
+}
+
+func (s *LocationService) SetPerson(ctx context.Context, personId string) error {
+	if err := s.repo.SetPerson(ctx, personId); err != nil {
+		return fmt.Errorf("failed to set person. error: %w", err)
+	}
+	return nil
+}
+func (s *LocationService) SetDepartment(ctx context.Context, departmentId string) error {
+	if err := s.repo.SetDepartment(ctx, departmentId); err != nil {
+		return fmt.Errorf("failed to set department. error: %w", err)
 	}
 	return nil
 }
@@ -233,6 +267,12 @@ func (s *LocationService) ReceivingFromChannel(ctx context.Context, dto *models.
 		return err
 	}
 
+	return nil
+}
+func (s *LocationService) ReceivingDialogOpen(ctx context.Context, dto *models.PostAction) error {
+	if err := s.most.Open(ctx, dto); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -23,6 +23,7 @@ func NewResponsibleRepo(db *sqlx.DB) *ResponsibleRepo {
 
 type Responsible interface {
 	Get(ctx context.Context, req *models.GetResponsibleDTO) ([]*models.Responsible, error)
+	GetWithChannel(ctx context.Context, req *models.GetResponsibleDTO) ([]*models.ResponsibleWithChannel, error)
 	GetBySSOId(ctx context.Context, id string) ([]*models.Responsible, error)
 	Create(ctx context.Context, dto *models.ResponsibleDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.ResponsibleDTO) error
@@ -53,6 +54,38 @@ func (r *ResponsibleRepo) Get(ctx context.Context, req *models.GetResponsibleDTO
 
 	query := fmt.Sprintf(`SELECT id, department_id, sso_id FROM %s %s ORDER BY created_at, id`, ResponsibleTable, condition)
 	data := []*models.Responsible{}
+
+	if err := r.db.SelectContext(ctx, &data, query, values...); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
+func (r *ResponsibleRepo) GetWithChannel(ctx context.Context, req *models.GetResponsibleDTO) ([]*models.ResponsibleWithChannel, error) {
+	condition := ""
+	params := []string{}
+	values := []interface{}{}
+	count := 1
+	if req.DepartmentId != "" {
+		values = append(values, req.DepartmentId)
+		params = append(params, fmt.Sprintf("department_id=$%d", count))
+		count++
+	}
+	if req.UserId != "" {
+		values = append(values, req.UserId)
+		params = append(params, fmt.Sprintf("sso_id=$%d", count))
+		count++
+	}
+	if len(params) > 0 {
+		condition = "WHERE " + strings.Join(params, " AND ")
+	}
+
+	query := fmt.Sprintf(`SELECT id, department_id, sso_id FROM %s
+		LEFT JOIN %s AS d ON d.id=department_id
+		%s ORDER BY created_at, id`,
+		ResponsibleTable, DepartmentTable, condition,
+	)
+	data := []*models.ResponsibleWithChannel{}
 
 	if err := r.db.SelectContext(ctx, &data, query, values...); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)

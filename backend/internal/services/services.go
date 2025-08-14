@@ -71,12 +71,11 @@ func NewServices(deps *Deps) *Services {
 	section := NewSectionService(deps.Repo.Section)
 	columns := NewColumnsService(deps.Repo.Columns)
 	createForm := NewCreateFormService(deps.Repo.CreateForm)
+
 	instrument := NewInstrumentService(deps.Repo.Instrument)
 	document := NewDocumentService(deps.Repo.Document)
 	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
 	verification := NewVerificationService(deps.Repo.Verification, verificationDoc)
-
-	si := NewSiService(&SiDeps{Repo: deps.Repo.SI, Instrument: instrument, Verification: verification})
 
 	verificationFields := NewVerificationFieldService(deps.Repo.VerificationFields)
 	contextMenu := NewContextService(deps.Repo.ContextMenu, role)
@@ -92,12 +91,17 @@ func NewServices(deps *Deps) *Services {
 	filters := NewFilterService(deps.Repo.Filters)
 	sorting := NewSortingService(deps.Repo.Sorting)
 
-	department := NewDepartmentService(deps.Repo.Department)
-	employee := NewEmployeeService(deps.Repo.Employee)
 	responsible := NewResponsibleService(deps.Repo.Responsible)
 
+	//TODO надо бы подумать как избавиться от этой кольцевой зависимости
+	si := NewSiService(&SiDeps{
+		Repo:         deps.Repo.SI,
+		Instrument:   instrument,
+		Verification: verification,
+		Location:     NewLocationService(&LocationDeps{Repo: deps.Repo.Location, Responsible: responsible}),
+	})
+
 	file := NewFileService()
-	// most := NewMostService(deps.MostClient)
 	most := most.NewMostService(most.MostDeps{Client: deps.MostClient})
 	notification := NewNotificationService(&NotificationDeps{SI: si, File: file, Most: most, Conf: deps.CheckUsedConf})
 	export := NewExportService(&ExportDeps{
@@ -107,10 +111,13 @@ func NewServices(deps *Deps) *Services {
 	})
 	location := NewLocationService(&LocationDeps{
 		Repo:         deps.Repo.Location,
-		Department:   department,
 		Responsible:  responsible,
 		Notification: notification,
+		Most:         most,
 	})
+	department := NewDepartmentService(deps.Repo.Department, location)
+	employee := NewEmployeeService(deps.Repo.Employee, location)
+
 	scheduler := NewSchedulerService(&SchedulerDeps{
 		Notification: notification,
 		User:         user,
