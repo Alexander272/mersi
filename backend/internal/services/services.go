@@ -66,7 +66,7 @@ func NewServices(deps *Deps) *Services {
 	session := NewSessionService(deps.Keycloak, user)
 	permission := NewPermissionService("configs/privacy.conf", rule, role)
 
-	realm := NewRealmService(deps.Repo.Realm)
+	realm := NewRealmService(deps.Repo.Realm, user)
 	accesses := NewAccessesService(deps.Repo.Accesses)
 	section := NewSectionService(deps.Repo.Section)
 	columns := NewColumnsService(deps.Repo.Columns)

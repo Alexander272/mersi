@@ -9,6 +9,11 @@ type GetEmployeesDTO struct {
 // 	UserId string `json:"userId" binding:"required"`
 // }
 
+type GetEmployeeByNameDTO struct {
+	Name         string `json:"name" binding:"required"`
+	DepartmentId string `json:"departmentId" binding:"required"`
+}
+
 type Employee struct {
 	Id           string `json:"id" db:"id"`
 	Name         string `json:"name" db:"name"`

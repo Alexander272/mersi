@@ -108,6 +108,15 @@ func (s *EmployeeService) GetByMostId(ctx context.Context, mostId string) (*mode
 }
 
 func (s *EmployeeService) Create(ctx context.Context, employee *models.WriteEmployeeDTO) error {
+	candidate, err := s.repo.GetByName(ctx, &models.GetEmployeeByNameDTO{Name: employee.Name, DepartmentId: employee.DepartmentId})
+	if err != nil && !errors.Is(err, models.ErrNoRows) {
+		return err
+	}
+
+	if candidate != nil {
+		return models.ErrAlreadyExists
+	}
+
 	if err := s.repo.Create(ctx, employee); err != nil {
 		return fmt.Errorf("failed to create employee. error: %w", err)
 	}

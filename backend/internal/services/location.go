@@ -38,6 +38,7 @@ func NewLocationService(deps *LocationDeps) *LocationService {
 type Location interface {
 	Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error)
 	GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
+	GetSeveralLast(ctx context.Context, req *models.GetSeveralLocationsDTO) ([]*models.Location, error)
 	GetUsedByHolder(ctx context.Context, dto *models.GetLocationByHolderDTO) ([]*models.Location, error)
 	GetUsedByDepartment(ctx context.Context, dto *models.GetLocationByDepartmentDTO) ([]*models.Location, error)
 	SelectByDepartments(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error)
@@ -66,6 +67,14 @@ func (s *LocationService) GetLast(ctx context.Context, dto *models.GetLocationDT
 	data, err := s.repo.GetLast(ctx, dto)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get last location. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *LocationService) GetSeveralLast(ctx context.Context, req *models.GetSeveralLocationsDTO) ([]*models.Location, error) {
+	data, err := s.repo.GetSeveralLast(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get several last locations. error: %w", err)
 	}
 	return data, nil
 }
@@ -129,7 +138,7 @@ func (s *LocationService) CreateSeveral(ctx context.Context, dto []*models.Locat
 	}
 
 	isFull := true
-	if dto[0].PersonId == "" && dto[0].NeedConfirmed {
+	if dto[0].PersonId == "" && dto[0].NeedConfirm {
 		if len(responsible) == 0 {
 			return false, models.ErrNoResponsible
 		}
@@ -168,7 +177,7 @@ func (s *LocationService) CreateSeveral(ctx context.Context, dto []*models.Locat
 	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
 		return false, fmt.Errorf("failed to create several locations. error: %w", err)
 	}
-	return false, fmt.Errorf("not implemented")
+	return isFull, nil
 }
 
 func (s *LocationService) Update(ctx context.Context, dto *models.LocationDTO) error {

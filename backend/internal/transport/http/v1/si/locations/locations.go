@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -40,6 +41,7 @@ func Register(api *gin.RouterGroup, service services.Location, ware *middleware.
 		{
 			secure.GET("", handler.get)
 			secure.GET("/last", handler.getLast)
+			secure.GET("/last/several", handler.getSeveralLast)
 
 			write := secure.Group("", ware.CheckPermissions(constants.Location, constants.Write))
 			{
@@ -56,16 +58,16 @@ func Register(api *gin.RouterGroup, service services.Location, ware *middleware.
 
 		receiving := locations.Group("receiving")
 		{
-			receiving.GET("/dialogs", handler.receivingDialog)
+			receiving.POST("/dialogs", handler.receivingDialog)
 			receiving.POST("/dialogs/open", handler.receivingDialogOpen)
 
 			secure := receiving.Group("", ware.VerifyToken, ware.CheckPermissions(constants.Location, constants.Read))
 			{
-				secure.GET("", handler.receiving)
+				secure.POST("", handler.receiving)
 
 				write := secure.Group("", ware.CheckPermissions(constants.Location, constants.Write))
 				{
-					write.GET("/forced", handler.forcedReceiving)
+					write.POST("/forced", handler.forcedReceiving)
 				}
 			}
 		}
@@ -106,12 +108,36 @@ func (h *Handler) getLast(c *gin.Context) {
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
 }
 
+func (h *Handler) getSeveralLast(c *gin.Context) {
+	instruments := c.Query("instruments")
+	if instruments == "" {
+		response.NewErrorResponse(c, http.StatusBadRequest, "instruments is empty", "Отправлены некорректные данные")
+		return
+	}
+	req := &models.GetSeveralLocationsDTO{InstrumentIds: strings.Split(instruments, ",")}
+
+	data, err := h.service.GetSeveralLast(c, req)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), req)
+		return
+	}
+	c.JSON(http.StatusOK, response.DataResponse{Data: data})
+}
+
 func (h *Handler) create(c *gin.Context) {
 	dto := &models.LocationDTO{}
 	if err := c.BindJSON(dto); err != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 		return
 	}
+
+	var user models.User
+	u, exists := c.Get(constants.CtxUser)
+	if exists {
+		user = u.(models.User)
+	}
+	dto.UserId = user.ID
 
 	if err := h.service.Create(c, dto); err != nil {
 		if errors.Is(err, models.ErrNoChannel) {
@@ -128,11 +154,6 @@ func (h *Handler) create(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
-	}
 	logger.Info("Инструмент перемещен",
 		logger.StringAttr("instrument_id", dto.InstrumentId),
 		logger.StringAttr("status", dto.Status),

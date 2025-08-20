@@ -37,6 +37,7 @@ func Register(api *gin.RouterGroup, services *services.Services, middleware *mid
 	{
 		si.GET("", handler.get)
 		si.GET("/:id", handler.getById)
+		si.GET("/sent", handler.getSent)
 
 		write := si.Group("", middleware.CheckPermissions(constants.SI, constants.Write))
 		{
@@ -90,6 +91,51 @@ func (h *Handler) getById(c *gin.Context) {
 	if err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), req)
+		return
+	}
+	c.JSON(http.StatusOK, response.DataResponse{Data: data})
+}
+
+func (h *Handler) getSent(c *gin.Context) {
+	section := c.Query("section")
+	err := uuid.Validate(section)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Сессия не найдена")
+		return
+	}
+
+	params := &models.GetSiDTO{
+		SectionId: section,
+	}
+
+	filters := c.QueryMap("filters")
+	for k, v := range filters {
+		valueMap := c.QueryMap(k)
+
+		values := []*models.FilterValue{}
+		for key, value := range valueMap {
+			values = append(values, &models.FilterValue{
+				CompareType: key,
+				Value:       value,
+			})
+		}
+
+		if k == "place" {
+			k = "department"
+		}
+
+		f := &models.Filter{
+			Field:     k,
+			FieldType: v,
+			Values:    values,
+		}
+		params.Filters = append(params.Filters, f)
+	}
+
+	data, err := h.service.GetSent(c, params)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), params)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})

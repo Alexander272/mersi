@@ -76,10 +76,11 @@ type SiVerification struct {
 }
 
 type SiReceiving struct {
-	PostId  string
-	Status  string
-	Channel string
-	SI      []*SI
+	PostId  string `json:"-"`
+	Status  string `json:"status"`
+	Channel string `json:"channel"`
+	Place   string `json:"place"`
+	SI      []*SI  `json:"si"`
 }
 
 type DeleteSiDTO struct {

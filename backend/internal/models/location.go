@@ -10,14 +10,19 @@ type Location struct {
 	DepartmentId    string `json:"departmentId" db:"department_id"`
 	DateOfIssue     int64  `json:"dateOfIssue" db:"date_of_issue"`
 	DateOfReceiving int64  `json:"dateOfReceiving" db:"date_of_receiving"`
-	NeedConfirmed   bool   `json:"needConfirmed" db:"need_confirmed"`
+	NeedConfirm     bool   `json:"needConfirm" db:"need_confirmed"`
 	HasConfirmed    bool   `json:"hasConfirmed" db:"has_confirmed"`
 	LastPlace       string `json:"lastPlace" db:"last_place"`
+	LastPlaceId     string `json:"lastPlaceId" db:"last_place_id"`
 	Status          string `json:"status" db:"status"`
 }
 
 type GetLocationDTO struct {
 	InstrumentId string `json:"instrumentId" db:"instrument_id"`
+}
+
+type GetSeveralLocationsDTO struct {
+	InstrumentIds []string `json:"instrumentIds" db:"instrument_id"`
 }
 
 type GetLocationByHolderDTO struct {
@@ -36,7 +41,7 @@ type LocationDTO struct {
 	// DeliveryDate    string `json:"deliveryDate" db:"delivery_date"`
 	DateOfIssue     int64  `json:"dateOfIssue" db:"date_of_issue" binding:"required,gte=1000000"`
 	DateOfReceiving int64  `json:"dateOfReceiving" db:"date_of_receiving" binding:"gte=0"`
-	NeedConfirmed   bool   `json:"needConfirmed" db:"need_confirmed"`
+	NeedConfirm     bool   `json:"needConfirm" db:"need_confirmed"`
 	Status          string `json:"status" db:"status"`
 	UserId          string `json:"userId" db:"user_id"`
 }

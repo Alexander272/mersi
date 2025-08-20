@@ -28,6 +28,7 @@ func NewLocationRepo(db *sqlx.DB) *LocationRepo {
 type Location interface {
 	Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error)
 	GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
+	GetSeveralLast(ctx context.Context, req *models.GetSeveralLocationsDTO) ([]*models.Location, error)
 	GetUsedByHolder(ctx context.Context, req *models.GetLocationByHolderDTO) ([]*models.Location, error)
 	GetUsedByDepartment(ctx context.Context, req *models.GetLocationByDepartmentDTO) ([]*models.Location, error)
 	SelectByDepartment(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error)
@@ -46,10 +47,10 @@ func (r *LocationRepo) Get(ctx context.Context, dto *models.GetLocationDTO) ([]*
 	query := fmt.Sprintf(`SELECT id, instrument_id, status, date_of_receiving, date_of_issue, need_confirmed, has_confirmed,
 		COALESCE(person, e.name, '') AS person, COALESCE(place, d.name, '') AS place,
 		COALESCE(person_id::text, '') AS person_id, COALESCE(department_id::text, '') AS department_id
-		FROM %s AS l WHERE instrument_id=$1 
+		FROM %s AS l
 		LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.person_id::uuid=id) AS e ON true
 		LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.department_id::uuid=id) AS d ON true
-		ORDER BY date_of_issue DESC, created_at DESC, id`,
+		WHERE instrument_id=$1 ORDER BY date_of_issue DESC, created_at DESC, id`,
 		LocationTable, EmployeeTable, DepartmentTable,
 	)
 	data := []*models.Location{}
@@ -63,7 +64,8 @@ func (r *LocationRepo) Get(ctx context.Context, dto *models.GetLocationDTO) ([]*
 
 func (r *LocationRepo) GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed,
-		COALESCE(person_id::text, '') AS person_id, COALESCE(department_id::text, '') AS department_id
+		COALESCE(person_id::text, '') AS person_id, COALESCE(department_id::text, '') AS department_id,
+		COALESCE(last_place_id::text, '') AS last_place_id
 		FROM %s WHERE instrument_id=$1 ORDER BY date_of_issue DESC, created_at DESC LIMIT 1`,
 		LocationTable,
 	)
@@ -76,6 +78,21 @@ func (r *LocationRepo) GetLast(ctx context.Context, dto *models.GetLocationDTO) 
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 
+	return data, nil
+}
+
+func (r *LocationRepo) GetSeveralLast(ctx context.Context, req *models.GetSeveralLocationsDTO) ([]*models.Location, error) {
+	query := fmt.Sprintf(`SELECT * FROM (
+			SELECT DISTINCT ON (instrument_id) * FROM %s ORDER BY instrument_id, date_of_issue DESC
+		)locs WHERE instrument_id::text = ANY($1) AND status!=%s ORDER BY status, date_of_issue DESC`,
+		//) locs WHERE instrument_id::text = ANY($1) ORDER BY status, date_of_issue DESC`,
+		LocationTable, constants.LocationStatusMoved,
+	)
+	data := []*models.Location{}
+
+	if err := r.db.SelectContext(ctx, &data, query, pq.Array(req.InstrumentIds)); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
 	return data, nil
 }
 
@@ -136,7 +153,7 @@ func (r *LocationRepo) Create(ctx context.Context, dto *models.LocationDTO) erro
 			s.department_id::uuid, COALESCE(m.department_id::text, ''), s.user_id::uuid
 		FROM (VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9))
 		AS s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, person_id, department_id, user_id) 
-		LEFT JOIN LATERAL (SELECT place, department_id FROM %s WHERE instrument_id=s.instrument_id::uuid ORDER BY created_at DESC LIMIT 1) AS m ON true`,
+		LEFT JOIN LATERAL (SELECT department_id FROM %s WHERE instrument_id=s.instrument_id::uuid ORDER BY created_at DESC LIMIT 1) AS m ON true`,
 		LocationTable, LocationTable,
 	)
 	dto.Id = uuid.NewString()
@@ -155,7 +172,7 @@ func (r *LocationRepo) Create(ctx context.Context, dto *models.LocationDTO) erro
 		departmentId = nil
 	}
 
-	args := []interface{}{dto.Id, dto.InstrumentId, dto.DateOfIssue, dto.DateOfReceiving, status, dto.NeedConfirmed, personId, departmentId, dto.UserId}
+	args := []interface{}{dto.Id, dto.InstrumentId, dto.DateOfIssue, dto.DateOfReceiving, status, dto.NeedConfirm, personId, departmentId, dto.UserId}
 	_, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
@@ -167,6 +184,8 @@ func (r *LocationRepo) CreateSeveral(ctx context.Context, dto []*models.Location
 	args := make([]interface{}, 0)
 	values := make([]string, 0, len(dto))
 	for i, v := range dto {
+		dto[i].Id = uuid.NewString()
+
 		status := v.Status
 		if status == "" {
 			status = constants.LocationStatusUsed
@@ -181,7 +200,7 @@ func (r *LocationRepo) CreateSeveral(ctx context.Context, dto []*models.Location
 			departmentId = nil
 		}
 
-		tmp := []interface{}{v.Id, v.InstrumentId, v.DateOfIssue, v.DateOfReceiving, status, v.NeedConfirmed, personId, departmentId, v.UserId}
+		tmp := []interface{}{v.Id, v.InstrumentId, v.DateOfIssue, v.DateOfReceiving, status, v.NeedConfirm, personId, departmentId, v.UserId}
 		args = append(args, tmp...)
 		numbers := []string{}
 		for j := range tmp {

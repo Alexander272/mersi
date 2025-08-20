@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	ErrNoRows        = errors.New("row not found")
+	ErrAlreadyExists = errors.New("already exists")
 	ErrNoChannel     = errors.New("channel not found")
 	ErrNoResponsible = errors.New("responsible not found")
 	ErrNoInstrument  = errors.New("instrument not found")

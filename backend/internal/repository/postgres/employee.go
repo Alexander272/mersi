@@ -26,6 +26,7 @@ type Employee interface {
 	GetAll(context.Context, *models.GetEmployeesDTO) ([]*models.Employee, error)
 	GetUnique(context.Context) ([]*models.Employee, error)
 	GetByDepartment(context.Context, string) ([]*models.Employee, error)
+	GetByName(ctx context.Context, req *models.GetEmployeeByNameDTO) (*models.Employee, error)
 	GetById(context.Context, string) (*models.Employee, error)
 	GetByMostId(context.Context, string) (*models.EmployeeData, error)
 	GetBySSOId(context.Context, string) (*models.Employee, error)
@@ -79,6 +80,19 @@ func (r *EmployeeRepo) GetByDepartment(ctx context.Context, departmentId string)
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return employees, nil
+}
+
+func (r *EmployeeRepo) GetByName(ctx context.Context, req *models.GetEmployeeByNameDTO) (*models.Employee, error) {
+	query := fmt.Sprintf(`SELECT id, name, most_id FROM %s WHERE name=$1 AND department_id=2`, EmployeeTable)
+	data := &models.Employee{}
+
+	if err := r.db.GetContext(ctx, data, query, req.Name); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
 }
 
 func (r *EmployeeRepo) GetById(ctx context.Context, id string) (*models.Employee, error) {

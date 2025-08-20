@@ -10,11 +10,13 @@ import (
 
 type RealmService struct {
 	repo repository.Realm
+	user User
 }
 
-func NewRealmService(repo repository.Realm) *RealmService {
+func NewRealmService(repo repository.Realm, user User) *RealmService {
 	return &RealmService{
 		repo: repo,
+		user: user,
 	}
 }
 
@@ -53,26 +55,13 @@ func (s *RealmService) GetByUser(ctx context.Context, req *models.GetRealmByUser
 }
 
 func (s *RealmService) Choose(ctx context.Context, dto *models.ChooseRealmDTO) (*models.User, error) {
-	// get menu
-	// menu, err := s.role.Get(ctx, dto.Role)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	user, err := s.user.GetRoles(ctx, &models.GetUserInfoDTO{UserID: dto.UserID, Realm: dto.RealmID})
+	if err != nil {
+		return nil, err
+	}
+	user.Role = dto.Role
 
-	// // get default filters
-	// filters, err := s.filter.Get(ctx, &models.GetFilterDTO{SSOId: dto.UserId, RealmId: dto.RealmId})
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// user := &models.User{
-	// 	Role:    dto.Role,
-	// 	Menu:    menu.Menu,
-	// 	Filters: filters,
-	// }
-	// return user, nil
-
-	return nil, fmt.Errorf("not implemented")
+	return user, nil
 }
 
 func (s *RealmService) Create(ctx context.Context, dto *models.RealmDTO) error {
