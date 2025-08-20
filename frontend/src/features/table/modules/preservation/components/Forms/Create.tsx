@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC, useRef, useState } from 'react'
 import { Button, Divider, IconButton, Stack, Typography, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
@@ -23,6 +23,7 @@ type Props = {
 
 export const Create: FC<Props> = ({ ids }) => {
 	const [active, setActive] = useState(0)
+	const savedIds = useRef(new Set<string>())
 	const { palette } = useTheme()
 
 	const dispatch = useAppDispatch()
@@ -63,7 +64,9 @@ export const Create: FC<Props> = ({ ids }) => {
 			}
 
 			toast.success('Данные о консервации добавлены')
-			closeHandler()
+			savedIds.current.add(ids[active])
+			setActive(prev => prev + 1)
+			if (savedIds.current.size == ids.length) closeHandler()
 		} catch (error) {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })
@@ -113,7 +116,7 @@ export const Create: FC<Props> = ({ ids }) => {
 					<Button onClick={closeHandler} variant='outlined' fullWidth>
 						Отмена
 					</Button>
-					<Button type='submit' variant='contained' fullWidth>
+					<Button disabled={savedIds.current.has(ids[active])} type='submit' variant='contained' fullWidth>
 						Сохранить
 					</Button>
 				</Stack>

@@ -36,6 +36,7 @@ export const Inputs: FC<Props> = ({ instrumentId }) => {
 				if (f.field == 'notes') return <NotesField key={f.id} field={f.field} label={f.label} />
 				if (f.type == 'file')
 					return <FileField key={f.id} field={f.field} label={f.label} instrumentId={instrumentId} />
+				if (f.type == 'files') return //TODO added upload
 			})}
 		</Stack>
 	)

@@ -19,7 +19,7 @@ export const Checkbox: FC<Props & React.InputHTMLAttributes<HTMLInputElement>> =
 }) => {
 	return (
 		<Field>
-			<Input id={id} name={name} checked={checked} onChange={onChange} type='checkbox' {...attr} />
+			<Input id={id} name={name} checked={checked || false} onChange={onChange} type='checkbox' {...attr} />
 
 			<Label htmlFor={id}>
 				<span>

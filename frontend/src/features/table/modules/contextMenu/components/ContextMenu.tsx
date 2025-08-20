@@ -9,6 +9,9 @@ import { getContextMenu, setContextMenu } from '../../../tableSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { ChangePositionDialog } from '../../../components/Dialogs/ChangePositionDialog'
 import { EditDialog } from '../../../components/Dialogs/EditDialog'
+import { HistoryDialog } from '../../history/components/Dialog'
+import { DeleteLocationDialog } from '../../locations/components/Dialogs/Delete'
+import { ForcedReceiptDialog } from '../../locations/components/Dialogs/Forced'
 import { CreateOnBase } from './CreateOnBase'
 import {
 	ChangePosition,
@@ -21,7 +24,7 @@ import {
 	Verification,
 	WriteOff,
 } from './ContextMenuItems'
-import { HistoryDialog } from '../../history/components/Dialog'
+import { Cancel, Forced, Location, Receive, Reserve } from './LocationItems'
 
 type ItemProps = { onClick?: () => void; label?: string }
 type MenuItem = { el: FC<ItemProps>; action?: DialogVariants }
@@ -31,6 +34,11 @@ const ContextMenuItems = new Map<string, MenuItem>([
 	['edit', { el: Edit, action: 'EditTableItem' }],
 	['change-position', { el: ChangePosition, action: 'ChangePosition' }],
 	['verification', { el: Verification, action: 'NewVerification' }],
+	['location', { el: Location, action: 'NewLocation' }],
+	['reserve', { el: Reserve, action: 'SendToReserve' }],
+	['receive', { el: Receive, action: 'Receive' }],
+	['forced', { el: Forced, action: 'Forced' }],
+	['cancel', { el: Cancel, action: 'DeleteLocation' }],
 	['repair-info', { el: Repair, action: 'AddRepair' }],
 	['preservation-info', { el: Preservation, action: 'AddPreservation' }],
 	['transfer-to-save', { el: TransferToSave, action: 'AddTransferToSave' }],
@@ -100,6 +108,8 @@ export const ContextMenu = () => {
 			<EditDialog />
 			<ChangePositionDialog />
 			<HistoryDialog />
+			<DeleteLocationDialog />
+			<ForcedReceiptDialog />
 		</>
 	)
 }

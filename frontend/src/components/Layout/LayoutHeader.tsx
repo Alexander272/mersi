@@ -11,6 +11,7 @@ import { GeometryIcon } from '../Icons/GeometryIcon'
 import { NavButton, NavLink } from './header.style'
 
 import logo from '@/assets/logo.webp'
+import { Link } from 'react-router'
 
 export const LayoutHeader = () => {
 	const [signOut] = useSignOutMutation()
@@ -26,7 +27,7 @@ export const LayoutHeader = () => {
 	return (
 		<AppBar sx={{ borderRadius: 0 }}>
 			<Toolbar sx={{ justifyContent: 'space-between', alignItems: 'inherit' }}>
-				<Box alignSelf={'center'} display={'flex'} alignItems={'center'}>
+				<Box alignSelf={'center'} display={'flex'} alignItems={'center'} component={Link} to={AppRoutes.Home}>
 					<img height={46} width={157} src={logo} alt='logo' />
 					<GeometryIcon fill={'#042245'} />
 				</Box>

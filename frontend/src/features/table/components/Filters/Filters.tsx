@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Badge, Box, Button, Stack, Tooltip, Typography, useTheme } from '@mui/material'
+import { Badge, Box, Button, Popover, Stack, Tooltip, Typography, useTheme } from '@mui/material'
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
@@ -10,7 +10,6 @@ import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useSaveFiltersMutation } from '../../filtersApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
 import { getFilters, setFilters } from '../../tableSlice'
-import { Popover } from '@/components/Popover/Popover'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { FilterIcon } from '@/components/Icons/FilterIcon'
 import { PlusIcon } from '@/components/Icons/PlusIcon'
@@ -114,20 +113,39 @@ export const Filters = () => {
 				open={open}
 				onClose={toggleHandler}
 				anchorEl={anchor.current}
-				paperSx={{
-					maxWidth: filter == 'default' ? 500 : 700,
-					transition: 'all 0.3s ease-in-out',
-					'&:before': {
-						content: '""',
-						display: 'block',
-						position: 'absolute',
-						top: 0,
-						right: filter == 'default' ? '41%' : '29.3%',
-						width: 10,
-						height: 10,
-						bgcolor: 'background.paper',
-						transform: 'translate(-50%, -50%) rotate(45deg)',
-						zIndex: 0,
+				anchorOrigin={{
+					vertical: 'bottom',
+					horizontal: 'center',
+				}}
+				transformOrigin={{
+					vertical: 'top',
+					horizontal: 'center',
+				}}
+				slotProps={{
+					paper: {
+						elevation: 0,
+						sx: {
+							overflow: 'visible',
+							filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+							mt: 1,
+							paddingX: 2,
+							pt: 1.5,
+							paddingBottom: 2,
+							maxWidth: filter == 'default' ? 500 : 700,
+							width: '100%',
+							'&:before': {
+								content: '""',
+								display: 'block',
+								position: 'absolute',
+								top: 0,
+								right: filter == 'default' ? '41%' : '29.3%',
+								width: 10,
+								height: 10,
+								bgcolor: 'background.paper',
+								transform: 'translate(-50%, -50%) rotate(45deg)',
+								zIndex: 0,
+							},
+						},
 					},
 				}}
 			>

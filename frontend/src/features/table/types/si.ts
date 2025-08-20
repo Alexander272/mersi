@@ -32,6 +32,9 @@ export interface ISI {
 	returnDate: number
 	transferToDepartment: string
 	writeOff: string
+	person: string
+	place: string
+	lastPlace: string
 	status: LocationStatus
 }
 export type LocationStatus = 'reserve' | 'used' | 'moved'
@@ -62,4 +65,11 @@ export interface IChangePositionDTO {
 	sectionId: string
 	newPosition: number
 	oldPosition: number
+}
+
+export interface ISentSI {
+	place: string
+	si: ISI[]
+	channel: string
+	status: string
 }

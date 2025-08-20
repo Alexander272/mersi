@@ -35,6 +35,10 @@ const widths = new Map([
 		'5f86ac32-9477-4f48-ae27-e9ef94d848f8',
 		{ verificationDate: 240, nextVerificationDate: 240, notes: 335, docs: 335 },
 	],
+	[
+		'062ae3f3-1f2a-4b1c-b098-683249e41584',
+		{ verificationDate: 180, nextVerificationDate: 180, registerLink: 180, status: 140, docs: 235, notes: 235 },
+	],
 ])
 
 const Statuses = {
@@ -44,7 +48,10 @@ const Statuses = {
 }
 
 const Formatter = (field: string, value: string) => {
-	if (field == 'verificationDate' || field == 'nextVerificationDate') return dayjs(+value * 1000).format('DD.MM.YYYY')
+	if (field == 'verificationDate' || field == 'nextVerificationDate') {
+		if (value != '') return dayjs(+value * 1000).format('DD.MM.YYYY')
+		return '-'
+	}
 	if (field == 'status') return Statuses[value as 'work' | 'repair' | 'decommissioning']
 	return value
 }
@@ -83,6 +90,7 @@ export const Verification: FC<Props> = ({ instrumentId }) => {
 					})}
 				</TableRow>
 			</TableHead>
+
 			<Box maxHeight={350} overflow={'auto'} position={'relative'} minHeight={150}>
 				<TableBody>
 					{data?.data.map(item => (

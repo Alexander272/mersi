@@ -1,1 +1,1 @@
-export const RealmKey = 'si_accounting/realm'
+export const RealmKey = 'mersi/realm'

@@ -9,13 +9,16 @@ import { getSelected } from '@/features/table/tableSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { CreateRepairDialog } from '../../repair/components/Dialogs/Create'
 import { CreateVerificationDialog } from '../../verification/components/Dialogs/Create'
-import { MenuItems } from './ToolsMenuItem'
 import { CreatePreservationDialog } from '../../preservation/components/Dialogs/Create'
 import { CreateTransferToSaveDialog } from '../../transferToSave/components/Dialogs/Create'
 import { CreateTransferToDepartmentDialog } from '../../transferToDep/components/Dialogs/Create'
 import { CreateWriteOffDialog } from '../../writeOff/components/Dialogs/Create'
 import { ScheduleDialog } from '../../export/components/ScheduleDialog'
 import { ExportDialog } from '../../export/components/ExportDialog'
+import { CreateLocationDialog } from '../../locations/components/Dialogs/Create'
+import { MenuItems } from './ToolsMenuItems'
+import { SendToReserveDialog } from '../../locations/components/Dialogs/SendToReserve'
+import { ReceiptDialog } from '../../locations/components/Dialogs/Receipt'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
@@ -60,14 +63,14 @@ export const ToolsMenu = () => {
 							overflow: 'visible',
 							filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
 							mt: 1.5,
-							maxWidth: 550,
+							maxWidth: 350,
 							width: '100%',
 							'&:before': {
 								content: '""',
 								display: 'block',
 								position: 'absolute',
 								top: 0,
-								right: '17%',
+								right: '28%',
 								width: 10,
 								height: 10,
 								bgcolor: 'background.paper',
@@ -91,6 +94,9 @@ export const ToolsMenu = () => {
 
 			<CreateRepairDialog />
 			<CreateVerificationDialog title={MenuItems.get('verification')?.label || ''} />
+			<CreateLocationDialog />
+			<SendToReserveDialog />
+			<ReceiptDialog />
 			<CreatePreservationDialog />
 			<CreateTransferToSaveDialog />
 			<CreateTransferToDepartmentDialog />

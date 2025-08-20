@@ -7,7 +7,7 @@ export const API = {
 	si: {
 		base: 'si' as const,
 		position: 'si/position' as const,
-		moved: 'si/moved' as const,
+		sent: 'si/sent' as const,
 		save: 'si/save' as const,
 		instruments: {
 			base: 'si/instruments' as const,
@@ -24,9 +24,13 @@ export const API = {
 			last: 'si/verifications/last' as const,
 			fields: 'si/verifications/fields' as const,
 		},
-		location: {
+		locations: {
 			base: 'si/locations' as const,
-			all: 'si/locations/all' as const,
+			last: 'si/locations/last' as const,
+			several: 'si/locations/several' as const,
+			receiving: 'si/locations/receiving' as const,
+			forced: 'si/locations/receiving/forced' as const,
+			dialogs: 'si/locations/receiving/dialogs' as const,
 		},
 		export: 'export' as const,
 		schedule: 'export/schedule' as const,

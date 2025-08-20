@@ -7,6 +7,7 @@ import { useGetHistoryTypesQuery } from '../historyApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { Verification } from './Verification'
+import { Location } from './Location'
 import { Repair } from './Repair'
 import { Preservation } from './Preservation'
 import { Save } from './Save'
@@ -67,6 +68,9 @@ export const History: FC<Props> = ({ instrumentId }) => {
 								transition: 'all 0.3s ease-in-out',
 								minHeight: 48,
 								flexGrow: 1,
+								flexShrink: 1,
+								maxWidth: '100%',
+								width: '100%',
 								':hover': {
 									backgroundColor: '#f5f5f5',
 								},
@@ -77,6 +81,7 @@ export const History: FC<Props> = ({ instrumentId }) => {
 			) : null}
 
 			{value == 'verifications' && <Verification instrumentId={instrumentId} />}
+			{value == 'locations' && <Location instrumentId={instrumentId} />}
 			{value == 'repair' && <Repair instrumentId={instrumentId} />}
 			{value == 'preservation' && <Preservation instrumentId={instrumentId} />}
 			{value == 'save' && <Save instrumentId={instrumentId} />}

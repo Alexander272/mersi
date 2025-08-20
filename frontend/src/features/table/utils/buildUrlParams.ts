@@ -12,7 +12,7 @@ export const buildSiUrlParams = (req: IGetSiDTO): URLSearchParams => {
 	if (req.size && req.size != Size) params.push(['size', req.size.toString()])
 
 	if (req.search?.value) {
-		params.push([`search[${req.search.fields.join(',')}]`, req.search.value])
+		params.push([`search[${req.search.fields.join(',')}]`, req.search.value || ''])
 	}
 
 	if (req.sort && Object.keys(req.sort).length) {

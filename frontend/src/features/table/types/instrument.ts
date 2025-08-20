@@ -18,4 +18,5 @@ export interface IInstrumentDTO {
 	actOfEntering: string
 	actOfEnteringId: string
 	notes: string
+	status?: string
 }

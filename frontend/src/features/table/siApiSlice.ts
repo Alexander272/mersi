@@ -1,7 +1,7 @@
 import { toast } from 'react-toastify'
 
 import type { IBaseFetchError } from '@/app/types/error'
-import type { IChangePositionDTO, IGetSiDTO, ISI, ISiDTO } from './types/si'
+import type { IChangePositionDTO, IGetSiDTO, ISentSI, ISI, ISiDTO } from './types/si'
 import { API } from '@/app/api'
 import { apiSlice } from '@/app/apiSlice'
 import { buildSiUrlParams } from './utils/buildUrlParams'
@@ -32,6 +32,23 @@ const SIApiSlice = apiSlice.injectEndpoints({
 				{ type: 'SI', id: arg },
 				{ type: 'SI', id: 'ID' },
 			],
+			onQueryStarted: async (_arg, api) => {
+				try {
+					await api.queryFulfilled
+				} catch (error) {
+					const fetchError = (error as IBaseFetchError).error
+					console.error(fetchError)
+					toast.error(fetchError.data.message, { autoClose: false })
+				}
+			},
+		}),
+		getSentSI: builder.query<{ data: ISentSI[] }, IGetSiDTO>({
+			query: params => ({
+				url: API.si.sent,
+				method: 'GET',
+				params: buildSiUrlParams(params),
+			}),
+			providesTags: [{ type: 'SI', id: 'MOVED' }],
 			onQueryStarted: async (_arg, api) => {
 				try {
 					await api.queryFulfilled
@@ -98,6 +115,7 @@ export const {
 	useGetSIQuery,
 	useLazyGetSIQuery,
 	useGetSIByIdQuery,
+	useGetSentSIQuery,
 	useCreateSiMutation,
 	useUpdateSIMutation,
 	useChangePositionMutation,
