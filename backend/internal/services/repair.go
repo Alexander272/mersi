@@ -9,12 +9,14 @@ import (
 )
 
 type RepairService struct {
-	repo repository.Repair
+	repo       repository.Repair
+	instrument Instrument
 }
 
-func NewRepairService(repo repository.Repair) *RepairService {
+func NewRepairService(repo repository.Repair, instrument Instrument) *RepairService {
 	return &RepairService{
-		repo: repo,
+		repo:       repo,
+		instrument: instrument,
 	}
 }
 
@@ -34,10 +36,18 @@ func (s *RepairService) Get(ctx context.Context, req *models.GetRepairDTO) ([]*m
 }
 
 func (s *RepairService) Create(ctx context.Context, dto *models.RepairDTO) error {
-	//TODO можно еще при добавлении ремонта менять статус у инструмента (чтобы он автоматом уходил из списка "на ремонте")
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create repair info. error: %w", err)
 	}
+
+	instrumentDTO := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatusWork,
+	}
+	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
+		return err
+	}
+
 	return nil
 }
 

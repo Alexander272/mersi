@@ -155,6 +155,9 @@ func (h *Handler) create(c *gin.Context) {
 	}
 	user := u.(models.User)
 	dto.Instrument.UserId = user.ID
+	if dto.Location != nil {
+		dto.Location.UserId = user.ID
+	}
 
 	if err := h.service.Create(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())

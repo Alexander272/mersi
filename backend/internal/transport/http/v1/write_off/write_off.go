@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
+	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -63,11 +64,22 @@ func (h *Handler) create(c *gin.Context) {
 		return
 	}
 
+	u, exists := c.Get(constants.CtxUser)
+	if !exists {
+		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		return
+	}
+	user := u.(models.User)
+	dto.UserId = user.ID
+
 	if err := h.service.Create(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Данные о списании добавлены", logger.AnyAttr("data", dto))
+
 	c.JSON(http.StatusCreated, response.IdResponse{Message: "Данные о списании добавлены"})
 }
 
@@ -89,6 +101,9 @@ func (h *Handler) update(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Данные о списании обновлены", logger.AnyAttr("data", dto))
+
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о списании обновлены"})
 }
 
@@ -105,5 +120,8 @@ func (h *Handler) delete(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Данные о списании удалены", logger.AnyAttr("data", dto))
+
 	c.JSON(http.StatusNoContent, response.IdResponse{})
 }

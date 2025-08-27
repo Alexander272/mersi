@@ -5,6 +5,10 @@ type GetEmployeesDTO struct {
 	// DepartmentId string `json:"departmentId"`
 }
 
+type GetUniqueEmployeeDTO struct {
+	Realm string `json:"realm" binding:"required"`
+}
+
 // type GetDepartmentsDTO struct {
 // 	UserId string `json:"userId" binding:"required"`
 // }

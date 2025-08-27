@@ -89,16 +89,17 @@ func (h *Handler) create(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.Create(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
-		return
-	}
-
 	var user models.User
 	u, exists := c.Get(constants.CtxUser)
 	if exists {
 		user = u.(models.User)
+	}
+	dto.UserId = user.ID
+
+	if err := h.service.Create(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
 	}
 
 	logger.Info("Добавлена поверка",

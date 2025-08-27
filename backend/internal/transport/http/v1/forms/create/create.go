@@ -29,6 +29,7 @@ func Register(api *gin.RouterGroup, service services.CreateForm, middleware *mid
 	create := api.Group("create", middleware.CheckPermissions(constants.CreatingForm, constants.Read))
 	{
 		create.GET("", handler.get)
+		create.GET("/bool-fields", handler.getBooleanFields)
 
 		write := create.Group("", middleware.CheckPermissions(constants.CreatingForm, constants.Write))
 		{
@@ -46,9 +47,30 @@ func (h *Handler) get(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Section id не валиден")
 		return
 	}
-	req := &models.GetCreateFormDTO{SectionID: section}
+	action := c.Query("action")
+	if action == "" {
+		action = "Create"
+	}
+	req := &models.GetCreateFormDTO{SectionID: section, Action: action}
 
 	data, err := h.service.Get(c, req)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), req)
+		return
+	}
+	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
+}
+
+func (h *Handler) getBooleanFields(c *gin.Context) {
+	section := c.Query("section")
+	if err := uuid.Validate(section); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Section id не валиден")
+		return
+	}
+	req := &models.GetCreateFormDTO{SectionID: section}
+
+	data, err := h.service.GetBooleanFields(c, req)
 	if err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), req)

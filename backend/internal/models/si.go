@@ -42,6 +42,7 @@ type SI struct {
 type BaseSI struct {
 	Instrument   *Instrument   `json:"instrument"`
 	Verification *Verification `json:"verification"`
+	Location     *Location     `json:"location"`
 }
 
 type GetSiDTO struct {

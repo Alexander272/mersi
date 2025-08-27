@@ -12,6 +12,7 @@ import (
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type EmployeeHandlers struct {
@@ -45,6 +46,13 @@ func Register(api *gin.RouterGroup, service services.Employee, middleware *middl
 func (h *EmployeeHandlers) GetAll(c *gin.Context) {
 	filter := make(map[string]string, 0)
 
+	realm := c.Query("realm")
+	if err := uuid.Validate(realm); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid realm param")
+		return
+	}
+	filter["realm_id"] = realm
+
 	departmentId := c.Query("departmentId")
 	if departmentId != "" {
 		filter["department_id"] = departmentId
@@ -61,10 +69,17 @@ func (h *EmployeeHandlers) GetAll(c *gin.Context) {
 }
 
 func (h *EmployeeHandlers) GetUnique(c *gin.Context) {
-	employees, err := h.service.GetUnique(c)
+	realm := c.Query("realm")
+	if err := uuid.Validate(realm); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid realm param")
+		return
+	}
+	dto := &models.GetUniqueEmployeeDTO{Realm: realm}
+
+	employees, err := h.service.GetUnique(c, dto)
 	if err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), nil)
+		error_bot.Send(c, err.Error(), dto)
 		return
 	}
 

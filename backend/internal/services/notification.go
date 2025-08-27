@@ -20,22 +20,25 @@ import (
 type NotificationService struct {
 	si        SI
 	file      File
+	section   Section
 	most      *most.MostService
 	conf      config.UsedConfig
 	iteration int
 }
 
 type NotificationDeps struct {
-	SI   SI
-	File File
-	Most *most.MostService
-	Conf config.UsedConfig
+	SI      SI
+	File    File
+	Section Section
+	Most    *most.MostService
+	Conf    config.UsedConfig
 }
 
 func NewNotificationService(deps *NotificationDeps) *NotificationService {
 	return &NotificationService{
 		si:        deps.SI,
 		file:      deps.File,
+		section:   deps.Section,
 		most:      deps.Most,
 		conf:      deps.Conf,
 		iteration: 0,
@@ -139,35 +142,54 @@ func (s *NotificationService) CheckUsed() error {
 func (s *NotificationService) CheckVerification() error {
 	logger.Info("Check verification")
 
-	now := time.Now()
-	//TODO может привязать день к realm или section
-	if time.Now().Day() != 5 {
-		return nil
-	}
-
-	dto := &models.Period{
-		StartAt:  time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()).Unix(),
-		FinishAt: time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location()).Unix(),
-	}
-
-	data, err := s.si.GetVerification(context.Background(), dto)
+	sections, err := s.section.GetAll(context.Background())
 	if err != nil {
 		return err
 	}
 
-	for _, d := range data {
-		switch d.BidType {
-		case "ointo_si":
-			if err := s.sendFile(d); err != nil {
-				return err
-			}
+	// может привязать день к realm или section, только тогда надо как-то получать данные
+	// хотя можно получать все section и делать запросы в цикле, если полученный день совпадает с текущим
+	// можно еще разрешить отрицательные значения, чтобы можно было считать от конца месяца
 
-		default:
-			if err := s.sendVerificationTable(d); err != nil {
-				return err
+	now := time.Now()
+	for _, item := range sections {
+		if item.VerificationDay < 0 {
+			if time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day()-item.VerificationDay != now.Day() {
+				return nil
+			}
+		} else {
+			if item.VerificationDay != now.Day() {
+				return nil
+			}
+		}
+		logger.Debug("Check verification", logger.AnyAttr("section", item))
+
+		dto := &models.Period{
+			StartAt:   time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()).Unix(),
+			FinishAt:  time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location()).Unix(),
+			SectionId: item.ID,
+		}
+
+		data, err := s.si.GetVerification(context.Background(), dto)
+		if err != nil {
+			return err
+		}
+
+		for _, d := range data {
+			switch d.BidType {
+			case "ointo_si":
+				if err := s.sendFile(d); err != nil {
+					return err
+				}
+
+			default:
+				if err := s.sendVerificationTable(d); err != nil {
+					return err
+				}
 			}
 		}
 	}
+
 	return nil
 }
 

@@ -97,7 +97,8 @@ func (r *LocationRepo) GetSeveralLast(ctx context.Context, req *models.GetSevera
 }
 
 func (r *LocationRepo) GetUsedByHolder(ctx context.Context, req *models.GetLocationByHolderDTO) ([]*models.Location, error) {
-	query := fmt.Sprintf(`SELECT * FROM (
+	query := fmt.Sprintf(`SELECT id, instrument_id, status, date_of_receiving, date_of_issue, need_confirmed, 
+		has_confirmed, person_id, department_id, last_place_id FROM (
 			SELECT DISTINCT ON (instrument_id) * FROM %s ORDER BY instrument_id, date_of_issue DESC
 		) locs WHERE person_id=$1`,
 		LocationTable,
@@ -110,7 +111,8 @@ func (r *LocationRepo) GetUsedByHolder(ctx context.Context, req *models.GetLocat
 	return data, nil
 }
 func (r *LocationRepo) GetUsedByDepartment(ctx context.Context, req *models.GetLocationByDepartmentDTO) ([]*models.Location, error) {
-	query := fmt.Sprintf(`SELECT * FROM (
+	query := fmt.Sprintf(`SELECT id, instrument_id, status, date_of_receiving, date_of_issue, need_confirmed, 
+		has_confirmed, person_id, department_id, last_place_id FROM (
 			SELECT DISTINCT ON (instrument_id) * FROM %s ORDER BY instrument_id, date_of_issue DESC
 		) locs WHERE department_id=$1`,
 		LocationTable,
@@ -250,7 +252,7 @@ func (r *LocationRepo) SetPerson(ctx context.Context, id string) error {
 	return nil
 }
 func (r *LocationRepo) SetDepartment(ctx context.Context, id string) error {
-	query := fmt.Sprintf(`UPDATE %s AS l SET department=d.name, person=e.name 
+	query := fmt.Sprintf(`UPDATE %s AS l SET place=d.name, person=e.name 
 		FROM %s AS e INNER JOIN %s AS d ON e.department_id=d.id 
 		WHERE l.department_id=d.id AND l.person_id=e.id AND l.department_id=$1`,
 		LocationTable, EmployeeTable, DepartmentTable,

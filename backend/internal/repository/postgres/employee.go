@@ -24,7 +24,7 @@ func NewEmployeeRepo(db *sqlx.DB) *EmployeeRepo {
 
 type Employee interface {
 	GetAll(context.Context, *models.GetEmployeesDTO) ([]*models.Employee, error)
-	GetUnique(context.Context) ([]*models.Employee, error)
+	GetUnique(context.Context, *models.GetUniqueEmployeeDTO) ([]*models.Employee, error)
 	GetByDepartment(context.Context, string) ([]*models.Employee, error)
 	GetByName(ctx context.Context, req *models.GetEmployeeByNameDTO) (*models.Employee, error)
 	GetById(context.Context, string) (*models.Employee, error)
@@ -36,7 +36,10 @@ type Employee interface {
 }
 
 func (r *EmployeeRepo) GetAll(ctx context.Context, req *models.GetEmployeesDTO) ([]*models.Employee, error) {
-	query := fmt.Sprintf(`SELECT id, name, notes, department_id, most_id, is_lead FROM %s`, EmployeeTable)
+	query := fmt.Sprintf(`SELECT e.id, e.name, notes, department_id, most_id, is_lead FROM %s AS e
+		INNER JOIN %s AS d ON e.department_id=d.id`,
+		EmployeeTable, DepartmentTable,
+	)
 
 	params := []interface{}{}
 	filters := []string{}
@@ -62,11 +65,14 @@ func (r *EmployeeRepo) GetAll(ctx context.Context, req *models.GetEmployeesDTO) 
 	return employees, nil
 }
 
-func (r *EmployeeRepo) GetUnique(ctx context.Context) ([]*models.Employee, error) {
-	query := fmt.Sprintf(`SELECT name FROM %s GROUP BY name ORDER BY name`, EmployeeTable)
+func (r *EmployeeRepo) GetUnique(ctx context.Context, dto *models.GetUniqueEmployeeDTO) ([]*models.Employee, error) {
+	query := fmt.Sprintf(`SELECT  DISTINCT(e.name) FROM %s AS e INNER JOIN %s AS d ON e.department_id=d.id
+		WHERE realm_id=$1 ORDER BY e.name`,
+		EmployeeTable, DepartmentTable,
+	)
 	employees := []*models.Employee{}
 
-	if err := r.db.SelectContext(ctx, &employees, query); err != nil {
+	if err := r.db.SelectContext(ctx, &employees, query, dto.Realm); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return employees, nil

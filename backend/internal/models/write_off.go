@@ -23,6 +23,7 @@ type WriteOffDTO struct {
 	Notes        string `json:"notes" db:"notes"`
 	DocId        string `json:"docId" db:"doc_id"`
 	DocName      string `json:"docName" db:"doc_name"`
+	UserId       string `json:"userId" db:"user_id"`
 }
 
 type DeleteWriteOffDTO struct {

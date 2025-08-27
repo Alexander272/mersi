@@ -20,20 +20,34 @@ func NewDocumentRepo(db *sqlx.DB) *DocumentRepo {
 }
 
 type Document interface {
-	GetTemp(ctx context.Context, req *models.GetTempDocumentDTO) ([]*models.Document, error)
+	GetTemp(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error)
+	GetByInstrument(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error)
 	CreateSeveral(ctx context.Context, dto []*models.Document) error
 	UpdatePath(ctx context.Context, dto *models.PathParts) (int64, error)
 	Delete(ctx context.Context, dto *models.DeleteDocumentDTO) error
 }
 
-func (r *DocumentRepo) GetTemp(ctx context.Context, req *models.GetTempDocumentDTO) ([]*models.Document, error) {
+func (r *DocumentRepo) GetTemp(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error) {
 	query := fmt.Sprintf(`SELECT id, label, size, path, type, belongs, user_id FROM %s 
-		WHERE user_id=$1 AND belongs=$2 AND path LIKE '%%temp/%%'`,
+		WHERE user_id=$1 AND belongs=$2 AND CASE WHEN $3!='' THEN instrument_id::text=$3 ELSE TRUE END AND path LIKE '%%temp/%%'`,
 		DocumentsTable,
 	)
 	data := []*models.Document{}
 
-	if err := r.db.SelectContext(ctx, &data, query, req.UserId, req.Group); err != nil {
+	if err := r.db.SelectContext(ctx, &data, query, req.UserId, req.Group, req.InstrumentId); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
+func (r *DocumentRepo) GetByInstrument(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error) {
+	query := fmt.Sprintf(`SELECT id, label, size, path, type, belongs, user_id FROM %s 
+		WHERE user_id=$1 AND belongs=$2 AND instrument_id=$3 AND path NOT LIKE '%%temp/%%'`,
+		DocumentsTable,
+	)
+	data := []*models.Document{}
+
+	if err := r.db.SelectContext(ctx, &data, query, req.UserId, req.Group, req.InstrumentId); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return data, nil
@@ -71,7 +85,8 @@ func (r *DocumentRepo) CreateSeveral(ctx context.Context, dto []*models.Document
 
 func (r *DocumentRepo) UpdatePath(ctx context.Context, dto *models.PathParts) (int64, error) {
 	src := fmt.Sprintf("temp/%s/%s", dto.UserId, dto.Group)
-	query := fmt.Sprintf(`UPDATE %s SET instrument_id=$1::uuid, path=REPLACE(path, $2, $3||'/'||$1::text)
+	query := fmt.Sprintf(`UPDATE %s SET instrument_id=$1::uuid, 
+		path=CASE WHEN instrument_id IS NULL THEN REPLACE(path, $2, $3||'/'||$1::text) ELSE REPLACE(path, $2, $3) END
 		WHERE (instrument_id IS NULL OR instrument_id=$1) AND belongs=$3 AND user_id=$4`,
 		DocumentsTable,
 	)

@@ -101,6 +101,10 @@ func (h *Handler) getLast(c *gin.Context) {
 
 	data, err := h.service.GetLast(c, req)
 	if err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), "Данные не найдены")
+			return
+		}
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), req)
 		return

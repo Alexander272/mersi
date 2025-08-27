@@ -11,11 +11,13 @@ import (
 
 type InstrumentService struct {
 	repo repository.Instrument
+	docs Document
 }
 
-func NewInstrumentService(repo repository.Instrument) *InstrumentService {
+func NewInstrumentService(repo repository.Instrument, docs Document) *InstrumentService {
 	return &InstrumentService{
 		repo: repo,
+		docs: docs,
 	}
 }
 
@@ -52,6 +54,19 @@ func (s *InstrumentService) Create(ctx context.Context, dto *models.InstrumentDT
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create instrument. error: %w", err)
 	}
+
+	if dto.ActOfEnteringId != "" {
+		pathDTO := &models.PathParts{
+			InstrumentId: dto.Id,
+			Group:        "act",
+			UserId:       dto.UserId,
+			IdWasEmpty:   true,
+		}
+		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

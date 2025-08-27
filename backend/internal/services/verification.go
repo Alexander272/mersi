@@ -10,14 +10,16 @@ import (
 )
 
 type VerificationService struct {
-	repo repository.Verification
-	docs VerificationDoc
+	repo    repository.Verification
+	verDocs VerificationDoc
+	docs    Document
 }
 
-func NewVerificationService(repo repository.Verification, docs VerificationDoc) *VerificationService {
+func NewVerificationService(repo repository.Verification, verDocs VerificationDoc, docs Document) *VerificationService {
 	return &VerificationService{
-		repo: repo,
-		docs: docs,
+		repo:    repo,
+		verDocs: verDocs,
+		docs:    docs,
 	}
 }
 
@@ -35,7 +37,7 @@ func (s *VerificationService) Get(ctx context.Context, req *models.GetVerificati
 		return nil, fmt.Errorf("failed to get verification by instrument. error: %w", err)
 	}
 
-	docs, err := s.docs.GetGrouped(ctx, &models.GetGroupedVerificationDocsDTO{InstrumentId: req.InstrumentId})
+	docs, err := s.verDocs.GetGrouped(ctx, &models.GetGroupedVerificationDocsDTO{InstrumentId: req.InstrumentId})
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +60,7 @@ func (s *VerificationService) GetLast(ctx context.Context, req *models.GetVerifi
 		return nil, fmt.Errorf("failed to get last verification. error: %w", err)
 	}
 
-	docs, err := s.docs.Get(ctx, &models.GetVerificationDocsDTO{VerificationId: data.Id})
+	docs, err := s.verDocs.Get(ctx, &models.GetVerificationDocsDTO{VerificationId: data.Id})
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +77,22 @@ func (s *VerificationService) Create(ctx context.Context, dto *models.Verificati
 	for i := range dto.Docs {
 		dto.Docs[i].VerificationId = dto.Id
 	}
-	if err := s.docs.CreateSeveral(ctx, dto.Docs); err != nil {
+	if err := s.verDocs.CreateSeveral(ctx, dto.Docs); err != nil {
 		s.Delete(ctx, &models.DeleteVerificationDTO{Id: dto.Id})
 		return err
 	}
+
+	if len(dto.Docs) > 0 {
+		pathDTO := &models.PathParts{
+			InstrumentId: dto.InstrumentId,
+			Group:        "verifications",
+			UserId:       dto.UserId,
+		}
+		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -87,7 +101,7 @@ func (s *VerificationService) Update(ctx context.Context, dto *models.Verificati
 		return fmt.Errorf("failed to update verification. error: %w", err)
 	}
 
-	if err := s.docs.UpdateSeveral(ctx, dto.Docs); err != nil {
+	if err := s.verDocs.UpdateSeveral(ctx, dto.Docs); err != nil {
 		return err
 	}
 	return nil

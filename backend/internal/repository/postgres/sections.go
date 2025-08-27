@@ -21,6 +21,7 @@ func NewSectionRepo(db *sqlx.DB) *SectionRepo {
 
 type Section interface {
 	Get(ctx context.Context, req *models.GetSectionsDTO) ([]*models.Section, error)
+	GetAll(ctx context.Context) ([]*models.Section, error)
 	GetGrouped(ctx context.Context, req *models.GetGroupedSectionDTO) ([]*models.GroupedSections, error)
 	Create(ctx context.Context, dto *models.SectionDTO) error
 	Update(ctx context.Context, dto *models.SectionDTO) error
@@ -28,7 +29,10 @@ type Section interface {
 }
 
 func (r *SectionRepo) Get(ctx context.Context, req *models.GetSectionsDTO) ([]*models.Section, error) {
-	query := fmt.Sprintf(`SELECT id, name, realm_id, position, bid_type, created_at FROM %s WHERE realm_id=$1 ORDER BY position`, SectionTable)
+	query := fmt.Sprintf(`SELECT id, name, realm_id, position, bid_type, verification_day, created_at 
+		FROM %s WHERE realm_id=$1 ORDER BY position`,
+		SectionTable,
+	)
 	data := []*models.Section{}
 
 	if err := r.db.SelectContext(ctx, &data, query, req.RealmID); err != nil {
@@ -37,8 +41,22 @@ func (r *SectionRepo) Get(ctx context.Context, req *models.GetSectionsDTO) ([]*m
 	return data, nil
 }
 
+func (r *SectionRepo) GetAll(ctx context.Context) ([]*models.Section, error) {
+	query := fmt.Sprintf(`SELECT id, name, realm_id, position, bid_type, verification_day, created_at 
+		FROM %s ORDER BY position`,
+		SectionTable,
+	)
+	data := []*models.Section{}
+
+	if err := r.db.SelectContext(ctx, &data, query); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
 func (r *SectionRepo) GetGrouped(ctx context.Context, req *models.GetGroupedSectionDTO) ([]*models.GroupedSections, error) {
-	query := fmt.Sprintf(`SELECT s.id, s.name, r.name AS title, realm, realm_id, position, bid_type, s.created_at FROM %s AS s 
+	query := fmt.Sprintf(`SELECT s.id, s.name, r.name AS title, realm, realm_id, position, bid_type, verification_day, s.created_at 
+		FROM %s AS s 
 		INNER JOIN %s AS r ON realm_id=r.id ORDER BY r.created_at, position`,
 		SectionTable, RealmTable,
 	)
@@ -51,12 +69,13 @@ func (r *SectionRepo) GetGrouped(ctx context.Context, req *models.GetGroupedSect
 	data := []*models.GroupedSections{}
 	for i, d := range tmp {
 		section := &models.Section{
-			ID:        d.ID,
-			RealmID:   d.RealmID,
-			Name:      d.Name,
-			Position:  d.Position,
-			BidType:   d.BidType,
-			CreatedAt: d.CreatedAt,
+			ID:              d.ID,
+			RealmID:         d.RealmID,
+			Name:            d.Name,
+			Position:        d.Position,
+			BidType:         d.BidType,
+			VerificationDay: d.VerificationDay,
+			CreatedAt:       d.CreatedAt,
 		}
 
 		if i == 0 || d.RealmID != data[len(data)-1].ID {
@@ -74,8 +93,8 @@ func (r *SectionRepo) GetGrouped(ctx context.Context, req *models.GetGroupedSect
 }
 
 func (r *SectionRepo) Create(ctx context.Context, dto *models.SectionDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, name, realm_id, position, bid_type) 
-		VALUES (:id, :name, :realm_id, :position, :bid_type)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, name, realm_id, position, bid_type, verification_day) 
+		VALUES (:id, :name, :realm_id, :position, :bid_type, :verification_day)`,
 		SectionTable,
 	)
 
@@ -86,7 +105,10 @@ func (r *SectionRepo) Create(ctx context.Context, dto *models.SectionDTO) error 
 }
 
 func (r *SectionRepo) Update(ctx context.Context, dto *models.SectionDTO) error {
-	query := fmt.Sprintf(`UPDATE %s SET name=:name, realm_id=:realm_id, position=:position, bid_type=:bid_type WHERE id=:id`, SectionTable)
+	query := fmt.Sprintf(`UPDATE %s SET name=:name, realm_id=:realm_id, position=:position, bid_type=:bid_type, verification_day=:verification_day 
+		WHERE id=:id`,
+		SectionTable,
+	)
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)

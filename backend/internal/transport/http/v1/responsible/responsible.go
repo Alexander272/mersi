@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
+	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -109,6 +110,8 @@ func (h *Handler) create(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Добавлен ответственный", logger.AnyAttr("responsible", dto))
 	c.JSON(http.StatusCreated, response.IdResponse{Message: "Данные созданы"})
 }
 
@@ -131,6 +134,8 @@ func (h *Handler) update(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Обновлен ответственный", logger.AnyAttr("responsible", dto))
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные обновлены"})
 }
 
@@ -146,5 +151,7 @@ func (h *Handler) delete(c *gin.Context) {
 		error_bot.Send(c, err.Error(), id)
 		return
 	}
+
+	logger.Info("Удален ответственный", logger.StringAttr("id", id))
 	c.JSON(http.StatusNoContent, response.IdResponse{})
 }

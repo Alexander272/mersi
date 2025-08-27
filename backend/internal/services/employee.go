@@ -23,7 +23,7 @@ func NewEmployeeService(repo repository.Employee, location Location) *EmployeeSe
 
 type Employee interface {
 	GetAll(context.Context, *models.GetEmployeesDTO) ([]*models.Employee, error)
-	GetUnique(context.Context) ([]*models.Employee, error)
+	GetUnique(context.Context, *models.GetUniqueEmployeeDTO) ([]*models.Employee, error)
 	GetByDepartment(context.Context, string) ([]*models.Employee, error)
 	GetById(context.Context, string) (*models.Employee, error)
 	GetByMostId(context.Context, string) (*models.EmployeeData, error)
@@ -44,8 +44,8 @@ func (s *EmployeeService) GetAll(ctx context.Context, req *models.GetEmployeesDT
 	return employees, nil
 }
 
-func (s *EmployeeService) GetUnique(ctx context.Context) ([]*models.Employee, error) {
-	employees, err := s.repo.GetUnique(ctx)
+func (s *EmployeeService) GetUnique(ctx context.Context, dto *models.GetUniqueEmployeeDTO) ([]*models.Employee, error) {
+	employees, err := s.repo.GetUnique(ctx, dto)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get unique employees. error: %w", err)
 	}

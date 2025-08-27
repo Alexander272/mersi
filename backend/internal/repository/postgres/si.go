@@ -121,10 +121,13 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 
 	params = append(params, req.Page.Limit, req.Page.Offset)
 
+	//TODO фильтр по людям может не работать т.к. person из locations обычно пустой
+	// возможно надо перенести COALESCE(person, e.emp, '') AS person в получение последней локации
+	// TODO он все таки не работает
 	query := fmt.Sprintf(`SELECT i.id, position, name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register, 
 		COALESCE(l.status, 'used') AS status, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
 		act_of_entering, act_of_entering_id, notes,
-		COALESCE(v.date, 0) AS date, COALESCE(v.next_date, 0) AS next_date, v.date, v.next_date, 
+		COALESCE(v.date, 0) AS date, COALESCE(v.next_date, 0) AS next_date,
 		COALESCE(cert, '') AS certificate, COALESCE(cert_id, '') AS certificate_id, COALESCE(repair, '') AS repair,
 		COALESCE(p.date_start, 0) AS preservation, COALESCE(p.date_end, 0) AS de_preservation,
 		COALESCE(ts.date_start, 0) AS transfer_date, COALESCE(ts.date_end, 0) AS return_date, 
@@ -216,7 +219,7 @@ func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*mo
 }
 
 func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.SiReceiving, error) {
-	params := []interface{}{req.SectionId, constants.LocationStatusMoved}
+	params := []interface{}{constants.LocationStatusMoved, req.SectionId}
 	filter := ""
 	count := len(params) + 1
 
@@ -232,7 +235,6 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 			}
 		}
 	}
-
 	logger.Debug("get si", logger.StringAttr("filter", filter), logger.AnyAttr("params", params))
 
 	query := fmt.Sprintf(`SELECT i.id, i.name, factory_number, year_of_issue, state_register, measurement_limits, date, next_date,
@@ -247,8 +249,8 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 		LEFT JOIN LATERAL (SELECT NULLIF(name,'') AS dep, channel_id FROM %s WHERE l.department_id::uuid=id) AS d ON TRUE
 		LEFT JOIN LATERAL (SELECT NULLIF(name,'') AS name FROM %s WHERE l.last_place_id=id::text) AS lp ON TRUE
 		LEFT JOIN LATERAL (SELECT most_channel_id FROM %s WHERE id=d.channel_id) AS c ON TRUE
-		LEFT JOIN LATERAL (SELECT notification_channel AS channel FROM %s AS r INNER JOIN %s AS s ON s.realm_id=r.id WHERE s.id=$1) AS r ON TRUE
-		WHERE section_id=$1 AND l.status=$2 %s
+		LEFT JOIN LATERAL (SELECT notification_channel AS channel FROM %s AS r INNER JOIN %s AS s ON s.realm_id=r.id WHERE s.id=i.section_id) AS r ON TRUE
+		WHERE l.status=$1 AND CASE WHEN $2!='' THEN section_id::text=$2 ELSE TRUE END %s
 		ORDER BY channel_id, place, last_place, next_date`,
 		InstrumentsTable, VerificationTable, LocationTable, EmployeeTable, DepartmentTable, DepartmentTable,
 		ChannelTable, RealmTable, SectionTable, filter,
@@ -303,8 +305,8 @@ func (r *SIRepo) GetUsed(ctx context.Context, req *models.Period) ([]*models.SiR
 		LEFT JOIN LATERAL (SELECT name AS dep, channel_id FROM %s WHERE l.department_id::uuid=id) AS d ON true
 		LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.last_place_id::uuid=id) AS lp ON true
 		LEFT JOIN LATERAL (SELECT most_channel_id FROM %s WHERE id=d.channel_id) AS c ON TRUE
-		LEFT JOIN LATERAL (SELECT notification_channel AS channel FROM %s AS r INNER JOIN %s AS s ON s.realm_id=r.id WHERE s.id=$1) AS r ON TRUE
-		WHERE section_id=$1 AND l.status=$2 AND next_date>=$3 AND next_date<=$4
+		LEFT JOIN LATERAL (SELECT notification_channel AS channel FROM %s AS r INNER JOIN %s AS s ON s.realm_id=r.id WHERE s.id=i.section_id) AS r ON TRUE
+		WHERE CASE WHEN $1!='' THEN section_id::text=$1 ELSE TRUE END AND l.status=$2 AND next_date>=$3 AND next_date<=$4
 		ORDER BY channel_id, place, last_place, next_date`,
 		InstrumentsTable, VerificationTable, LocationTable, EmployeeTable, DepartmentTable, DepartmentTable,
 		ChannelTable, RealmTable, SectionTable,

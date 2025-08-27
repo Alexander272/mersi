@@ -42,7 +42,7 @@ func NewMattermostClient(conf Config) *Client {
 	}
 }
 
-// TODO подумать может действительно вынести подключение по websocket в функцию
+// подумать может действительно вынести подключение по websocket в функцию
 func (m *Client) Connect() bool {
 	socket, err := model.NewWebSocketClient("wss://"+m.apiUrl, m.token)
 	if err != nil {

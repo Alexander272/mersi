@@ -10,6 +10,7 @@ type CreateFormStep struct {
 
 type GetCreateFormDTO struct {
 	SectionID string `json:"sectionId"`
+	Action    string `json:"action"`
 }
 
 type CreateFormField struct {
@@ -22,7 +23,9 @@ type CreateFormField struct {
 	Path       string    `json:"path" db:"path"`
 	Type       string    `json:"type" db:"type"`
 	IsRequired bool      `json:"isRequired" db:"is_required"`
+	CanUpdate  bool      `json:"canUpdate" db:"can_update"`
 	Position   int       `json:"position" db:"position"`
+	Hide       string    `json:"hide" db:"hide"`
 	Created    time.Time `json:"created" db:"created_at"`
 }
 
@@ -36,7 +39,9 @@ type CreateFormFieldDTO struct {
 	Path       string `json:"path" db:"path"`
 	Type       string `json:"type" db:"type" binding:"required"`
 	IsRequired bool   `json:"isRequired" db:"is_required"`
+	CanUpdate  bool   `json:"canUpdate" db:"can_update"`
 	Position   int    `json:"position" db:"position" binding:"min=0"`
+	Hide       string `json:"hide" db:"hide"`
 }
 
 type DeleteCreateFormFieldDTO struct {

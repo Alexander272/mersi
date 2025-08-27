@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -66,6 +67,9 @@ func (s *LocationService) Get(ctx context.Context, dto *models.GetLocationDTO) (
 func (s *LocationService) GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error) {
 	data, err := s.repo.GetLast(ctx, dto)
 	if err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("failed to get last location. error: %w", err)
 	}
 	return data, nil

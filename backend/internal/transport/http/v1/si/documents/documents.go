@@ -34,6 +34,7 @@ func Register(api *gin.RouterGroup, service services.Document, middleware *middl
 	{
 		docs.GET("", handler.download)
 		docs.GET("/temp/:group", handler.getTemp)
+		docs.GET("/list/:group", handler.getList)
 
 		write := docs.Group("", middleware.CheckPermissions(constants.Documents, constants.Write))
 		{
@@ -49,6 +50,7 @@ func (h *Handler) getTemp(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Группа файлов не задана")
 		return
 	}
+	instrument := c.Query("instrument")
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
@@ -57,12 +59,48 @@ func (h *Handler) getTemp(c *gin.Context) {
 	}
 	user := u.(models.User)
 
-	req := &models.GetTempDocumentDTO{
-		Group:  group,
-		UserId: user.ID,
+	req := &models.GetDocumentDTO{
+		Group:        group,
+		UserId:       user.ID,
+		InstrumentId: instrument,
 	}
 
 	data, err := h.service.GetTemp(c, req)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), req)
+		return
+	}
+	c.JSON(http.StatusOK, response.DataResponse{Data: data})
+}
+
+func (h *Handler) getList(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Группа файлов не задана")
+		return
+	}
+
+	instrument := c.Query("instrument")
+	if err := uuid.Validate(instrument); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+
+	u, exists := c.Get(constants.CtxUser)
+	if !exists {
+		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		return
+	}
+	user := u.(models.User)
+
+	req := &models.GetDocumentDTO{
+		Group:        group,
+		InstrumentId: instrument,
+		UserId:       user.ID,
+	}
+
+	data, err := h.service.GetByInstrument(c, req)
 	if err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), req)
@@ -144,6 +182,7 @@ func (h *Handler) delete(c *gin.Context) {
 		return
 	}
 	group := c.Query("group")
+	isTemp := c.Query("isTemp")
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
@@ -158,6 +197,7 @@ func (h *Handler) delete(c *gin.Context) {
 		Filename:     filename,
 		Group:        group,
 		UserId:       user.ID,
+		IsTemp:       isTemp == "true",
 	}
 
 	if err := h.service.Delete(c, req); err != nil {

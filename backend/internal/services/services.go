@@ -43,6 +43,7 @@ type Services struct {
 	Scheduler
 	Department
 	Employee
+	Channel
 	Responsible
 	Most *most.MostService
 	Export
@@ -72,20 +73,20 @@ func NewServices(deps *Deps) *Services {
 	columns := NewColumnsService(deps.Repo.Columns)
 	createForm := NewCreateFormService(deps.Repo.CreateForm)
 
-	instrument := NewInstrumentService(deps.Repo.Instrument)
 	document := NewDocumentService(deps.Repo.Document)
 	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
-	verification := NewVerificationService(deps.Repo.Verification, verificationDoc)
+	verification := NewVerificationService(deps.Repo.Verification, verificationDoc, document)
+	instrument := NewInstrumentService(deps.Repo.Instrument, document)
 
 	verificationFields := NewVerificationFieldService(deps.Repo.VerificationFields)
 	contextMenu := NewContextService(deps.Repo.ContextMenu, role)
 	customContext := NewCustomContextService(deps.Repo.CustomContextMenu)
 	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role)
-	repair := NewRepairService(deps.Repo.Repair)
+	repair := NewRepairService(deps.Repo.Repair, instrument)
 	preservation := NewPreservationService(deps.Repo.Preservation)
 	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave)
-	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment, instrument)
-	writeOff := NewWriteOffService(deps.Repo.WriteOff)
+	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment, instrument, document)
+	writeOff := NewWriteOffService(deps.Repo.WriteOff, instrument, document)
 	historyType := NewHistoryTypeService(deps.Repo.HistoryType)
 
 	filters := NewFilterService(deps.Repo.Filters)
@@ -103,7 +104,13 @@ func NewServices(deps *Deps) *Services {
 
 	file := NewFileService()
 	most := most.NewMostService(most.MostDeps{Client: deps.MostClient})
-	notification := NewNotificationService(&NotificationDeps{SI: si, File: file, Most: most, Conf: deps.CheckUsedConf})
+	notification := NewNotificationService(&NotificationDeps{
+		SI:      si,
+		File:    file,
+		Section: section,
+		Most:    most,
+		Conf:    deps.CheckUsedConf,
+	})
 	export := NewExportService(&ExportDeps{
 		File:    file,
 		SI:      si,
@@ -117,6 +124,7 @@ func NewServices(deps *Deps) *Services {
 	})
 	department := NewDepartmentService(deps.Repo.Department, location)
 	employee := NewEmployeeService(deps.Repo.Employee, location)
+	channel := NewChannelService(deps.Repo.Channel)
 
 	scheduler := NewSchedulerService(&SchedulerDeps{
 		Notification: notification,
@@ -156,6 +164,7 @@ func NewServices(deps *Deps) *Services {
 		Sorting:              sorting,
 		Department:           department,
 		Employee:             employee,
+		Channel:              channel,
 		Responsible:          responsible,
 		Location:             location,
 

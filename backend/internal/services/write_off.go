@@ -9,12 +9,16 @@ import (
 )
 
 type WriteOffService struct {
-	repo repository.WriteOff
+	repo       repository.WriteOff
+	instrument Instrument
+	docs       Document
 }
 
-func NewWriteOffService(repo repository.WriteOff) *WriteOffService {
+func NewWriteOffService(repo repository.WriteOff, instrument Instrument, docs Document) *WriteOffService {
 	return &WriteOffService{
-		repo: repo,
+		repo:       repo,
+		instrument: instrument,
+		docs:       docs,
 	}
 }
 
@@ -37,7 +41,25 @@ func (s *WriteOffService) Create(ctx context.Context, dto *models.WriteOffDTO) e
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create write off. error: %w", err)
 	}
-	//TODO надо еще как-то статус менять или делать что-то подобное
+
+	if dto.DocId != "" {
+		pathDTO := &models.PathParts{
+			InstrumentId: dto.InstrumentId,
+			Group:        "writeOff",
+			UserId:       dto.UserId,
+		}
+		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
+			return err
+		}
+	}
+
+	instrumentDTO := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatusDec,
+	}
+	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
+		return err
+	}
 	return nil
 }
 

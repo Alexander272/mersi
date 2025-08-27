@@ -19,6 +19,7 @@ type GetVerificationDTO struct {
 type VerificationDTO struct {
 	Id           string                `json:"id" db:"id"`
 	InstrumentId string                `json:"instrumentId" db:"instrument_id"`
+	UserId       string                `json:"userId" db:"user_id"`
 	Date         int64                 `json:"verificationDate" db:"date"`
 	NextDate     int64                 `json:"nextVerificationDate" db:"next_date"`
 	RegisterLink string                `json:"registerLink" db:"register_link"`

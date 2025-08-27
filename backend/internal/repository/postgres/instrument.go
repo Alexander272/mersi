@@ -56,7 +56,10 @@ func (r *InstrumentRepo) GetUniqueData(ctx context.Context, req *models.GetUniqu
 	snake := reg.ReplaceAllString(req.Field, "${1}_${2}")
 	req.Field = strings.ToLower(snake)
 
-	enabledFields := map[string]struct{}{"manufacturer": {}, "country_of_produce": {}, "responsible": {}, "type": {}}
+	enabledFields := map[string]struct{}{
+		"name": {}, "type": {}, "measurement_limits": {}, "accuracy": {}, "factory_number": {}, "manufacturer": {}, "country_of_produce": {},
+		"responsible": {},
+	}
 
 	if _, exist := enabledFields[req.Field]; !exist {
 		return nil, fmt.Errorf("field is not allowed")
@@ -153,10 +156,18 @@ func (r *InstrumentRepo) ChangeStatus(ctx context.Context, dto *models.UpdateSta
 
 func (r *InstrumentRepo) Delete(ctx context.Context, id string) error {
 	// query := fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, InstrumentsTable)
-	query := fmt.Sprintf(`UPDATE %s SET status='deleted', deleted=now() WHERE id=$1 AND (
-			SELECT status FROM %s WHERE instrument_id=$1 ORDER BY date_of_issue DESC, created_at DESC LIMIT 1
-		) = 'reserve'`,
-		InstrumentsTable, LocationTable,
+	// query := fmt.Sprintf(`UPDATE %s SET status='deleted', deleted=now() WHERE id=$1 AND (
+	// 		SELECT status FROM %s WHERE instrument_id=$1 ORDER BY date_of_issue DESC, created_at DESC LIMIT 1
+	// 	) = 'reserve'`,
+	// 	InstrumentsTable, LocationTable,
+	// )
+	query := fmt.Sprintf(`UPDATE %s AS i SET status='deleted', deleted=now()
+		FROM (SELECT i.id, l.status FROM %s AS i
+			LEFT JOIN LATERAL (SELECT status FROM %s WHERE instrument_id=i.id ORDER BY date_of_issue DESC, created_at DESC LIMIT 1) AS l ON TRUE
+			WHERE i.id=$1
+		) AS s
+		WHERE i.id=$1 AND (s.status IS NULL OR s.status='reserve')`,
+		InstrumentsTable, InstrumentsTable, LocationTable,
 	)
 
 	res, err := r.db.ExecContext(ctx, query, id)

@@ -10,6 +10,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
+	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -95,6 +96,8 @@ func (h *Handler) create(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Добавлена консервация", logger.AnyAttr("preservation", dto))
 	c.JSON(http.StatusCreated, response.IdResponse{Message: "Сведения о консервации добавлены"})
 }
 
@@ -120,6 +123,8 @@ func (h *Handler) update(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Обновлена консервация", logger.AnyAttr("preservation", dto))
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Сведения о консервации обновлены"})
 }
 
@@ -136,5 +141,7 @@ func (h *Handler) delete(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Удалена консервация", logger.StringAttr("id", id))
 	c.JSON(http.StatusNoContent, response.IdResponse{})
 }

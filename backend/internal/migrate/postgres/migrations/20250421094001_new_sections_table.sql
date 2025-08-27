@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.sections
     name text COLLATE pg_catalog."default" NOT NULL,
     position integer,
     bid_type text COLLATE pg_catalog."default" DEFAULT ''::text,
+    verification_day integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT now(),
     CONSTRAINT sections_pkey PRIMARY KEY (id)
 )

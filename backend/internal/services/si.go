@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -57,12 +58,17 @@ func (s *SIService) GetById(ctx context.Context, req *models.GetSiByIdDTO) (*mod
 		return nil, err
 	}
 	verification, err := s.verification.GetLast(ctx, &models.GetVerificationDTO{InstrumentId: req.Id})
-	if err != nil {
+	if err != nil && !errors.Is(err, models.ErrNoRows) {
+		return nil, err
+	}
+	location, err := s.location.GetLast(ctx, &models.GetLocationDTO{InstrumentId: req.Id})
+	if err != nil && !errors.Is(err, models.ErrNoRows) {
 		return nil, err
 	}
 	data := &models.BaseSI{
 		Instrument:   instrument,
 		Verification: verification,
+		Location:     location,
 	}
 	return data, nil
 }
@@ -104,6 +110,7 @@ func (s *SIService) Create(ctx context.Context, dto *models.SiDTO) error {
 		}
 	}
 	if dto.Location != nil {
+		dto.Location.InstrumentId = dto.Instrument.Id
 		if err := s.location.Create(ctx, dto.Location); err != nil {
 			s.instrument.Delete(ctx, dto.Instrument.Id)
 			return err
@@ -122,11 +129,11 @@ func (s *SIService) Update(ctx context.Context, dto *models.SiDTO) error {
 			return err
 		}
 	}
-	if dto.Location != nil {
-		if err := s.location.Update(ctx, dto.Location); err != nil {
-			return err
-		}
-	}
+	// if dto.Location != nil {
+	// 	if err := s.location.Update(ctx, dto.Location); err != nil {
+	// 		return err
+	// 	}
+	// }
 	return nil
 }
 

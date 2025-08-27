@@ -11,12 +11,14 @@ import (
 type TransferToDepService struct {
 	repo       repository.TransferToDepartment
 	instrument Instrument
+	docs       Document
 }
 
-func NewTransferToDepService(repo repository.TransferToDepartment, instrument Instrument) *TransferToDepService {
+func NewTransferToDepService(repo repository.TransferToDepartment, instrument Instrument, docs Document) *TransferToDepService {
 	return &TransferToDepService{
 		repo:       repo,
 		instrument: instrument,
+		docs:       docs,
 	}
 }
 
@@ -38,6 +40,17 @@ func (s *TransferToDepService) Get(ctx context.Context, req *models.GetTransferT
 func (s *TransferToDepService) Create(ctx context.Context, dto *models.TransferToDepartmentDTO) error {
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create transfer to department. error: %w", err)
+	}
+
+	if dto.DocId != "" {
+		pathDTO := &models.PathParts{
+			InstrumentId: dto.InstrumentId,
+			Group:        "transferToDep",
+			UserId:       dto.UserId,
+		}
+		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
+			return err
+		}
 	}
 
 	status := &models.UpdateStatus{

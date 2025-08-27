@@ -22,6 +22,7 @@ func NewCreateFormRepo(db *sqlx.DB) *CreateFormRepo {
 
 type CreateForm interface {
 	Get(ctx context.Context, req *models.GetCreateFormDTO) ([]*models.CreateFormStep, error)
+	GetBooleanFields(ctx context.Context, dto *models.GetCreateFormDTO) ([]*models.CreateFormField, error)
 	Create(ctx context.Context, dto *models.CreateFormFieldDTO) error
 	Update(ctx context.Context, dto *models.CreateFormFieldDTO) error
 	UpdateSeveral(ctx context.Context, dto []*models.CreateFormFieldDTO) error
@@ -29,13 +30,13 @@ type CreateForm interface {
 }
 
 func (r *CreateFormRepo) Get(ctx context.Context, req *models.GetCreateFormDTO) ([]*models.CreateFormStep, error) {
-	query := fmt.Sprintf(`SELECT id, section_id, step, step_name, field, field_name, path, type, is_required, position FROM %s
-		WHERE section_id=$1 ORDER BY step, position`,
+	query := fmt.Sprintf(`SELECT id, section_id, step, step_name, field, field_name, path, type, is_required, can_update, 
+		position, hide FROM %s WHERE section_id=$1 AND CASE WHEN $2 THEN can_update=true ELSE TRUE END ORDER BY step, position`,
 		CreatingFormTable,
 	)
 
 	tmp := []*models.CreateFormField{}
-	if err := r.db.SelectContext(ctx, &tmp, query, req.SectionID); err != nil {
+	if err := r.db.SelectContext(ctx, &tmp, query, req.SectionID, req.Action == "Update"); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 
@@ -55,11 +56,24 @@ func (r *CreateFormRepo) Get(ctx context.Context, req *models.GetCreateFormDTO) 
 	return data, nil
 }
 
+func (r *CreateFormRepo) GetBooleanFields(ctx context.Context, dto *models.GetCreateFormDTO) ([]*models.CreateFormField, error) {
+	query := fmt.Sprintf(`SELECT id, section_id, step, step_name, field, field_name, path, type, is_required, can_update, 
+		position, hide FROM %s WHERE section_id=$1 AND type='checkbox' ORDER BY step, position`,
+		CreatingFormTable,
+	)
+
+	data := []*models.CreateFormField{}
+	if err := r.db.SelectContext(ctx, &data, query, dto.SectionID); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
 func (r *CreateFormRepo) Create(ctx context.Context, dto *models.CreateFormFieldDTO) error {
 	//TODO надо еще добавить всякие ограничения и доп параметры
 	// к примеру: мин и макс для чисел, многострочность для текста, группу для файлов и тому подобное
-	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, step, step_name, field, field_name, path, type, is_required, position)
-		VALUES (:id, :section_id, :step, :step_name, :field, :field_name, :path, :type, :is_required, :position)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, step, step_name, field, field_name, path, type, is_required, can_update, position, hide)
+		VALUES (:id, :section_id, :step, :step_name, :field, :field_name, :path, :type, :is_required, :can_update, :position, :hide)`,
 		CreatingFormTable,
 	)
 	dto.ID = uuid.NewString()
@@ -72,7 +86,7 @@ func (r *CreateFormRepo) Create(ctx context.Context, dto *models.CreateFormField
 
 func (r *CreateFormRepo) Update(ctx context.Context, dto *models.CreateFormFieldDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET step=:step, step_name=:step_name, field=:field, type=:type, position=:position,
-		field_name=:field_name, path=:path, is_required=:is_required
+		field_name=:field_name, path=:path, is_required=:is_required, can_update=:can_update, hide=:hide
 		WHERE id=:id`, CreatingFormTable,
 	)
 

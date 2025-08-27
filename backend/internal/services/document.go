@@ -28,17 +28,26 @@ func NewDocumentService(repo repository.Document) *DocumentService {
 }
 
 type Document interface {
-	GetTemp(ctx context.Context, req *models.GetTempDocumentDTO) ([]*models.Document, error)
+	GetTemp(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error)
+	GetByInstrument(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error)
 	Upload(ctx context.Context, dto *models.DocumentsDTO) ([]*models.Document, error)
 	ChangePath(ctx context.Context, req *models.PathParts) error
 	Delete(ctx context.Context, dto *models.DeleteDocumentDTO) error
 	DeleteByInstrumentId(ctx context.Context, instrumentId string) error
 }
 
-func (s *DocumentService) GetTemp(ctx context.Context, req *models.GetTempDocumentDTO) ([]*models.Document, error) {
+func (s *DocumentService) GetTemp(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error) {
 	data, err := s.repo.GetTemp(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get temp documents. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *DocumentService) GetByInstrument(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error) {
+	data, err := s.repo.GetByInstrument(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get documents by group. error: %w", err)
 	}
 	return data, nil
 }
@@ -95,13 +104,14 @@ func (s *DocumentService) Upload(ctx context.Context, dto *models.DocumentsDTO) 
 			DocumentType: documentTypes[fh.Header.Get("Content-Type")],
 		}
 
-		paths := []string{s.path}
-		if dto.InstrumentId != "" {
-			paths = append(paths, dto.Group, dto.InstrumentId)
-		} else {
-			paths = append(paths, "temp", dto.UserId, dto.Group)
-		}
-		paths = append(paths, doc.Id, fh.Filename)
+		// paths := []string{s.path}
+		// if dto.InstrumentId != "" {
+		// 	paths = append(paths, dto.Group, dto.InstrumentId)
+		// } else {
+		// 	paths = append(paths, "temp", dto.UserId, dto.Group, dto.InstrumentId)
+		// }
+		// paths = append(paths, doc.Id, fh.Filename)
+		paths := []string{s.path, "temp", dto.UserId, dto.Group, dto.InstrumentId, doc.Id, fh.Filename}
 
 		dst := path.Join(paths...)
 		doc.Path = dst
@@ -126,10 +136,13 @@ func (s *DocumentService) ChangePath(ctx context.Context, req *models.PathParts)
 
 	if count > 0 {
 		newPath := path.Join(s.path, req.Group, req.InstrumentId)
-		//TODO думаю тут еще надо id пользователя использовать (чтобы во время одновременного создания ничего лишнего не попало)
+		// думаю тут еще надо id пользователя использовать (чтобы во время одновременного создания ничего лишнего не попало)
 		// по хорошему это еще надо синхронизировать между устройствами
 		// еще можно добавить какую-нибудь группировку чтобы файлы из разных мест не пересекались или она мне не нужна
-		srcPath := path.Join(s.path, "temp", req.UserId, req.Group)
+		srcPath := path.Join(s.path, "temp", req.UserId, req.Group, req.InstrumentId)
+		if req.IdWasEmpty {
+			srcPath = path.Join(s.path, "temp", req.UserId, req.Group)
+		}
 
 		if err = os.MkdirAll(filepath.Dir(newPath), 0750); err != nil {
 			return err
@@ -144,10 +157,10 @@ func (s *DocumentService) ChangePath(ctx context.Context, req *models.PathParts)
 
 func (s *DocumentService) Delete(ctx context.Context, dto *models.DeleteDocumentDTO) error {
 	paths := []string{s.path}
-	if dto.InstrumentId != "" {
+	if !dto.IsTemp {
 		paths = append(paths, dto.Group, dto.InstrumentId)
 	} else {
-		paths = append(paths, "temp", dto.UserId, dto.Group)
+		paths = append(paths, "temp", dto.UserId, dto.Group, dto.InstrumentId)
 	}
 	paths = append(paths, dto.Id, dto.Filename)
 

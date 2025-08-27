@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
+	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -68,6 +69,8 @@ func (h *Handler) create(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Добавлен ремонт", logger.AnyAttr("repair", dto))
 	c.JSON(http.StatusCreated, response.IdResponse{Message: "Данные о ремонте добавлены"})
 }
 
@@ -89,6 +92,8 @@ func (h *Handler) update(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Обновлен ремонт", logger.AnyAttr("repair", dto))
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о ремонте обновлены"})
 }
 
@@ -105,5 +110,7 @@ func (h *Handler) delete(c *gin.Context) {
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
+
+	logger.Info("Удален ремонт", logger.StringAttr("id", id))
 	c.JSON(http.StatusNoContent, response.IdResponse{})
 }

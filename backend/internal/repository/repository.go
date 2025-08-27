@@ -90,6 +90,9 @@ type Department interface {
 type Employee interface {
 	postgres.Employee
 }
+type Channel interface {
+	postgres.Channel
+}
 type Responsible interface {
 	postgres.Responsible
 }
@@ -127,6 +130,7 @@ type Repository struct {
 	Sorting
 	Department
 	Employee
+	Channel
 	Responsible
 	Users
 }
@@ -162,6 +166,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Sorting:              postgres.NewSortingRepo(db),
 		Department:           postgres.NewDepartmentRepo(db),
 		Employee:             postgres.NewEmployeeRepo(db),
+		Channel:              postgres.NewChannelRepo(db),
 		Responsible:          postgres.NewResponsibleRepo(db),
 		Users:                postgres.NewUserRepo(db),
 	}

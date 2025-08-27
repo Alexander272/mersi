@@ -20,6 +20,7 @@ func NewCreateFormService(repo repository.CreateForm) *CreateFormService {
 
 type CreateForm interface {
 	Get(ctx context.Context, req *models.GetCreateFormDTO) ([]*models.CreateFormStep, error)
+	GetBooleanFields(ctx context.Context, dto *models.GetCreateFormDTO) ([]*models.CreateFormField, error)
 	Create(ctx context.Context, dto *models.CreateFormFieldDTO) error
 	Update(ctx context.Context, dto *models.CreateFormFieldDTO) error
 	UpdateSeveral(ctx context.Context, dto []*models.CreateFormFieldDTO) error
@@ -30,6 +31,14 @@ func (s *CreateFormService) Get(ctx context.Context, req *models.GetCreateFormDT
 	data, err := s.repo.Get(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf(`failed to get 'create form' steps. error: %w`, err)
+	}
+	return data, nil
+}
+
+func (s *CreateFormService) GetBooleanFields(ctx context.Context, dto *models.GetCreateFormDTO) ([]*models.CreateFormField, error) {
+	data, err := s.repo.GetBooleanFields(ctx, dto)
+	if err != nil {
+		return nil, fmt.Errorf(`failed to get 'create form' boolean fields. error: %w`, err)
 	}
 	return data, nil
 }

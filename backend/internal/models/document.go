@@ -15,9 +15,10 @@ type Document struct {
 	UserId       string `json:"userId" db:"user_id"`
 }
 
-type GetTempDocumentDTO struct {
-	UserId string `json:"userId" db:"user_id"`
-	Group  string `json:"group" db:"belongs"`
+type GetDocumentDTO struct {
+	UserId       string `json:"userId" db:"user_id"`
+	Group        string `json:"group" db:"belongs"`
+	InstrumentId string `json:"instrumentId" db:"instrument_id"`
 }
 
 type GetDocumentsDTO struct {
@@ -37,6 +38,7 @@ type PathParts struct {
 	InstrumentId string
 	UserId       string
 	Group        string
+	IdWasEmpty   bool
 }
 
 type DeleteDocumentDTO struct {
@@ -45,4 +47,5 @@ type DeleteDocumentDTO struct {
 	UserId       string
 	Group        string
 	Filename     string
+	IsTemp       bool
 }
