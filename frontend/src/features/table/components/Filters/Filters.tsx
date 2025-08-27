@@ -131,7 +131,7 @@ export const Filters = () => {
 							paddingX: 2,
 							pt: 1.5,
 							paddingBottom: 2,
-							maxWidth: filter == 'default' ? 500 : 700,
+							maxWidth: filter == 'default' ? 500 : 750,
 							width: '100%',
 							'&:before': {
 								content: '""',

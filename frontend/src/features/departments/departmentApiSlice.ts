@@ -8,8 +8,11 @@ import { API } from '@/app/api'
 export const departmentApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: false,
 	endpoints: builder => ({
-		getDepartments: builder.query<{ data: IDepartment[] }, null>({
-			query: () => `${API.departments}`,
+		getDepartments: builder.query<{ data: IDepartment[] }, string>({
+			query: realm => ({
+				url: API.departments,
+				params: new URLSearchParams({ realm }),
+			}),
 			providesTags: [{ type: 'Departments', id: 'ALL' }],
 			onQueryStarted: async (_arg, api) => {
 				try {
@@ -80,6 +83,7 @@ export const departmentApiSlice = apiSlice.injectEndpoints({
 
 export const {
 	useGetDepartmentsQuery,
+	useLazyGetDepartmentsQuery,
 	useGetDepartmentsByIdQuery,
 	useGetDepartmentsByUserQuery,
 	useCreateDepartmentMutation,

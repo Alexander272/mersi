@@ -9,6 +9,7 @@ import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
 import { useCreateTransferToDepartmentMutation } from '../../transferApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
+import { setSelected } from '@/features/table/tableSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
 import { Inputs } from './Inputs'
@@ -33,6 +34,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'AddTransferToDep', isOpen: false }))
+		dispatch(setSelected([]))
 	}
 
 	const activeHandler = (type: 'prev' | 'next') => () => {
@@ -69,8 +71,8 @@ export const Create: FC<Props> = ({ ids }) => {
 					</IconButton>
 				)}
 
-				<Typography textAlign={'center'} sx={{ width: '100%' }}>
-					<Typography component={'span'} mr={2.5} fontSize={'1.3rem'} color='primary'>
+				<Typography textAlign={'center'} fontSize={'1.2rem'} fontWeight={'bold'} sx={{ width: '100%' }}>
+					<Typography component={'span'} mr={2.5} fontSize={'1.4rem'} color='primary'>
 						{ids.length > 1 ? `${active + 1}/${ids.length}` : ''}
 					</Typography>
 					{data?.data.name} ({data?.data.factoryNumber})

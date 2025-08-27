@@ -15,6 +15,7 @@ export const API = {
 		},
 		documents: {
 			base: 'si/documents' as const,
+			temp: 'si/documents/temp' as const,
 			list: 'si/documents/list' as const,
 		},
 

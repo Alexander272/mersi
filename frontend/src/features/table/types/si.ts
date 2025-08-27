@@ -1,3 +1,4 @@
+import type { ILocationDTO } from '../modules/locations/types/location'
 import type { IVerificationDTO } from '../modules/verification/types/verification'
 import type { IInstrumentDTO } from './instrument'
 import type { ISort, IFilter, ISearch } from './params'
@@ -42,6 +43,7 @@ export type LocationStatus = 'reserve' | 'used' | 'moved'
 export interface ISiForm {
 	instrument: IInstrumentDTO
 	verification: IVerificationDTO
+	location: ILocationDTO
 }
 
 export interface ISiDTO {

@@ -30,7 +30,10 @@ export const EditForm: FC<Props> = ({ id }) => {
 	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetCreateFormStepsQuery(section?.id || '', { skip: !section?.id })
+	const { data, isFetching } = useGetCreateFormStepsQuery(
+		{ section: section?.id || '', action: 'Update' },
+		{ skip: !section?.id }
+	)
 	const { data: si } = useGetSIByIdQuery(id, { skip: !id })
 	const [update, { isLoading }] = useUpdateSIMutation()
 	const [remove] = useDeleteSIMutation()
@@ -68,7 +71,7 @@ export const EditForm: FC<Props> = ({ id }) => {
 			form.verification.docs = docs
 		}
 
-		if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval != '') {
+		if (form.verification.verificationDate != 0 && !form.instrument.interVerificationInterval) {
 			form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
 				.add(+form.instrument.interVerificationInterval, 'month')
 				.unix()

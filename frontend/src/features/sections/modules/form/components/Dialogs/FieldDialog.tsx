@@ -12,6 +12,7 @@ import {
 	Stack,
 	Switch,
 	TextField,
+	Typography,
 	useTheme,
 } from '@mui/material'
 import { Controller, useForm } from 'react-hook-form'
@@ -26,6 +27,7 @@ import { Fallback } from '@/components/Fallback/Fallback'
 import {
 	useCreateFieldToCreateFormMutation,
 	useDeleteFieldToCreateFormMutation,
+	useGetBoolFormFieldsQuery,
 	useUpdateFieldToCreateFormMutation,
 } from '../../formApiSlice'
 import { Confirm } from '@/components/Confirm/Confirm'
@@ -65,7 +67,9 @@ const defaultValues: ICreateFormFieldDTO = {
 	path: '',
 	type: '',
 	isRequired: false,
+	canUpdate: true,
 	position: 0,
+	hide: '',
 }
 
 const Form: FC<Context> = ({ item }) => {
@@ -75,6 +79,8 @@ const Form: FC<Context> = ({ item }) => {
 	defaultValues.position = item?.position || 0
 
 	const dispatch = useAppDispatch()
+
+	const { data } = useGetBoolFormFieldsQuery(item?.sectionId || '', { skip: !item?.sectionId })
 
 	const [create, { isLoading: creating }] = useCreateFieldToCreateFormMutation()
 	const [update, { isLoading: updating }] = useUpdateFieldToCreateFormMutation()
@@ -103,7 +109,9 @@ const Form: FC<Context> = ({ item }) => {
 			path: form.path.trim(),
 			type: form.type,
 			isRequired: form.isRequired,
+			canUpdate: form.canUpdate,
 			position: form.position,
+			hide: form.hide,
 		}
 
 		try {
@@ -133,12 +141,25 @@ const Form: FC<Context> = ({ item }) => {
 				name={'field'}
 				render={({ field }) => <TextField {...field} label={'Название поля (в объекте)'} fullWidth />}
 			/>
-			<Controller
-				control={control}
-				name={'path'}
-				//TODO Может как-нибудь по другому это все обозвать
-				render={({ field }) => <TextField {...field} label={'Группа (таблица)'} fullWidth />}
-			/>
+			<FormControl>
+				<InputLabel id={'path'}>Группа (таблица)</InputLabel>
+				<Controller
+					control={control}
+					name={'path'}
+					//TODO Может как-нибудь по другому это все обозвать
+					// render={({ field }) => <TextField {...field} label={'Группа (таблица)'} fullWidth />}
+					render={({ field, fieldState: { error } }) => (
+						<Select labelId={'path'} label={'Группа (таблица)'} error={Boolean(error)} {...field}>
+							<MenuItem value='' disabled>
+								Выберите группу
+							</MenuItem>
+							<MenuItem value='instrument'>Основная (Инструменты)</MenuItem>
+							<MenuItem value='verification'>Поверки</MenuItem>
+							<MenuItem value='location'>Перемещения</MenuItem>
+						</Select>
+					)}
+				/>
+			</FormControl>
 			<FormControl>
 				<InputLabel id={'type'}>Тип поля</InputLabel>
 				<Controller
@@ -152,7 +173,10 @@ const Form: FC<Context> = ({ item }) => {
 							<MenuItem value='text'>Текст</MenuItem>
 							<MenuItem value='number'>Число</MenuItem>
 							<MenuItem value='date'>Дата</MenuItem>
+							<MenuItem value='checkbox'>Флажок</MenuItem>
 							<MenuItem value='file'>Файл</MenuItem>
+							{/* //TODO наверное стоит что-нибудь более понятное написать */}
+							<MenuItem value='files'>Группа файлов</MenuItem>
 							<MenuItem value='list'>Список</MenuItem>
 							{/* //TODO наверное стоит что-нибудь более понятное написать */}
 							<MenuItem value='autocomplete'>Текст с авто дополнениями</MenuItem>
@@ -171,6 +195,38 @@ const Form: FC<Context> = ({ item }) => {
 					/>
 				)}
 			/>
+			<Controller
+				control={control}
+				name={'canUpdate'}
+				render={({ field }) => (
+					<FormControlLabel
+						control={<Switch checked={field.value || false} {...field} />}
+						label={<>Поле {!field.value && 'не '}может быть обновлено</>}
+						sx={{ userSelect: 'none' }}
+					/>
+				)}
+			/>
+
+			<Stack spacing={1}>
+				<Typography>Спрятать если значение поля ниже истинно</Typography>
+				<FormControl>
+					<InputLabel id={'hide'}>Название поля</InputLabel>
+					<Controller
+						control={control}
+						name={'hide'}
+						render={({ field, fieldState: { error } }) => (
+							<Select labelId={'hide'} label={'Название поля'} error={Boolean(error)} {...field}>
+								<MenuItem value=''>Выберите поле</MenuItem>
+								{data?.data.map(item => (
+									<MenuItem key={item.id} value={`${item.path}.${item.field}`}>
+										{item.fieldName}
+									</MenuItem>
+								))}
+							</Select>
+						)}
+					/>
+				</FormControl>
+			</Stack>
 
 			<Divider sx={{ width: '50%', alignSelf: 'center' }} />
 			<Stack spacing={2} direction={'row'}>

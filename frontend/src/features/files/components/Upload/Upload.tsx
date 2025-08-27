@@ -6,7 +6,6 @@ import {
 	List,
 	ListItem,
 	ListItemIcon,
-	ListItemSecondaryAction,
 	ListItemText,
 	Stack,
 	Tooltip,
@@ -15,10 +14,10 @@ import {
 } from '@mui/material'
 import { toast } from 'react-toastify'
 
-import type { IFetchError } from '@/app/types/error'
-import { convertFileSize } from '@/features/files/utils/convertFileSize'
-import { useDeleteFileMutation, useGetFileListQuery, useUploadFilesMutation } from '@/features/files/fileApiSlice'
+import type { IDocument } from '../../types/document'
 import { AcceptedFiles } from '@/constants/accept'
+import { convertFileSize } from '@/features/files/utils/convertFileSize'
+import { useDeleteFileMutation, useUploadFilesMutation } from '@/features/files/fileApiSlice'
 import { UploadIcon } from '@/components/Icons/UploadIcon'
 import { QuestionIcon } from '@/components/Icons/QuestionIcon'
 import { PdfIcon } from '@/components/Icons/PdfIcon'
@@ -30,8 +29,11 @@ import Input from './Input'
 import Button from './Button'
 
 type Props = {
+	value: IDocument[]
+	onChange: (value: IDocument[]) => void
 	instrumentId: string
-	verificationId: string
+	group: string
+	isTemp?: boolean
 }
 
 const Types = {
@@ -41,15 +43,10 @@ const Types = {
 	sheet: <SheetIcon />,
 }
 
-export const Upload: FC<Props> = ({ verificationId, instrumentId }) => {
+export const Upload: FC<Props> = ({ instrumentId, group, value, onChange, isTemp = true }) => {
 	const [files, setFiles] = useState<File[]>([])
 
 	const { palette } = useTheme()
-
-	const { data } = useGetFileListQuery(
-		{ verificationId: verificationId || '', instrumentId: instrumentId }
-		// { skip: !instrumentId }
-	)
 
 	const [upload, { isSuccess, isError }] = useUploadFilesMutation()
 	const [remove] = useDeleteFileMutation()
@@ -78,16 +75,17 @@ export const Upload: FC<Props> = ({ verificationId, instrumentId }) => {
 
 	const uploadFiles = async (files: File[]) => {
 		const data = new FormData()
-		files.forEach((file: File) => data.append('files', file))
 		data.append('instrumentId', instrumentId)
-		data.append('verificationId', verificationId)
+		data.append('group', group)
+		files.forEach((file: File) => data.append('files', file))
 
-		await upload({ data, verificationId }).unwrap()
+		const res = await upload({ data }).unwrap()
+		onChange(res.data)
 	}
 
 	const deleteHandler = (event: MouseEvent<HTMLButtonElement>) => {
 		const { id } = (event.target as HTMLButtonElement).dataset
-		const doc = data?.data.find(d => d.id == id)
+		const doc = value?.find(d => d.id == id)
 		if (!doc) return
 
 		void deleteFile(doc)
@@ -96,16 +94,13 @@ export const Upload: FC<Props> = ({ verificationId, instrumentId }) => {
 	const deleteFile = async (doc: IDocument) => {
 		const data = {
 			instrumentId,
-			verificationId,
+			group,
 			id: doc.id,
 			filename: doc.label,
+			isTemp,
 		}
-		try {
-			await remove(data).unwrap()
-		} catch (error) {
-			const fetchError = error as IFetchError
-			toast.error(fetchError.data.message, { autoClose: false })
-		}
+
+		await remove(data).unwrap()
 	}
 
 	return (
@@ -152,15 +147,18 @@ export const Upload: FC<Props> = ({ verificationId, instrumentId }) => {
 
 				{/* //TODO как-то файлы дергаются */}
 				<List dense disablePadding sx={{ mt: '0!important' }}>
-					{(data?.data || []).map(d => (
-						<ListItem key={d.id} sx={{ paddingY: 0, pl: 1 }}>
-							<ListItemIcon sx={{ minWidth: 40 }}>{Types[d.type as 'doc']}</ListItemIcon>
-							<ListItemText primary={d.label} secondary={convertFileSize(d.size, 2) + ' МБ'} />
-							<ListItemSecondaryAction>
+					{(value || []).map(d => (
+						<ListItem
+							key={d.id}
+							sx={{ paddingY: 0, pl: 1 }}
+							secondaryAction={
 								<IconButton data-id={d.id} onClick={deleteHandler}>
 									<DeleteIcon fontSize={18} color={palette.error.main} pointerEvents='none' />
 								</IconButton>
-							</ListItemSecondaryAction>
+							}
+						>
+							<ListItemIcon sx={{ minWidth: 40 }}>{Types[d.type as 'doc']}</ListItemIcon>
+							<ListItemText primary={d.label} secondary={convertFileSize(d.size, 2) + ' МБ'} />
 						</ListItem>
 					))}
 					{files.map(d => (

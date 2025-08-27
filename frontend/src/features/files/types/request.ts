@@ -1,6 +1,6 @@
-export type GetDocuments = {
-	verificationId: string
-	instrumentId: string
+export type IGetDocumentsDTO = {
+	group: string
+	instrument: string
 }
 
 export interface IUploadFiles {
@@ -12,4 +12,5 @@ export type DeleteDocuments = {
 	filename: string
 	group: string
 	instrumentId: string
+	isTemp: boolean
 }

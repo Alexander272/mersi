@@ -27,9 +27,10 @@ import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
 import { ExchangeIcon } from '@/components/Icons/ExchangeIcon'
 import { FileSyncIcon } from '@/components/Icons/FileSyncIcon'
 import { EditEmployeeIcon } from '@/components/Icons/EditEmployeeIcon'
+import { AppRoutes } from '@/pages/router/routes'
 
 type Props = { onClick?: () => void; item: IToolsMenu; label?: string }
-type MenuItem = { el: FC<Props>; action?: DialogVariants; label?: string }
+type MenuItem = { el: FC<Props>; action?: DialogVariants; link?: string; label?: string }
 
 export const Icons = new Map<string, JSX.Element>([
 	['graphic', <DocumentCheckIcon fontSize={20} fill={'#757575'} />],
@@ -44,6 +45,7 @@ export const Icons = new Map<string, JSX.Element>([
 	['transfer-to-department', <ProductReturn fontSize={18} fill={'#757575'} />],
 	['write-off', <FileDeleteIcon fontSize={20} fill={'#757575'} />],
 	['departments', <EditEmployeeIcon fontSize={18} fill={'#757575'} />],
+	['places', <EditEmployeeIcon fontSize={18} fill={'#757575'} />],
 ])
 
 export const ToolsItem: FC<Props> = ({ onClick, item, label }) => {
@@ -101,5 +103,6 @@ export const MenuItems = new Map<string, MenuItem>([
 	['transfer-to-save', { el: ToolsItem, action: 'AddTransferToSave' }],
 	['transfer-to-department', { el: ToolsItem, action: 'AddTransferToDep' }],
 	['write-off', { el: ToolsItem, action: 'WriteOff' }],
-	['departments', { el: ToolsItem }], //TODO
+	['departments', { el: ToolsItem, link: AppRoutes.Employees }],
+	['places', { el: ToolsItem, link: AppRoutes.Places }],
 ])

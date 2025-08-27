@@ -102,24 +102,11 @@ type GroupedListProps = {
 const GroupedList: FC<GroupedListProps> = ({ data }) => {
 	const dispatch = useAppDispatch()
 
-	// const defState = data.reduce((a, v) => a.set(v.id, true), new Map<string, boolean>())
 	const defState = data.flatMap(item => item.si).reduce((a, v) => a.set(v.id, true), new Map<string, boolean>())
 	const [checked, setChecked] = useState<Map<string, boolean>>(defState)
 	const hasResWrite = useCheckPermission(PermRules.Reserve.Write)
 
 	const [receiving, { isLoading }] = useReceivingMutation()
-
-	//TODO
-	// const groupMap = new Map<string, ISI[]>()
-	// data.forEach(d => {
-	// 	d = { ...d, name: `${d.name} (${d.factoryNumber})` }
-
-	// 	if (groupMap.has(d.place || d.lastPlace)) {
-	// 		groupMap.get(d.place || d.lastPlace)?.push(d)
-	// 	} else {
-	// 		groupMap.set(d.place || d.lastPlace, [d])
-	// 	}
-	// })
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'Receive', isOpen: false }))
@@ -127,9 +114,6 @@ const GroupedList: FC<GroupedListProps> = ({ data }) => {
 
 	const receiveHandler = async () => {
 		const value: string[] = []
-		// checked.forEach((v, k) => {
-		// 	if (v && data.some(d => d.id === k)) value.push(k)
-		// })
 		checked.forEach((v, k) => {
 			if (v) value.push(k)
 		})

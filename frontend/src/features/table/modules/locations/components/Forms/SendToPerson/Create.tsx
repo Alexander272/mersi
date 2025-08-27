@@ -99,8 +99,8 @@ export const Create: FC<Props> = ({ ids }) => {
 					</IconButton>
 				)}
 
-				<Typography textAlign={'center'} sx={{ width: '100%' }}>
-					<Typography component={'span'} mr={2.5} fontSize={'1.3rem'} color='primary'>
+				<Typography textAlign={'center'} fontSize={'1.2rem'} fontWeight={'bold'} sx={{ width: '100%' }}>
+					<Typography component={'span'} mr={2.5} fontSize={'1.4rem'} color='primary'>
 						{ids.length > 1 ? `${active + 1}/${ids.length}` : ''}
 					</Typography>
 					{data?.data.name} ({data?.data.factoryNumber})

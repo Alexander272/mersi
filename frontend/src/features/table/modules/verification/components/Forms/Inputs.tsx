@@ -1,23 +1,29 @@
-import { FC, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers'
-import { Controller, useFormContext } from 'react-hook-form'
+import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import dayjs from 'dayjs'
 
 import type { IDocument } from '@/features/files/types/document'
 import { VerificationStatuses } from '../../constants/status'
 import { useAppSelector } from '@/hooks/redux'
+import { useGetTempFilesQuery } from '@/features/files/fileApiSlice'
 import { useGetVerificationFieldsQuery } from '../../verificationApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
 import { UploadButton } from '@/features/files/components/UploadButton/UploadButton'
 import { DateTextField } from '@/components/DatePicker/DatePicker'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
+import { Upload } from '@/features/files/components/Upload/Upload'
+
+const docsGroup = 'verifications'
 
 type Props = {
 	instrumentId: string
+	interval?: number
+	minDate?: number
 }
 
-export const Inputs: FC<Props> = ({ instrumentId }) => {
+export const Inputs: FC<Props> = ({ instrumentId, interval, minDate = 1262286000 }) => {
 	const section = useAppSelector(getSection)
 
 	const { data, isFetching } = useGetVerificationFieldsQuery(
@@ -30,13 +36,17 @@ export const Inputs: FC<Props> = ({ instrumentId }) => {
 			{isFetching && <BoxFallback />}
 
 			{data?.data.map(f => {
-				if (f.type == 'date') return <DateField key={f.id} field={f.field} label={f.label} />
+				if (f.type == 'date')
+					return (
+						<DateField key={f.id} field={f.field} label={f.label} minDate={minDate} interval={interval} />
+					)
 				if (f.field == 'status') return <StatusField key={f.id} field={f.field} label={f.label} />
 				if (f.field == 'registerLink') return <LinkField key={f.id} field={f.field} label={f.label} />
 				if (f.field == 'notes') return <NotesField key={f.id} field={f.field} label={f.label} />
 				if (f.type == 'file')
 					return <FileField key={f.id} field={f.field} label={f.label} instrumentId={instrumentId} />
-				if (f.type == 'files') return //TODO added upload
+				if (f.type == 'files')
+					return <FilesBoxField key={f.id} field={f.field} label={f.label} instrumentId={instrumentId} />
 			})}
 		</Stack>
 	)
@@ -48,8 +58,25 @@ type FieldProps = {
 	instrumentId?: string
 }
 
-const DateField: FC<FieldProps> = ({ label, field }) => {
-	const { control } = useFormContext()
+const DateField: FC<FieldProps & { minDate: number; interval?: number }> = ({ label, field, minDate, interval }) => {
+	const { control, watch, setValue } = useFormContext()
+
+	let date = 0
+	if (field == 'nextVerificationDate') {
+		date = watch('verificationDate')
+	}
+
+	useEffect(() => {
+		if (field == 'nextVerificationDate') {
+			if (interval && date) {
+				const newDate = dayjs(date * 1000)
+					.add(interval, 'M')
+					.subtract(1, 'd')
+					.unix()
+				setValue('nextVerificationDate', newDate)
+			}
+		}
+	}, [date, field, interval, setValue])
 
 	return (
 		<Controller
@@ -63,6 +90,7 @@ const DateField: FC<FieldProps> = ({ label, field }) => {
 					label={label}
 					showDaysOutsideCurrentMonth
 					fixedWeekNumber={6}
+					minDate={dayjs(minDate * 1000)}
 					slots={{
 						textField: DateTextField,
 					}}
@@ -129,6 +157,19 @@ const FileField: FC<FieldProps> = ({ label, field, instrumentId = '' }) => {
 
 	const { control, setValue } = useFormContext()
 
+	const { data, isFetching } = useGetTempFilesQuery(
+		{ group: docsGroup, instrument: instrumentId },
+		{ skip: !instrumentId }
+	)
+
+	useEffect(() => {
+		if (data?.data.length) {
+			setDoc(data.data[0])
+			setValue('doc', data.data[0]?.label || '')
+			setValue(`docId`, data.data[0]?.id || '')
+		}
+	}, [data, setValue])
+
 	const setDocument = (value: IDocument | null) => {
 		setDoc(value)
 		setValue(field, value?.label || '')
@@ -137,6 +178,8 @@ const FileField: FC<FieldProps> = ({ label, field, instrumentId = '' }) => {
 
 	return (
 		<Stack direction={'row'}>
+			{isFetching && <BoxFallback />}
+
 			<Controller
 				control={control}
 				name={field}
@@ -158,7 +201,7 @@ const FileField: FC<FieldProps> = ({ label, field, instrumentId = '' }) => {
 				value={doc}
 				onChange={setDocument}
 				instrumentId={instrumentId}
-				group='act'
+				group={docsGroup}
 				sx={{
 					width: 200,
 					borderTopLeftRadius: 0,
@@ -169,4 +212,31 @@ const FileField: FC<FieldProps> = ({ label, field, instrumentId = '' }) => {
 			/>
 		</Stack>
 	)
+}
+
+const FilesBoxField: FC<FieldProps> = ({ field, instrumentId = '' }) => {
+	const [doc, setDoc] = useState<IDocument[]>([])
+
+	const { control } = useFormContext()
+	const { replace } = useFieldArray({ control, name: field as 'docs' })
+
+	const { data, isFetching } = useGetTempFilesQuery(
+		{ group: docsGroup, instrument: instrumentId },
+		{ skip: !instrumentId }
+	)
+
+	useEffect(() => {
+		if (data?.data.length) {
+			setDoc(data.data)
+			replace(data.data.map(d => ({ docId: d.id, doc: d.label })))
+		}
+	}, [data, field, replace])
+
+	const setDocument = (value: IDocument[]) => {
+		setDoc(value)
+		replace(value.map(d => ({ docId: d.id, doc: d.label })) || [])
+	}
+
+	if (isFetching) return <BoxFallback />
+	return <Upload value={doc} onChange={setDocument} instrumentId={instrumentId} group={docsGroup} />
 }

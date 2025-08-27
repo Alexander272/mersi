@@ -1,14 +1,21 @@
-import { FC, useEffect } from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers'
 import dayjs from 'dayjs'
 
 import type { IFilter } from '../../types/params'
-import { useGetUniqueInstrumentDataQuery } from '../../instrumentApiSlice'
-import { DateTextField } from '@/components/DatePicker/DatePicker'
+import { PermRules } from '@/constants/permissions'
 import { useAppSelector } from '@/hooks/redux'
+import { useCheckPermission } from '@/features/user/hooks/check'
+import { useLazyGetDepartmentsQuery } from '@/features/departments/departmentApiSlice'
+import { useLazyGetUniqueEmployeeQuery } from '@/features/employees/employeesApiSlice'
+import { useGetUniqueInstrumentDataQuery } from '../../instrumentApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
+import { getRealm } from '@/features/realms/realmSlice'
+import { DateTextField } from '@/components/DatePicker/DatePicker'
+import { Option, SelectWithFilter } from '@/components/SelectWithFilter/SelectWithFilter'
+import { Fallback } from '@/components/Fallback/Fallback'
 
 type Props = {
 	index: number
@@ -222,6 +229,49 @@ const AutocompleteFilter: FC<Props> = ({ index }) => {
 	)
 }
 
-const ListFilter: FC<Props> = () => {
-	return <></>
+const ListFilter: FC<Props & { label?: string }> = ({ index, label }) => {
+	const [options, setOptions] = useState<Option[]>([])
+
+	const hasReserve = useCheckPermission(PermRules.Location.Write)
+
+	const realm = useAppSelector(getRealm)
+	const { setValue, watch } = useFormContext<{ filters: IFilter[] }>()
+	const field = watch(`filters.${index}.field`)
+	const value = watch(`filters.${index}.value`)
+
+	const [getDepartments, { isFetching: isFetchDeps }] = useLazyGetDepartmentsQuery()
+	const [getEmployees, { isFetching: isFetchEmp }] = useLazyGetUniqueEmployeeQuery()
+
+	const fetchData = useCallback(async () => {
+		if (!realm) return
+		if (field == 'place') {
+			const { data } = await getDepartments(realm.id)
+			const newOptions = [{ id: '_moved', name: 'Перемещение' }]
+			if (hasReserve) newOptions.unshift({ id: '_reserve', name: 'Резерв' })
+			newOptions.push(...(data?.data.map(d => ({ id: d.id, name: d.name })) || []))
+			setOptions(newOptions)
+		}
+		if (field == 'person') {
+			const { data } = await getEmployees(realm.id)
+			setOptions(data?.data.map(d => ({ id: d.name.replaceAll('.', '_'), name: d.name })) || [])
+		}
+	}, [field, getDepartments, getEmployees, hasReserve, realm])
+
+	useEffect(() => {
+		fetchData()
+	}, [fetchData])
+
+	const changeHandler = (values: Option[]) => {
+		setValue(`filters.${index}.value`, values.map(v => v.id).join(','))
+	}
+
+	if (isFetchDeps || isFetchEmp) return <Fallback />
+	return (
+		<SelectWithFilter
+			values={options.filter(o => value.includes(o.id))}
+			options={options}
+			onChange={changeHandler}
+			label={label}
+		/>
+	)
 }

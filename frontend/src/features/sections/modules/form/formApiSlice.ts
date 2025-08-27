@@ -8,10 +8,10 @@ import { apiSlice } from '@/app/apiSlice'
 export const formApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: false,
 	endpoints: builder => ({
-		getCreateFormSteps: builder.query<{ data: ICreateFormStep[] }, string>({
-			query: section => ({
+		getCreateFormSteps: builder.query<{ data: ICreateFormStep[] }, { section: string; action: string }>({
+			query: req => ({
 				url: API.createForm,
-				params: new URLSearchParams({ section }),
+				params: new URLSearchParams({ section: req.section, action: req.action }),
 			}),
 			providesTags: [{ type: 'CreateForm', id: 'List' }],
 			onQueryStarted: async (_arg, api) => {
@@ -24,6 +24,14 @@ export const formApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
+		getBoolFormFields: builder.query<{ data: ICreateFormFieldDTO[] }, string>({
+			query: section => ({
+				url: `${API.createForm}/bool-fields`,
+				params: new URLSearchParams({ section }),
+			}),
+			providesTags: [{ type: 'CreateForm', id: 'List' }],
+		}),
+
 		createFieldToCreateForm: builder.mutation<null, ICreateFormFieldDTO>({
 			query: body => ({
 				url: API.createForm,
@@ -60,6 +68,7 @@ export const formApiSlice = apiSlice.injectEndpoints({
 
 export const {
 	useGetCreateFormStepsQuery,
+	useGetBoolFormFieldsQuery,
 	useCreateFieldToCreateFormMutation,
 	useUpdateFieldToCreateFormMutation,
 	useUpdateSeveralFieldsToCreateFormMutation,

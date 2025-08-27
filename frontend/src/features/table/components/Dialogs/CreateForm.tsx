@@ -17,6 +17,7 @@ import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { Step, Stepper } from '@/components/Stepper/Stepper'
 import { RefreshIcon } from '@/components/Icons/RefreshIcon'
 import { Form as FormFields } from '../Form/Form'
+
 type Props = {
 	id: string
 }
@@ -28,7 +29,10 @@ export const CreateForm: FC<Props> = () => {
 	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetCreateFormStepsQuery(section?.id || '', { skip: !section?.id })
+	const { data, isFetching } = useGetCreateFormStepsQuery(
+		{ section: section?.id || '', action: 'Create' },
+		{ skip: !section?.id }
+	)
 	const { data: si } = useGetSI()
 	const [create, { isLoading }] = useCreateSiMutation()
 
@@ -61,14 +65,40 @@ export const CreateForm: FC<Props> = () => {
 
 		form.instrument.sectionId = section?.id || ''
 		form.instrument.position = (si?.total || 0) + 1
-		if (form?.verification?.verificationDate != 0 && form.instrument.interVerificationInterval != '') {
-			form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
-				.add(+form.instrument.interVerificationInterval, 'month')
-				.unix()
-		}
+		form.instrument.name = form.instrument.name.trim()
+		form.instrument.type = form.instrument.type?.trim()
+		form.instrument.factoryNumber = form.instrument.factoryNumber?.trim()
+		form.instrument.measurementLimits = form.instrument.measurementLimits?.trim()
+		form.instrument.accuracy = form.instrument.accuracy?.trim()
+		form.instrument.stateRegister = form.instrument.stateRegister?.trim()
+		form.instrument.manufacturer = form.instrument.manufacturer?.trim()
+		form.instrument.notes = form.instrument.notes?.trim()
 
+		if (form.verification) {
+			form.verification.notes = form.verification.notes?.trim()
+			form.verification.registerLink = form.verification.registerLink?.trim()
+
+			if (!form.instrument.interVerificationInterval) {
+				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
+					.add(+form.instrument.interVerificationInterval, 'month')
+					.unix()
+			}
+			if (form.verification.notVerified) {
+				form.instrument.interVerificationInterval = 0
+				form.verification.verificationDate = 0
+				form.verification.nextVerificationDate = 0
+			}
+		}
 		if (form?.verification.docs?.length) {
 			form.verification.docs = form.verification.docs.filter(d => d.doc && d.doc != '')
+		}
+
+		if (form.location) {
+			const isToReserve = form.location.isToReserve
+			form.location.department = isToReserve ? '' : form.location.department
+			form.location.person = isToReserve ? '' : form.location.person
+			form.location.dateOfReceiving = !form.location.needConfirm || isToReserve ? form.location.dateOfIssue : 0
+			form.location.status = form.location.needConfirm ? 'moved' : isToReserve ? 'reserve' : 'used'
 		}
 
 		try {
@@ -87,6 +117,7 @@ export const CreateForm: FC<Props> = () => {
 		console.log('delete')
 		methods.reset({ instrument: {}, verification: undefined })
 		localStorage.removeItem(localKeys.form)
+		setActiveStep(0)
 	}
 
 	return (

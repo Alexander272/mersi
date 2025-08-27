@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { FormControl, TextField } from '@mui/material'
+import { Checkbox, FormControl, FormControlLabel, useTheme } from '@mui/material'
 import { Controller, useFormContext } from 'react-hook-form'
 
 import type { ICreateFormField } from '@/features/sections/modules/form/types/create'
@@ -8,7 +8,8 @@ type Props = {
 	data: ICreateFormField
 }
 
-export const NumberField: FC<Props> = ({ data }) => {
+export const CheckboxField: FC<Props> = ({ data }) => {
+	const { palette } = useTheme()
 	const { control, watch } = useFormContext()
 	const watchField = watch(data.hide)
 
@@ -19,21 +20,17 @@ export const NumberField: FC<Props> = ({ data }) => {
 				control={control}
 				name={data.path + '.' + data.field}
 				rules={{ required: data.isRequired }}
-				render={({ field, fieldState: { error } }) => (
-					<TextField
-						{...field}
-						value={field.value || ''}
-						onChange={e => field.onChange(+(e.target.value || 0))}
+				render={({ field }) => (
+					<FormControlLabel
 						label={data.fieldName}
-						fullWidth
-						error={Boolean(error)}
-						slotProps={{
-							htmlInput: {
-								type: 'number',
-								step: 1,
-								// min: 1,
-								// max: 100
-							},
+						control={<Checkbox checked={field.value || false} />}
+						onChange={field.onChange}
+						sx={{
+							transition: 'all 0.3s ease-in-out',
+							borderRadius: 3,
+							userSelect: 'none',
+							margin: 0,
+							':hover': { backgroundColor: palette.action.hover },
 						}}
 					/>
 				)}

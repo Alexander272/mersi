@@ -31,6 +31,7 @@ export const Repair: FC<Props> = ({ instrumentId }) => {
 			</TableHead>
 			<Box maxHeight={350} overflow={'auto'} position={'relative'} minHeight={150}>
 				{!data?.data.length && <NoRowsOverlay />}
+
 				<TableBody>
 					{data?.data.map(item => (
 						<TableRow key={item.id} height={38}>

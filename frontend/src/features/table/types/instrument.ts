@@ -13,8 +13,8 @@ export interface IInstrumentDTO {
 	manufacturer: string
 	responsible: string
 	inventory: string
-	yearOfIssue: string
-	interVerificationInterval: string
+	yearOfIssue: number
+	interVerificationInterval: number
 	actOfEntering: string
 	actOfEnteringId: string
 	notes: string

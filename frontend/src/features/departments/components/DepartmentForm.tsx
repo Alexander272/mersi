@@ -50,6 +50,8 @@ export const DepartmentForm: FC<Props> = ({ department, setDepartment }) => {
 		console.log('save', form, dirtyFields)
 		if (!Object.keys(dirtyFields).length) return
 
+		form.name = form.name.trim()
+
 		const newData = { ...form, id: data?.data.id || '', leaderId: data?.data.leaderId || '', channelName: '' }
 		try {
 			if (department == 'new') {
@@ -85,11 +87,26 @@ export const DepartmentForm: FC<Props> = ({ department, setDepartment }) => {
 				<Fallback position={'absolute'} zIndex={5} background={'#f5f5f557'} />
 			) : null}
 
-			<Stack direction={'row'} flexGrow={1} width={'100%'} spacing={2} mb={2}>
+			<Stack direction={'row'} alignItems={'flex-start'} flexGrow={1} width={'100%'} spacing={2} mb={2}>
 				<Controller
 					control={control}
 					name={'name'}
-					render={({ field }) => <TextField {...field} label={'Подразделение'} fullWidth />}
+					rules={{
+						required: 'Это поле обязательно',
+						validate: {
+							noLeadingOrTrailingSpaces: value =>
+								value.trim() !== '' || 'Поле не может содержать только пробелы',
+						},
+					}}
+					render={({ field, fieldState: { error } }) => (
+						<TextField
+							{...field}
+							label={'Подразделение'}
+							fullWidth
+							error={!!error}
+							helperText={error?.message}
+						/>
+					)}
 				/>
 
 				<Button
@@ -98,6 +115,7 @@ export const DepartmentForm: FC<Props> = ({ department, setDepartment }) => {
 					disabled={!Object.keys(dirtyFields).length}
 					sx={{
 						minWidth: 56,
+						height: 40,
 					}}
 				>
 					<SaveIcon

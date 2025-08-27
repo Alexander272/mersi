@@ -6,7 +6,9 @@ import { NotFound } from '@/pages/notFound/NotFoundLazy'
 import { Auth } from '@/pages/auth/AuthLazy'
 import { Home } from '@/pages/home/HomeLazy'
 import { Sections } from '@/pages/sections/SectionLazy'
-import { Realms } from '@/pages//realms/RealmsLazy'
+import { Realms } from '@/pages/realms/RealmsLazy'
+import { Places } from '@/pages/places/PlacesLazy'
+import { Employees } from '@/pages/employee/EmployeesLazy'
 import PrivateRoute from './PrivateRoute'
 
 const config: RouteObject[] = [
@@ -26,14 +28,14 @@ const config: RouteObject[] = [
 						index: true,
 						element: <Home />,
 					},
-					// {
-					// 	path: AppRoutes.EMPLOYEES,
-					// 	element: <Employees />,
-					// },
-					// {
-					// 	path: AppRoutes.PLACES,
-					// 	element: <Places />,
-					// },
+					{
+						path: AppRoutes.Employees,
+						element: <Employees />,
+					},
+					{
+						path: AppRoutes.Places,
+						element: <Places />,
+					},
 					{
 						path: AppRoutes.Realm,
 						element: <Realms />,

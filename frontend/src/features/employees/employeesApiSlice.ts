@@ -8,12 +8,14 @@ import { API } from '@/app/api'
 const employeesApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: false,
 	endpoints: builder => ({
-		getEmployees: builder.query<{ data: IEmployee[] }, string | null>({
-			query: departmentId => ({
+		getEmployees: builder.query<{ data: IEmployee[] }, { realm: string; department: string | null }>({
+			query: req => ({
 				url: `${API.employees}`,
-				params: new URLSearchParams(departmentId ? { departmentId } : undefined),
+				params: new URLSearchParams(
+					Object.assign({ realm: req.realm }, req.department ? { departmentId: req.department } : undefined)
+				),
 			}),
-			providesTags: (_result, _error, arg) => [{ type: 'Employees', id: arg || 'all' }],
+			providesTags: (_result, _error, arg) => [{ type: 'Employees', id: arg.department || 'all' }],
 			onQueryStarted: async (_arg, api) => {
 				try {
 					await api.queryFulfilled
@@ -23,8 +25,11 @@ const employeesApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
-		getUniqueEmployee: builder.query<{ data: IEmployee[] }, null>({
-			query: () => `${API.employees}/unique`,
+		getUniqueEmployee: builder.query<{ data: IEmployee[] }, string>({
+			query: realm => ({
+				url: `${API.employees}/unique`,
+				params: new URLSearchParams({ realm }),
+			}),
 			providesTags: [{ type: 'Employees', id: 'unique' }],
 			onQueryStarted: async (_arg, api) => {
 				try {
@@ -93,7 +98,9 @@ const employeesApiSlice = apiSlice.injectEndpoints({
 
 export const {
 	useGetEmployeesQuery,
+	useLazyGetEmployeesQuery,
 	useGetUniqueEmployeeQuery,
+	useLazyGetUniqueEmployeeQuery,
 	useGetEmployeeByIdQuery,
 	useCreateEmployeeMutation,
 	useUpdateEmployeeMutation,

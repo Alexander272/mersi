@@ -56,9 +56,11 @@ export const Create: FC<Props> = ({ ids }) => {
 		console.log('save', form, methods.formState.dirtyFields)
 
 		form.instrumentId = data.data.id
-		form.nextVerificationDate = dayjs(form.verificationDate * 1000)
-			.add(+(data.data.interVerificationInterval || 0), 'month')
-			.unix()
+		if (form.nextVerificationDate == 0) {
+			form.nextVerificationDate = dayjs(form.verificationDate * 1000)
+				.add(+(data.data.interVerificationInterval || 0), 'month')
+				.unix()
+		}
 
 		form.docs = form.docs?.filter(d => d.doc && d.doc != '')
 
@@ -87,8 +89,8 @@ export const Create: FC<Props> = ({ ids }) => {
 					</IconButton>
 				)}
 
-				<Typography textAlign={'center'} sx={{ width: '100%' }}>
-					<Typography component={'span'} mr={2.5} fontSize={'1.3rem'} color='primary'>
+				<Typography textAlign={'center'} fontSize={'1.2rem'} fontWeight={'bold'} sx={{ width: '100%' }}>
+					<Typography component={'span'} mr={2.5} fontSize={'1.4rem'} color='primary'>
 						{ids.length > 1 ? `${active + 1}/${ids.length}` : ''}
 					</Typography>
 					{data?.data.name} ({data?.data.factoryNumber})
@@ -107,7 +109,11 @@ export const Create: FC<Props> = ({ ids }) => {
 
 			<Stack mt={2} component={'form'} onSubmit={saveHandler}>
 				<FormProvider {...methods}>
-					<Inputs instrumentId={ids?.length ? ids[active] : ''} />
+					<Inputs
+						instrumentId={ids?.length ? ids[active] : ''}
+						interval={data?.data.interVerificationInterval}
+						minDate={ver?.data.verificationDate}
+					/>
 				</FormProvider>
 
 				<Divider sx={{ width: '50%', alignSelf: 'center' }} />

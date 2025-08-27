@@ -14,10 +14,8 @@ type Props = {
 export const FileField: FC<Props> = ({ data, instrumentId = '' }) => {
 	const [doc, setDoc] = useState<IDocument | null>(null)
 
-	const { control, setValue } = useFormContext()
-
-	//TODO надо еще вставлять название файла в поле для ввода и решить что делать если файла не будет, а будет только название
-	// еще наверное надо как-то редактировать название файла при изменении его в поле ввода
+	const { control, setValue, watch } = useFormContext()
+	const watchField = watch(data.hide)
 
 	const setDocument = (value: IDocument | null) => {
 		setDoc(value)
@@ -25,6 +23,7 @@ export const FileField: FC<Props> = ({ data, instrumentId = '' }) => {
 		setValue(`${data.path}.${data.field}Id`, value?.id || '')
 	}
 
+	if (data.hide && watchField) return null
 	return (
 		<Stack direction={'row'}>
 			<Controller

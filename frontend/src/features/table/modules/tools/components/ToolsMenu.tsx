@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Button, Menu } from '@mui/material'
+import { useNavigate } from 'react-router'
 
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetToolsMenuQuery } from '../toolsMenuApiSlice'
@@ -16,13 +17,14 @@ import { CreateWriteOffDialog } from '../../writeOff/components/Dialogs/Create'
 import { ScheduleDialog } from '../../export/components/ScheduleDialog'
 import { ExportDialog } from '../../export/components/ExportDialog'
 import { CreateLocationDialog } from '../../locations/components/Dialogs/Create'
-import { MenuItems } from './ToolsMenuItems'
 import { SendToReserveDialog } from '../../locations/components/Dialogs/SendToReserve'
 import { ReceiptDialog } from '../../locations/components/Dialogs/Receipt'
+import { MenuItems } from './ToolsMenuItems'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
 	const [open, setOpen] = useState(false)
+	const navigate = useNavigate()
 
 	const selected = useAppSelector(getSelected)
 	const section = useAppSelector(getSection)
@@ -32,8 +34,9 @@ export const ToolsMenu = () => {
 
 	const toggleHandler = () => setOpen(prev => !prev)
 
-	const menuHandler = (variant: DialogVariants) => () => {
-		dispatch(changeDialogIsOpen({ variant, isOpen: true, context: Object.keys(selected) }))
+	const menuHandler = (variant?: DialogVariants, link?: string) => () => {
+		if (variant) dispatch(changeDialogIsOpen({ variant, isOpen: true, context: Object.keys(selected) }))
+		if (link) navigate(link)
 		toggleHandler()
 	}
 
@@ -88,7 +91,13 @@ export const ToolsMenu = () => {
 					if (item) item.label = d.label
 					const Elem = item?.el
 					if (!Elem) return null
-					return <Elem key={d.id} item={d} onClick={item.action ? menuHandler(item.action) : undefined} />
+					return (
+						<Elem
+							key={d.id}
+							item={d}
+							onClick={item.action || item.link ? menuHandler(item.action, item.link) : undefined}
+						/>
+					)
 				})}
 			</Menu>
 

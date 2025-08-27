@@ -14,7 +14,9 @@ type Props = {
 export const AutocompleteField: FC<Props> = ({ data }) => {
 	const [options, setOptions] = useState<string[]>([])
 	const section = useAppSelector(getSection)
-	const { control } = useFormContext()
+
+	const { control, watch } = useFormContext()
+	const watchField = watch(data.hide)
 
 	// const { data: options, isFetching } = useGetUniqueInstrumentDataQuery(data.field, { skip: !data.field })
 
@@ -26,6 +28,7 @@ export const AutocompleteField: FC<Props> = ({ data }) => {
 		setOptions(res.data || [])
 	}
 
+	if (data.hide && watchField) return null
 	return (
 		<Controller
 			name={data.path + '.' + data.field}

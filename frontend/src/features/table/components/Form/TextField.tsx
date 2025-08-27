@@ -9,8 +9,10 @@ type Props = {
 }
 
 export const TextField: FC<Props> = ({ data }) => {
-	const { control } = useFormContext()
+	const { control, watch } = useFormContext()
+	const watchField = watch(data.hide)
 
+	if (data.hide && watchField) return null
 	return (
 		<FormControl>
 			<Controller

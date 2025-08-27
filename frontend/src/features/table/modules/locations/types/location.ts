@@ -23,6 +23,7 @@ export interface ILocationDTO {
 	dateOfReceiving: number
 	needConfirm: boolean
 	status: string
+	isToReserve?: boolean
 }
 
 export interface ILocationForm {

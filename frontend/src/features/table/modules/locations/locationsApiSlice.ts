@@ -3,6 +3,7 @@ import { toast } from 'react-toastify'
 import type { IBaseFetchError } from '@/app/types/error'
 import type { IForcedReceipt, ILocation, ILocationDTO, IReceiving } from './types/location'
 import { API } from '@/app/api'
+import { HttpCodes } from '@/constants/httpCodes'
 import { apiSlice } from '@/app/apiSlice'
 
 const locationApiSlice = apiSlice.injectEndpoints({
@@ -34,6 +35,7 @@ const locationApiSlice = apiSlice.injectEndpoints({
 					await api.queryFulfilled
 				} catch (error) {
 					const fetchError = (error as IBaseFetchError).error
+					if (fetchError.status == HttpCodes.NOT_FOUND) return
 					toast.error(fetchError.data.message, { autoClose: false })
 				}
 			},

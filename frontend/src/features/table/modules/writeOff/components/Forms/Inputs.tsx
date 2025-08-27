@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { Stack, TextField } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers'
 import { Controller, useFormContext } from 'react-hook-form'
@@ -6,10 +6,13 @@ import dayjs from 'dayjs'
 
 import type { IDocument } from '@/features/files/types/document'
 import type { IWriteOffDTO } from '../../types/writeoff'
+import { useGetTempFilesQuery } from '@/features/files/fileApiSlice'
 import { UploadButton } from '@/features/files/components/UploadButton/UploadButton'
 import { DateTextField } from '@/components/DatePicker/DatePicker'
+import { BoxFallback } from '@/components/Fallback/BoxFallback'
 
 const min = 1262286000
+const docsGroup = 'writeOff'
 
 type Props = {
 	instrumentId: string
@@ -20,6 +23,19 @@ export const Inputs: FC<Props> = ({ instrumentId }) => {
 
 	const { control, setValue } = useFormContext<IWriteOffDTO>()
 
+	const { data, isFetching } = useGetTempFilesQuery(
+		{ group: docsGroup, instrument: instrumentId },
+		{ skip: !instrumentId }
+	)
+
+	useEffect(() => {
+		if (data?.data.length) {
+			setDoc(data.data[0])
+			setValue('docName', data.data[0]?.label || '')
+			setValue(`docId`, data.data[0]?.id || '')
+		}
+	}, [data, setValue])
+
 	const setDocument = (value: IDocument | null) => {
 		setDoc(value)
 		setValue('docName', value?.label || '')
@@ -27,7 +43,9 @@ export const Inputs: FC<Props> = ({ instrumentId }) => {
 	}
 
 	return (
-		<Stack spacing={2} mb={2}>
+		<Stack spacing={2} mb={2} position={'relative'}>
+			{isFetching && <BoxFallback />}
+
 			<Controller
 				control={control}
 				name={'date'}
@@ -36,7 +54,7 @@ export const Inputs: FC<Props> = ({ instrumentId }) => {
 						{...field}
 						value={dayjs(field.value * 1000)}
 						onChange={value => field.onChange(value?.startOf('d').unix())}
-						label={`Дата передачи`}
+						label={`Дата списания`}
 						showDaysOutsideCurrentMonth
 						fixedWeekNumber={6}
 						minDate={dayjs(min * 1000)}
@@ -74,7 +92,7 @@ export const Inputs: FC<Props> = ({ instrumentId }) => {
 					value={doc}
 					onChange={setDocument}
 					instrumentId={instrumentId}
-					group='writeOff'
+					group={docsGroup}
 					sx={{
 						width: 200,
 						borderTopLeftRadius: 0,

@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 
 import { DayjsFormat } from '@/constants/dateFormat'
 import { useGetLocationsQuery } from '../../locations/locationsApiSlice'
+import { NoRowsOverlay } from '@/features/table/components/NoRowsOverlay/components/NoRowsOverlay'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { Table } from '@/components/Table/Table'
 import { TableHead } from '@/components/Table/TableHead'
@@ -33,6 +34,8 @@ export const Location: FC<Props> = ({ instrumentId }) => {
 			</TableHead>
 
 			<Box maxHeight={350} overflow={'auto'} position={'relative'} minHeight={150}>
+				{!data?.data.length && <NoRowsOverlay />}
+
 				<TableBody>
 					{data?.data.map(item => (
 						<TableRow key={item.id} sx={{ minHeight: 38, cursor: 'default' }}>

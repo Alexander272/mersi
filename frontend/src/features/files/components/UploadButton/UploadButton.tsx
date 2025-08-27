@@ -16,10 +16,11 @@ type Props = {
 	onChange: (value: IDocument | null) => void
 	instrumentId: string
 	group: string
+	isTemp?: boolean
 	sx?: SxProps<Theme>
 }
 
-export const UploadButton: FC<Props> = ({ value, onChange, instrumentId, group, sx }) => {
+export const UploadButton: FC<Props> = ({ value, onChange, instrumentId, group, isTemp = true, sx }) => {
 	const [upload, { isLoading: uploading }] = useUploadFilesMutation()
 	const [remove, { isLoading: removing }] = useDeleteFileMutation()
 
@@ -62,6 +63,7 @@ export const UploadButton: FC<Props> = ({ value, onChange, instrumentId, group, 
 			group,
 			id: value.id,
 			filename: value.label,
+			isTemp,
 		}
 		try {
 			await remove(data).unwrap()

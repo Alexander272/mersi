@@ -64,15 +64,15 @@ export const Row: FC<Props> = ({ item, sx }) => {
 			const deadline = dayjs()
 				.add(1, 'month')
 				.isAfter(dayjs(item.nextVerificationDate * 1000))
-			if (deadline) styles.background = RowColors.deadlineOr
+			if (deadline && item.nextVerificationDate) styles.background = RowColors.deadlineOr
 		} else {
 			const deadline = dayjs()
 				.add(15, 'd')
 				.isAfter(dayjs(item.nextVerificationDate * 1000))
-			if (deadline) styles.background = RowColors.deadlineRed
+			if (deadline && item.nextVerificationDate) styles.background = RowColors.deadlineRed
 		}
 		const overdue = dayjs().isAfter(dayjs(item.nextVerificationDate * 1000))
-		if (overdue) styles.background = RowColors.overdue
+		if (overdue && item.nextVerificationDate) styles.background = RowColors.overdue
 
 		if (item.status == 'reserve') styles.background = RowColors.reverse
 

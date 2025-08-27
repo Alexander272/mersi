@@ -14,7 +14,9 @@ export interface ICreateFormField {
 	path: string
 	type: string
 	isRequired: boolean
+	canUpdate: boolean
 	position: number
+	hide: string
 	created: string
 }
 
@@ -28,5 +30,7 @@ export interface ICreateFormFieldDTO {
 	path: string
 	type: string
 	isRequired: boolean
+	canUpdate: boolean
 	position: number
+	hide: string
 }

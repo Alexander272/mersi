@@ -3,7 +3,9 @@ import { Autocomplete, TextField } from '@mui/material'
 import { Controller, RegisterOptions, useFormContext } from 'react-hook-form'
 
 import type { ILocationForm } from '../../../types/location'
+import { useAppSelector } from '@/hooks/redux'
 import { useGetDepartmentsQuery } from '@/features/departments/departmentApiSlice'
+import { getRealm } from '@/features/realms/realmSlice'
 
 type Props = {
 	label: string
@@ -14,8 +16,9 @@ type Props = {
 
 export const DepartmentList: FC<Props> = ({ label, name, rules, disabled }) => {
 	const { control, setValue } = useFormContext<ILocationForm>()
+	const realm = useAppSelector(getRealm)
 
-	const { data, isFetching } = useGetDepartmentsQuery(null)
+	const { data, isFetching } = useGetDepartmentsQuery(realm?.id || '', { skip: !realm })
 
 	useEffect(() => {
 		//TODO на проде почему-то не отрабатывает setValue
