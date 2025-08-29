@@ -110,7 +110,7 @@ export const ChangePositionForm: FC<Props> = ({ id }) => {
 											type: 'number',
 											step: 1,
 											min: 1,
-											max: si?.total,
+											max: si?.data[si?.data.length - 1]?.position,
 										},
 									}}
 								/>

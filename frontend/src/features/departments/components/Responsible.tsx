@@ -20,7 +20,7 @@ type Props = {
 
 export const Responsible: FC<Props> = ({ department }) => {
 	const { palette } = useTheme()
-	const defaultValue = { id: '', departmentId: department?.id || '', ssoId: '' }
+	const defaultValue = { id: '', departmentId: department?.id || '', userId: '' }
 
 	const { data, isFetching } = useGetResponsibleQuery({ department: department?.id || '' }, { skip: !department })
 	const { data: users, isFetching: usersIsFetching } = useGetUserByAccessQuery(null)
@@ -71,7 +71,7 @@ export const Responsible: FC<Props> = ({ department }) => {
 		const updated: IResponsible[] = []
 
 		form.values.forEach(item => {
-			if (item.ssoId) {
+			if (item.userId) {
 				if (item.id) {
 					updated.push(item)
 				} else {
@@ -163,7 +163,7 @@ export const Responsible: FC<Props> = ({ department }) => {
 					<Controller
 						key={field.id}
 						control={control}
-						name={`values.${index}.ssoId`}
+						name={`values.${index}.userId`}
 						render={({ field }) => (
 							<Select {...field}>
 								{users?.data.map(user => (

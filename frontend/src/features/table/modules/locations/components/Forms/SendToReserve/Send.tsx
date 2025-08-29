@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Button, Divider, Stack, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material'
+import { Button, Divider, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
 import { toast } from 'react-toastify'
 import dayjs from 'dayjs'
 
@@ -59,6 +59,7 @@ export const SendToReserve: FC<Props> = ({ ids }) => {
 		}
 	}
 
+	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
 	return (
 		<Stack position={'relative'} mt={-2.5}>
 			{isFetching || isLoading ? <BoxFallback /> : null}

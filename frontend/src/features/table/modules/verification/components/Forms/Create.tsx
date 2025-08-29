@@ -56,7 +56,7 @@ export const Create: FC<Props> = ({ ids }) => {
 		console.log('save', form, methods.formState.dirtyFields)
 
 		form.instrumentId = data.data.id
-		if (form.nextVerificationDate == 0) {
+		if (!form.nextVerificationDate || form.nextVerificationDate == 0) {
 			form.nextVerificationDate = dayjs(form.verificationDate * 1000)
 				.add(+(data.data.interVerificationInterval || 0), 'month')
 				.unix()

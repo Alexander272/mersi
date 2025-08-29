@@ -6,6 +6,7 @@ import { dialogPath, dialogReducer } from '@/features/dialog/dialogSlice'
 import { tablePath, tableReducer } from '@/features/table/tableSlice'
 import { realmPath, realmReducer } from '@/features/realms/realmSlice'
 import { sectionPath, sectionReducer } from '@/features/sections/sectionSlice'
+import { employeesPath, employeesReducer } from '@/features/employees/employeeSlice'
 import { resetStoreListener } from './middlewares/resetStore'
 import { apiSlice } from './apiSlice'
 
@@ -16,8 +17,8 @@ const rootReducer = combineReducers({
 	[tablePath]: tableReducer,
 	[realmPath]: realmReducer,
 	[sectionPath]: sectionReducer,
+	[employeesPath]: employeesReducer,
 	// [dataTablePath]: dataTableReducer,
-	// [employeesPath]: employeesReducer,
 })
 
 export const store = configureStore({

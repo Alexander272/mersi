@@ -8,14 +8,12 @@ import { API } from '@/app/api'
 const employeesApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: false,
 	endpoints: builder => ({
-		getEmployees: builder.query<{ data: IEmployee[] }, { realm: string; department: string | null }>({
-			query: req => ({
-				url: `${API.employees}`,
-				params: new URLSearchParams(
-					Object.assign({ realm: req.realm }, req.department ? { departmentId: req.department } : undefined)
-				),
+		getEmployees: builder.query<{ data: IEmployee[] }, string | null>({
+			query: departmentId => ({
+				url: API.employees,
+				params: new URLSearchParams(departmentId ? { departmentId } : undefined),
 			}),
-			providesTags: (_result, _error, arg) => [{ type: 'Employees', id: arg.department || 'all' }],
+			providesTags: (_result, _error, arg) => [{ type: 'Employees', id: arg || 'all' }],
 			onQueryStarted: async (_arg, api) => {
 				try {
 					await api.queryFulfilled

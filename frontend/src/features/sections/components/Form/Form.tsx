@@ -13,10 +13,17 @@ import {
 	Typography,
 	useTheme,
 } from '@mui/material'
+import { toast } from 'react-toastify'
 
+import type { IFetchError } from '@/app/types/error'
 import type { ISection } from '../../types/sections'
+import {
+	useCreateSectionMutation,
+	useDeleteSectionMutation,
+	useGetGroupedSectionsQuery,
+	useUpdateSectionMutation,
+} from '../../sectionsApiSlice'
 import { Fallback } from '@/components/Fallback/Fallback'
-import { useGetGroupedSectionsQuery } from '../../sectionsApiSlice'
 import { SaveIcon } from '@/components/Icons/SaveIcon'
 import { Confirm } from '@/components/Confirm/Confirm'
 import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
@@ -39,9 +46,9 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 
 	const { data, isFetching } = useGetGroupedSectionsQuery(null)
 
-	const isCreating = false
-	const isUpdating = false
-	const isDeleting = false
+	const [create, { isLoading: isCreating }] = useCreateSectionMutation()
+	const [update, { isLoading: isUpdating }] = useUpdateSectionMutation()
+	const [remove, { isLoading: isDeleting }] = useDeleteSectionMutation()
 
 	const {
 		control,
@@ -67,19 +74,40 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 		console.log('save', form, dirtyFields)
 		if (!Object.keys(dirtyFields).length) return
 
-		//TODO дописать
+		if (!data) {
+			form.position = 1
+		} else {
+			const lastIndex = data?.data.length - 1
+			const position = data?.data[lastIndex]?.sections[data?.data[lastIndex]?.sections.length - 1]?.position || 0
+			if (section == 'new') form.position = position + 1
+		}
+
+		const newData = { ...form, id: section || '', maxPosition: form.position }
+		try {
+			if (section == 'new') {
+				const payload = await create(newData).unwrap()
+				setSection(payload.id)
+				toast.success('Область создана')
+			} else {
+				await update(newData).unwrap()
+				toast.success('Область обновлена')
+			}
+		} catch (error) {
+			const fetchError = error as IFetchError
+			toast.error(fetchError.data.message, { autoClose: false })
+		}
 	})
 
 	const deleteHandler = async () => {
 		if (section == 'new') return
-		// try {
-		// 	await remove(section).unwrap()
-		setSection('new')
-		// 	toast.success('Область удалена')
-		// } catch (error) {
-		// 	const fetchError = error as IFetchError
-		// 	toast.error(fetchError.data.message, { autoClose: false })
-		// }
+		try {
+			await remove(section).unwrap()
+			setSection('new')
+			toast.success('Область удалена')
+		} catch (error) {
+			const fetchError = error as IFetchError
+			toast.error(fetchError.data.message, { autoClose: false })
+		}
 	}
 
 	let length = data?.data.find(item => item.id == realmId)?.sections.length || 0

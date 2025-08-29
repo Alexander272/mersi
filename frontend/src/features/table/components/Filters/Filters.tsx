@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Badge, Box, Button, Popover, Stack, Tooltip, Typography, useTheme } from '@mui/material'
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
@@ -41,6 +41,12 @@ export const Filters = () => {
 
 	const methods = useForm<{ filters: IFilter[] }>()
 	const fieldsMethods = useFieldArray({ control: methods.control, name: 'filters' })
+
+	useEffect(() => {
+		if (filters) {
+			methods.reset({ filters })
+		}
+	}, [filters, methods])
 
 	const toggleHandler = () => setOpen(prev => !prev)
 

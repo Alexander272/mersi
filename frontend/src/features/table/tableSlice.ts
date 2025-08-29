@@ -50,6 +50,8 @@ const tableSlice = createSlice({
 		},
 		setStatus: (state, action: PayloadAction<Status>) => {
 			state.status = action.payload
+			state.page = 1
+			state.selected = {}
 		},
 
 		setDefaultSorting: (state, action: PayloadAction<ISort>) => {
@@ -69,10 +71,14 @@ const tableSlice = createSlice({
 
 		setFilters: (state, action: PayloadAction<IFilter[]>) => {
 			state.filters = action.payload
+			state.page = 1
+			state.selected = {}
 		},
 
 		setSearch: (state, action: PayloadAction<string>) => {
 			state.search.value = action.payload
+			state.page = 1
+			state.selected = {}
 		},
 		setSearchFields: (state, action: PayloadAction<string[]>) => {
 			state.search.fields = action.payload
@@ -108,18 +114,6 @@ const tableSlice = createSlice({
 		},
 	},
 	extraReducers: builder => {
-		builder.addCase(setFilters, state => {
-			state.page = 1
-			state.selected = {}
-		})
-		builder.addCase(setSearch, state => {
-			state.page = 1
-			state.selected = {}
-		})
-		builder.addCase(setStatus, state => {
-			state.page = 1
-			state.selected = {}
-		})
 		builder.addCase(setSection, state => {
 			state.page = 1
 			state.selected = {}

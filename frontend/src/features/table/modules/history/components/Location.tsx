@@ -53,7 +53,13 @@ export const Location: FC<Props> = ({ instrumentId }) => {
 							</TableCell>
 							<TableCell width={230}>
 								<CellText
-									value={item.status == 'reserve' && !item.place ? 'Резерв' : item.place || ''}
+									value={
+										item.status == 'reserve' && !item.place
+											? 'Резерв'
+											: item.status == 'moved'
+											? 'Перемещение'
+											: item.place || ''
+									}
 								/>
 							</TableCell>
 							<TableCell width={230}>

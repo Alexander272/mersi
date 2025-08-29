@@ -66,15 +66,34 @@ export const EditForm: FC<Props> = ({ id }) => {
 		//TODO потенциальная проблема с удалением файлов. Если пользователь удалил файл, но потом передумал и нажал отменить,
 		// то надо будет как-то фиксировать это на сервере (т.к. файл то уже удален)
 
+		form.instrument.name = form.instrument.name.trim()
+		form.instrument.type = form.instrument.type?.trim()
+		form.instrument.factoryNumber = form.instrument.factoryNumber?.trim()
+		form.instrument.measurementLimits = form.instrument.measurementLimits?.trim()
+		form.instrument.accuracy = form.instrument.accuracy?.trim()
+		form.instrument.stateRegister = form.instrument.stateRegister?.trim()
+		form.instrument.manufacturer = form.instrument.manufacturer?.trim()
+		form.instrument.notes = form.instrument.notes?.trim()
+
+		if (form.verification) {
+			form.verification.notes = form.verification.notes?.trim()
+			form.verification.registerLink = form.verification.registerLink?.trim()
+
+			if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval) {
+				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
+					.add(+form.instrument.interVerificationInterval, 'month')
+					.unix()
+			}
+
+			if (form.verification.notVerified) {
+				form.instrument.interVerificationInterval = 0
+				form.verification.verificationDate = 0
+				form.verification.nextVerificationDate = 0
+			}
+		}
 		if (form?.verification?.docs?.length) {
 			const docs = form.verification.docs.filter(d => d.doc && d.doc != '')
 			form.verification.docs = docs
-		}
-
-		if (form.verification.verificationDate != 0 && !form.instrument.interVerificationInterval) {
-			form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
-				.add(+form.instrument.interVerificationInterval, 'month')
-				.unix()
 		}
 
 		try {

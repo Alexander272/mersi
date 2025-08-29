@@ -62,8 +62,10 @@ const DateField: FC<FieldProps & { minDate: number; interval?: number }> = ({ la
 	const { control, watch, setValue } = useFormContext()
 
 	let date = 0
+	let status = ''
 	if (field == 'nextVerificationDate') {
 		date = watch('verificationDate')
+		status = watch('status')
 	}
 
 	useEffect(() => {
@@ -78,6 +80,7 @@ const DateField: FC<FieldProps & { minDate: number; interval?: number }> = ({ la
 		}
 	}, [date, field, interval, setValue])
 
+	if (field == 'nextVerificationDate' && status != VerificationStatuses.Work) return null
 	return (
 		<Controller
 			control={control}

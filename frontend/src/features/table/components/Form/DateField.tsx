@@ -38,7 +38,7 @@ export const DateField: FC<Props> = ({ data }) => {
 		<Controller
 			control={control}
 			name={data.path + '.' + data.field}
-			rules={{ required: true, min: 1000000000 }}
+			rules={{ required: data.isRequired, min: 1000000000 }}
 			render={({ field, fieldState: { error } }) => (
 				<DatePicker
 					{...field}

@@ -23,7 +23,7 @@ type Props = {
 export const FieldsList: FC<Props> = ({ section }) => {
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetCreateFormStepsQuery(section, { skip: !section })
+	const { data, isFetching } = useGetCreateFormStepsQuery({ section, action: 'Create' }, { skip: !section })
 	const [updateAll, { isLoading }] = useUpdateSeveralFieldsToCreateFormMutation()
 
 	const methods = useForm<{ data: ICreateFormStep[] }>({ values: { data: data?.data || [] } })

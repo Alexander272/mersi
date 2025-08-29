@@ -13,6 +13,7 @@ const filterApiSlice = apiSlice.injectEndpoints({
 				url: API.filters,
 				params: new URLSearchParams({ section }),
 			}),
+			providesTags: [{ type: 'Sections', id: 'Filters' }],
 			onQueryStarted: async (_arg, api) => {
 				try {
 					await api.queryFulfilled
@@ -26,10 +27,9 @@ const filterApiSlice = apiSlice.injectEndpoints({
 			query: data => ({
 				url: `${API.filters}/change`,
 				method: 'POST',
-				//TODO похоже в таком виде это не работает
-				// params: new URLSearchParams({ section: data.section }),
 				body: data,
 			}),
+			invalidatesTags: [{ type: 'Sections', id: 'Filters' }],
 		}),
 
 		getSort: builder.query<{ data: ISortDTO[] }, string>({
@@ -37,6 +37,7 @@ const filterApiSlice = apiSlice.injectEndpoints({
 				url: API.sorting,
 				params: new URLSearchParams({ section }),
 			}),
+			providesTags: [{ type: 'Sections', id: 'Sort' }],
 			onQueryStarted: async (_arg, api) => {
 				try {
 					await api.queryFulfilled
@@ -53,6 +54,7 @@ const filterApiSlice = apiSlice.injectEndpoints({
 				params: new URLSearchParams({ section: data.section }),
 				body: data.sort,
 			}),
+			invalidatesTags: [{ type: 'Sections', id: 'Sort' }],
 		}),
 	}),
 })

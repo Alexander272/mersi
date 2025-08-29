@@ -1,11 +1,21 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MenuItem, Select, SelectChangeEvent, Stack, Typography } from '@mui/material'
-import { useFormContext } from 'react-hook-form'
+import { useFieldArray, useFormContext } from 'react-hook-form'
 import dayjs from 'dayjs'
 
 import type { IFilter } from '../../types/params'
+import { SelectWithFilter, type Option } from '@/components/SelectWithFilter/SelectWithFilter'
 import { localKeys } from '@/constants/localKeys'
+import { PermRules } from '@/constants/permissions'
+import { useAppSelector } from '@/hooks/redux'
+import { useCheckPermission } from '@/features/user/hooks/check'
+import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
+import { useGetDepartmentsQuery } from '@/features/departments/departmentApiSlice'
+import { useGetUniqueEmployeeQuery } from '@/features/employees/employeesApiSlice'
+import { getSection } from '@/features/sections/sectionSlice'
+import { getRealm } from '@/features/realms/realmSlice'
 import { Checkbox } from '@/components/Checkbox/Checkbox'
+import { Fallback } from '@/components/Fallback/Fallback'
 
 const months = [
 	'Январе',
@@ -22,21 +32,29 @@ const months = [
 	'Декабре',
 ]
 
-type ActiveType = 'overdue' | 'month' | 'empty'
+type ActiveType = 'overdue' | 'month' | 'empty' | 'place' | 'person'
 
 export const Default = () => {
 	const [active, setActive] = useState<ActiveType | undefined>(
 		(localStorage.getItem(localKeys.activeFilters) as ActiveType) || undefined
 	)
 	const [month, setMonth] = useState(dayjs().get('month'))
+	const section = useAppSelector(getSection)
 
-	const { setValue, reset } = useFormContext<{ filters: IFilter[] }>()
+	const { control } = useFormContext<{ filters: IFilter[] }>()
+	const { replace } = useFieldArray({ control, name: 'filters' })
+
+	const { data } = useGetColumnsQuery({ section: section?.id || '', original: true }, { skip: !section?.id })
 
 	const activeHandler = (value: ActiveType) => {
-		setActive(prev => (prev != value ? value : undefined))
-		if (active != value) localStorage.setItem(localKeys.activeFilters, value)
-		else localStorage.removeItem(localKeys.activeFilters)
-		reset()
+		if (active != value) {
+			setActive(value)
+			localStorage.setItem(localKeys.activeFilters, value)
+		} else {
+			setActive(undefined)
+			localStorage.removeItem(localKeys.activeFilters)
+		}
+		replace([])
 		return active != value
 	}
 
@@ -44,24 +62,21 @@ export const Default = () => {
 		const isActive = activeHandler('empty')
 		if (!isActive) return
 
-		setValue(`filters.${0}`, {
-			field: 'nextVerificationDate',
-			fieldType: 'date',
-			compareType: 'eq',
-			value: '0',
-		})
+		replace([{ field: 'nextVerificationDate', fieldType: 'date', compareType: 'eq', value: '0' }])
 	}
 
 	const overdueHandler = () => {
 		const isActive = activeHandler('overdue')
 		if (!isActive) return
 
-		setValue(`filters.${0}`, {
-			field: 'nextVerificationDate',
-			fieldType: 'date',
-			compareType: 'lte',
-			value: dayjs().startOf('d').unix().toString(),
-		})
+		replace([
+			{
+				field: 'nextVerificationDate',
+				fieldType: 'date',
+				compareType: 'lte',
+				value: dayjs().startOf('d').unix().toString(),
+			},
+		])
 	}
 
 	const monthHandler = () => {
@@ -69,36 +84,61 @@ export const Default = () => {
 		if (!isActive) return
 
 		const date = dayjs().set('month', month)
-		setValue(`filters.${0}`, {
-			field: 'nextVerificationDate',
-			fieldType: 'date',
-			compareType: 'gte',
-			value: date.startOf('month').unix().toString(),
-		})
-		setValue(`filters.${1}`, {
-			field: 'nextVerificationDate',
-			fieldType: 'date',
-			compareType: 'lte',
-			value: date.endOf('month').unix().toString(),
-		})
+		replace([
+			{
+				field: 'nextVerificationDate',
+				fieldType: 'date',
+				compareType: 'gte',
+				value: date.startOf('month').unix().toString(),
+			},
+			{
+				field: 'nextVerificationDate',
+				fieldType: 'date',
+				compareType: 'lte',
+				value: date.endOf('month').unix().toString(),
+			},
+		])
 	}
 	const curMonthHandler = (event: SelectChangeEvent<number>) => {
 		setMonth(+event.target.value)
-		reset()
 		const date = dayjs().set('month', +event.target.value)
-		setValue(`filters.${0}`, {
-			field: 'nextVerificationDate',
-			fieldType: 'date',
-			compareType: 'gte',
-			value: date.startOf('month').unix().toString(),
-		})
-		setValue(`filters.${1}`, {
-			field: 'nextVerificationDate',
-			fieldType: 'date',
-			compareType: 'lte',
-			value: date.endOf('month').unix().toString(),
-		})
+		replace([
+			{
+				field: 'nextVerificationDate',
+				fieldType: 'date',
+				compareType: 'gte',
+				value: date.startOf('month').unix().toString(),
+			},
+			{
+				field: 'nextVerificationDate',
+				fieldType: 'date',
+				compareType: 'lte',
+				value: date.endOf('month').unix().toString(),
+			},
+		])
 	}
+
+	const placeHandler = () => {
+		const isActive = activeHandler('place')
+		if (!isActive) return
+		replace([{ field: 'place', fieldType: 'list', compareType: 'in', value: '' }])
+		// setPlace([])
+	}
+	// const setPlaceHandler = (values: string[]) => {
+	// 	setPlace(values)
+	// 	setFilters([{ field: 'place', fieldType: 'list', compareType: 'in', value: values.join(',') }])
+	// }
+
+	const personHandler = () => {
+		const isActive = activeHandler('person')
+		if (!isActive) return
+		replace([{ field: 'person', fieldType: 'list', compareType: 'in', value: '' }])
+		// setPerson([])
+	}
+	// const setPersonHandler = (values: string[]) => {
+	// 	setPerson(values)
+	// 	setFilters([{ field: 'person', fieldType: 'list', compareType: 'in', value: values.join(',') }])
+	// }
 
 	return (
 		<Stack spacing={1}>
@@ -136,7 +176,98 @@ export const Default = () => {
 				</Select>
 			</Stack>
 
-			{/* //TODO можно добавить фильтр по месту нахождения и держателям, если такие колонки есть в таблице */}
+			{data?.data.find(col => col.field == 'place') && (
+				<Stack direction={'row'} justifyContent={'space-between'}>
+					<Checkbox
+						id='place'
+						name='place'
+						checked={active == 'place'}
+						onChange={placeHandler}
+						label='Место нахождения'
+					/>
+					<DepartmentFilter disabled={active != 'place'} />
+				</Stack>
+			)}
+
+			{data?.data.find(col => col.field == 'person') && (
+				<Stack direction={'row'} justifyContent={'space-between'}>
+					<Checkbox
+						id='person'
+						name='person'
+						checked={active == 'person'}
+						onChange={personHandler}
+						label='ФИО сотрудника'
+					/>
+					<PersonFilter disabled={active != 'person'} />
+				</Stack>
+			)}
 		</Stack>
+	)
+}
+
+type ListProps = { disabled?: boolean }
+const DepartmentFilter = ({ disabled }: ListProps) => {
+	const [options, setOptions] = useState<Option[]>([])
+
+	const hasReserve = useCheckPermission(PermRules.Location.Write)
+
+	const realm = useAppSelector(getRealm)
+
+	const { setValue, watch } = useFormContext<{ filters: IFilter[] }>()
+	const value = watch(`filters.0.value`)
+
+	const { data, isFetching } = useGetDepartmentsQuery(realm?.id || '', { skip: !realm })
+
+	useEffect(() => {
+		if (!data) return
+		const newOptions = [{ id: '_moved', name: 'Перемещение' }]
+		if (hasReserve) newOptions.unshift({ id: '_reserve', name: 'Резерв' })
+		newOptions.push(...(data?.data.map(d => ({ id: d.id, name: d.name })) || []))
+		setOptions(newOptions)
+	}, [data, hasReserve])
+
+	const changeHandler = (values: Option[]) => {
+		setValue(`filters.0.value`, values.map(v => v.id).join(','))
+	}
+
+	if (isFetching) return <Fallback />
+	return (
+		<SelectWithFilter
+			values={options.filter(o => value?.includes(o.id))}
+			options={options}
+			onChange={changeHandler}
+			disabled={disabled}
+			sx={{ width: 270 }}
+		/>
+	)
+}
+const PersonFilter = ({ disabled }: ListProps) => {
+	const [options, setOptions] = useState<Option[]>([])
+
+	const realm = useAppSelector(getRealm)
+
+	const { data, isFetching } = useGetUniqueEmployeeQuery(realm?.id || '', { skip: !realm })
+
+	const { setValue, watch } = useFormContext()
+	const value = watch(`filters.0.value`)
+
+	useEffect(() => {
+		if (!data) return
+		setOptions(data.data.map(d => ({ id: d.name.replaceAll('.', '_'), name: d.name })))
+	}, [data])
+
+	const changeHandler = (values: Option[]) => {
+		setValue(`filters.0.value`, values.map(v => v.id.replaceAll('_', '.')).join(','))
+	}
+
+	if (isFetching) return <Fallback />
+	return (
+		<SelectWithFilter
+			values={options.filter(o => value?.includes(o.id.replaceAll('_', '.')))}
+			options={options}
+			onChange={changeHandler}
+			disabled={disabled}
+			sx={{ width: 270 }}
+		/>
 	)
 }

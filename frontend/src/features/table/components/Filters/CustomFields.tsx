@@ -183,53 +183,69 @@ const DateFilter: FC<Props> = ({ index }) => {
 }
 
 const AutocompleteFilter: FC<Props> = ({ index }) => {
+	const [options, setOptions] = useState<Option[]>([])
+
 	const section = useAppSelector(getSection)
-	const { control, setValue, watch } = useFormContext<{ filters: IFilter[] }>()
+	const { setValue, watch } = useFormContext<{ filters: IFilter[] }>()
 	const field = watch(`filters.${index}.field`)
 	const value = watch(`filters.${index}.value`)
 
-	const { data: options, isFetching } = useGetUniqueInstrumentDataQuery(
+	const { data, isFetching } = useGetUniqueInstrumentDataQuery(
 		{ field, section: section?.id || '' },
 		{ skip: !field || !section?.id }
 	)
 
 	useEffect(() => {
-		if (options?.data.length && value == '') setValue(`filters.${index}.value`, options?.data[0])
-	}, [options, value, setValue, index])
+		if (!data) return
+		setOptions(data.data.map(d => ({ id: d, name: d })))
+		if (data.data.length && value == '') setValue(`filters.${index}.value`, data.data[0])
+		// if (options?.data.length && value == '') setValue(`filters.${index}.value`, options?.data[0])
+	}, [data, value, setValue, index])
+
+	const changeHandler = (values: Option[]) => {
+		setValue(`filters.${index}.value`, values.map(v => v.id).join(','))
+	}
 
 	if (isFetching) return <CircularProgress size={20} />
 	return (
-		<FormControl fullWidth>
-			<InputLabel id={`filters.${index}.value`}>Значение</InputLabel>
-
-			<Controller
-				control={control}
-				name={`filters.${index}.value`}
-				rules={{ required: true }}
-				render={({ field, fieldState: { error } }) => (
-					<Select
-						multiple
-						labelId={`filters.${index}.value`}
-						value={field.value.split('|')}
-						label='Значение'
-						error={Boolean(error)}
-						onChange={({ target: { value } }) =>
-							field.onChange(typeof value === 'string' ? value : value.join('|'))
-						}
-					>
-						{options?.data.map(r => (
-							<MenuItem key={r} value={r}>
-								{r}
-							</MenuItem>
-						))}
-					</Select>
-				)}
-			/>
-		</FormControl>
+		<SelectWithFilter
+			values={options.filter(o => value.includes(o.id))}
+			options={options}
+			onChange={changeHandler}
+		/>
 	)
+	// return (
+	// 	<FormControl fullWidth>
+	// 		<InputLabel id={`filters.${index}.value`}>Значение</InputLabel>
+
+	// 		<Controller
+	// 			control={control}
+	// 			name={`filters.${index}.value`}
+	// 			rules={{ required: true }}
+	// 			render={({ field, fieldState: { error } }) => (
+	// 				<Select
+	// 					multiple
+	// 					labelId={`filters.${index}.value`}
+	// 					value={field.value.split('|')}
+	// 					label='Значение'
+	// 					error={Boolean(error)}
+	// 					onChange={({ target: { value } }) =>
+	// 						field.onChange(typeof value === 'string' ? value : value.join('|'))
+	// 					}
+	// 				>
+	// 					{options?.data.map(r => (
+	// 						<MenuItem key={r} value={r}>
+	// 							{r}
+	// 						</MenuItem>
+	// 					))}
+	// 				</Select>
+	// 			)}
+	// 		/>
+	// 	</FormControl>
+	// )
 }
 
-const ListFilter: FC<Props & { label?: string }> = ({ index, label }) => {
+export const ListFilter: FC<Props & { label?: string }> = ({ index, label }) => {
 	const [options, setOptions] = useState<Option[]>([])
 
 	const hasReserve = useCheckPermission(PermRules.Location.Write)
@@ -262,13 +278,13 @@ const ListFilter: FC<Props & { label?: string }> = ({ index, label }) => {
 	}, [fetchData])
 
 	const changeHandler = (values: Option[]) => {
-		setValue(`filters.${index}.value`, values.map(v => v.id).join(','))
+		setValue(`filters.${index}.value`, values.map(v => v.id.replaceAll('_', '.')).join(','))
 	}
 
 	if (isFetchDeps || isFetchEmp) return <Fallback />
 	return (
 		<SelectWithFilter
-			values={options.filter(o => value.includes(o.id))}
+			values={options.filter(o => value.includes(o.id.replaceAll('_', '.')))}
 			options={options}
 			onChange={changeHandler}
 			label={label}

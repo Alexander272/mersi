@@ -19,8 +19,8 @@ const RowColors = {
 	deadlineRed: '#ff9393',
 	deadlineOr: '#fdae1f',
 	moved: '#eee',
-	preservation: '#f7f7f7',
-	save: '#f7f7f7',
+	preservation: '#ededed',
+	save: '#ededed',
 	reverse: '#fff4cb',
 }
 
@@ -56,9 +56,10 @@ export const Row: FC<Props> = ({ item, sx }) => {
 
 	const getStyles = () => {
 		const styles = { background: '' }
-		if (status != 'work') return styles
+		if (status != 'work' && !selected[item.id]) return styles
 
-		if (item.status == 'moved') styles.background = RowColors.moved
+		if (item.interVerificationInterval && !item.verificationDate) styles.background = RowColors.reverse
+		if (item.status == 'reserve') styles.background = RowColors.reverse
 
 		if (realm?.id == 'c0d7fd4e-da02-4265-be05-9023bac5ff0d') {
 			const deadline = dayjs()
@@ -74,7 +75,7 @@ export const Row: FC<Props> = ({ item, sx }) => {
 		const overdue = dayjs().isAfter(dayjs(item.nextVerificationDate * 1000))
 		if (overdue && item.nextVerificationDate) styles.background = RowColors.overdue
 
-		if (item.status == 'reserve') styles.background = RowColors.reverse
+		if (item.status == 'moved') styles.background = RowColors.moved
 
 		if (item.preservationDate && !item.dePreservationDate) styles.background = RowColors.preservation
 		if (item.transferDate && !item.returnDate) styles.background = RowColors.save

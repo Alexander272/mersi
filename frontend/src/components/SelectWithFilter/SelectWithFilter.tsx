@@ -9,7 +9,9 @@ import {
 	Popper,
 	Stack,
 	styled,
+	SxProps,
 	TextField,
+	Theme,
 	useTheme,
 } from '@mui/material'
 
@@ -26,10 +28,12 @@ type Props = {
 	headerLabel?: string
 	values: Option[]
 	options: Option[]
+	disabled?: boolean
 	onChange: (values: Option[]) => void
+	sx?: SxProps<Theme>
 }
 
-export const SelectWithFilter: FC<Props> = ({ label, headerLabel, values, options, onChange }) => {
+export const SelectWithFilter: FC<Props> = ({ label, headerLabel, values, options, onChange, disabled, sx }) => {
 	const theme = useTheme()
 	const anchor = useRef<HTMLParagraphElement>(null)
 	const [open, setOpen] = useState(false)
@@ -42,12 +46,13 @@ export const SelectWithFilter: FC<Props> = ({ label, headerLabel, values, option
 	}
 
 	return (
-		<Stack width={'100%'}>
+		<Stack width={'100%'} sx={sx}>
 			<TextField
 				ref={anchor}
 				label={label || 'Значение'}
 				value={values.length ? values.map(v => v.name).join(', ') : ''}
 				onClick={openHandler}
+				disabled={disabled}
 				slotProps={{
 					htmlInput: {
 						readOnly: true,
@@ -172,8 +177,8 @@ const StyledAutocompletePopper = styled('div')(({ theme }) => ({
 		backgroundColor: '#fff',
 
 		[`& .${autocompleteClasses.option}`]: {
-			flexDirection: 'column',
-			alignItems: 'flex-start',
+			// flexDirection: 'column',
+			// alignItems: 'flex-start',
 			padding: 8,
 			paddingBottom: 0,
 			margin: 6,

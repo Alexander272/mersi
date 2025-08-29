@@ -1,8 +1,10 @@
 import { FC, SyntheticEvent, useEffect } from 'react'
 import { Stack, Tab, Tabs, useTheme } from '@mui/material'
 
-import { Fallback } from '@/components/Fallback/Fallback'
+import { useAppSelector } from '@/hooks/redux'
 import { useGetDepartmentsQuery } from '../departmentApiSlice'
+import { getRealm } from '@/features/realms/realmSlice'
+import { Fallback } from '@/components/Fallback/Fallback'
 
 type Props = {
 	department: string
@@ -11,8 +13,9 @@ type Props = {
 
 export const DepartmentList: FC<Props> = ({ department, setDepartment }) => {
 	const { palette } = useTheme()
+	const realm = useAppSelector(getRealm)
 
-	const { data, isFetching } = useGetDepartmentsQuery(null)
+	const { data, isFetching } = useGetDepartmentsQuery(realm?.id || '', { skip: !realm })
 
 	useEffect(() => {
 		if (!data || department == 'new') return

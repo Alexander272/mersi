@@ -8,7 +8,6 @@ import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
 import { localKeys } from '../../constants/storage'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { useGetSI } from '../../hooks/getSI'
 import { useGetCreateFormStepsQuery } from '@/features/sections/modules/form/formApiSlice'
 import { useCreateSiMutation } from '../../siApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
@@ -33,7 +32,7 @@ export const CreateForm: FC<Props> = () => {
 		{ section: section?.id || '', action: 'Create' },
 		{ skip: !section?.id }
 	)
-	const { data: si } = useGetSI()
+
 	const [create, { isLoading }] = useCreateSiMutation()
 
 	useEffect(() => {
@@ -64,7 +63,7 @@ export const CreateForm: FC<Props> = () => {
 		}
 
 		form.instrument.sectionId = section?.id || ''
-		form.instrument.position = (si?.total || 0) + 1
+		// form.instrument.position = (si?.total || 0) + 1
 		form.instrument.name = form.instrument.name.trim()
 		form.instrument.type = form.instrument.type?.trim()
 		form.instrument.factoryNumber = form.instrument.factoryNumber?.trim()
@@ -78,7 +77,7 @@ export const CreateForm: FC<Props> = () => {
 			form.verification.notes = form.verification.notes?.trim()
 			form.verification.registerLink = form.verification.registerLink?.trim()
 
-			if (!form.instrument.interVerificationInterval) {
+			if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval) {
 				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
 					.add(+form.instrument.interVerificationInterval, 'month')
 					.unix()

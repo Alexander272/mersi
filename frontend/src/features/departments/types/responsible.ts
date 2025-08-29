@@ -1,7 +1,7 @@
 export interface IResponsible {
 	id: string
 	departmentId: string
-	ssoId: string
+	userId: string
 }
 
 export interface IChangeResponsible {

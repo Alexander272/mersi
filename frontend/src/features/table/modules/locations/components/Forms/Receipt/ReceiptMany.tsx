@@ -45,7 +45,9 @@ export const ReceiptMany: FC = () => {
 
 	const [enable, setEnable] = useState<string[]>([])
 	const [filters, setFilters] = useState(defFilter)
-	const { data: departments, isFetching: isFetchDepartments } = useGetDepartmentsQuery(null)
+	const { data: departments, isFetching: isFetchDepartments } = useGetDepartmentsQuery(section?.realmId || '', {
+		skip: !section?.realmId,
+	})
 	// const { data: departmentsByUser } = useGetDepartmentsByUserQuery(null)
 	const { data: departmentsByUser } = useGetResponsibleByUserQuery(null)
 
@@ -156,7 +158,10 @@ const GroupedList: FC<GroupedListProps> = ({ data }) => {
 					<CheckboxGroup
 						key={item.place}
 						checked={checked}
-						data={{ name: item.place, list: item.si || [] }}
+						data={{
+							name: item.place,
+							list: item.si.map(si => ({ ...si, name: `${si.name} (${si.factoryNumber})` })) || [],
+						}}
 						onChange={setChecked}
 					/>
 				))}
