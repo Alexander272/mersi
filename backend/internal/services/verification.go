@@ -10,16 +10,18 @@ import (
 )
 
 type VerificationService struct {
-	repo    repository.Verification
-	verDocs VerificationDoc
-	docs    Document
+	repo       repository.Verification
+	verDocs    VerificationDoc
+	instrument Instrument
+	docs       Document
 }
 
-func NewVerificationService(repo repository.Verification, verDocs VerificationDoc, docs Document) *VerificationService {
+func NewVerificationService(repo repository.Verification, verDocs VerificationDoc, instrument Instrument, docs Document) *VerificationService {
 	return &VerificationService{
-		repo:    repo,
-		verDocs: verDocs,
-		docs:    docs,
+		repo:       repo,
+		verDocs:    verDocs,
+		instrument: instrument,
+		docs:       docs,
 	}
 }
 
@@ -91,6 +93,14 @@ func (s *VerificationService) Create(ctx context.Context, dto *models.Verificati
 		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
 			return err
 		}
+	}
+
+	instDTO := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatus(dto.Status),
+	}
+	if err := s.instrument.ChangeStatus(ctx, instDTO); err != nil {
+		return err
 	}
 
 	return nil

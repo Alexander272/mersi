@@ -8,7 +8,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type Permission struct {
@@ -18,31 +17,12 @@ type Permission struct {
 
 func (m *Middleware) CheckPermissions(menuItem, method string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		realm := c.GetHeader("realm")
-		err := uuid.Validate(realm)
-		if err != nil {
-			response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid id param")
+		u, exists := c.Get(constants.CtxUser)
+		if !exists {
+			response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "сессия не найдена")
 			return
 		}
-
-		identity, err := c.Cookie(constants.IdentityCookie)
-		if err != nil || identity == "" {
-			response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
-			return
-		}
-		id := &models.Identity{}
-		err = id.Parse(identity)
-		if err != nil {
-			response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
-			return
-		}
-
-		role := ""
-		for _, item := range id.Roles {
-			if item.RealmId == realm {
-				role = item.Name
-			}
-		}
+		role := u.(models.User).Role
 
 		access, err := m.services.Permission.Enforce(role, menuItem, method)
 		if err != nil {

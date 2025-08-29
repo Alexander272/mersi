@@ -82,6 +82,12 @@ func (r *InstrumentRepo) GetUniqueData(ctx context.Context, req *models.GetUniqu
 }
 
 func (r *InstrumentRepo) Create(ctx context.Context, dto *models.InstrumentDTO) error {
+	maxQuery := fmt.Sprintf(`SELECT MAX(position) FROM %s WHERE section_id=$1`, InstrumentsTable)
+	var maxPosition int
+	if err := r.db.GetContext(ctx, &maxPosition, maxQuery, dto.SectionId); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+
 	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, user_id, position, name, date_of_receipt, type, factory_number, measurement_limits, 
 		accuracy, state_register, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
 		act_of_entering, act_of_entering_id, notes, status) 
@@ -91,6 +97,7 @@ func (r *InstrumentRepo) Create(ctx context.Context, dto *models.InstrumentDTO) 
 		InstrumentsTable,
 	)
 	dto.Id = uuid.NewString()
+	dto.Position = maxPosition + 1
 	dto.Status = models.InstrumentStatusWork
 	if dto.ActOfEnteringId == "" {
 		dto.ActOfEnteringId = uuid.Nil.String()

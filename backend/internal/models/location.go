@@ -1,10 +1,10 @@
 package models
 
 type Location struct {
-	Id              string `json:"id" db:"id"`
-	InstrumentId    string `json:"instrumentId" db:"instrument_id"`
-	Person          string `json:"person" db:"person"`
-	Department      string `json:"department" db:"department"`
+	Id           string `json:"id" db:"id"`
+	InstrumentId string `json:"instrumentId" db:"instrument_id"`
+	Person       string `json:"person" db:"person"`
+	// Department      string `json:"department" db:"department"`
 	Place           string `json:"place" db:"place"`
 	PersonId        string `json:"personId" db:"person_id"`
 	DepartmentId    string `json:"departmentId" db:"department_id"`

@@ -73,12 +73,12 @@ type (
 	}
 
 	SchedulerConfig struct {
-		StartTime int           `yaml:"start_time" env-default:"12"` // 12 hours (noon)
+		StartTime time.Duration `yaml:"start_time" env-default:"12h"` // 12 hours (noon)
 		Interval  time.Duration `yaml:"interval" env-default:"24h"`
 	}
 
 	NotificationConfig struct {
-		StartTime int           `yaml:"start_time" env-default:"12"` // 12 hours (noon)
+		StartTime time.Duration `yaml:"start_time" env-default:"12h"` // 12 hours (noon)
 		Interval  time.Duration `yaml:"interval" env-default:"24h"`
 		CheckUsed UsedConfig    `yaml:"check_used"`
 		// Times     []*models.NotificationTime `yaml:"times"`

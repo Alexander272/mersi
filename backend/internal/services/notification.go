@@ -258,8 +258,9 @@ func (s *NotificationService) sendVerificationTable(dto *models.SiVerification) 
 
 func (s *NotificationService) CheckReceiving(ctx context.Context, dto *models.DialogResponse) error {
 	instrumentsDTO := &models.SiReceiving{
-		PostId: "",
-		Status: "",
+		PostId:  "",
+		Status:  "",
+		Channel: dto.ChannelID,
 	}
 	instruments := []*models.SI{}
 	accept := []*models.SI{}
@@ -281,9 +282,8 @@ func (s *NotificationService) CheckReceiving(ctx context.Context, dto *models.Di
 		}
 	}
 
-	//TODO надо проверять
 	for _, v := range instruments {
-		if _, ok := dto.Submission[v.Id]; !ok {
+		if value, exist := dto.Submission[v.Id]; !exist || !value {
 			missing = append(missing, v)
 		} else {
 			accept = append(accept, v)
@@ -291,6 +291,7 @@ func (s *NotificationService) CheckReceiving(ctx context.Context, dto *models.Di
 	}
 
 	instrumentsDTO.SI = accept
+	instrumentsDTO.Place = accept[0].Place
 	if err := s.updateInstruments(instrumentsDTO); err != nil {
 		return err
 	}
@@ -307,7 +308,8 @@ func (s *NotificationService) CheckReceiving(ctx context.Context, dto *models.Di
 func (s *NotificationService) sendInstruments(dto *models.SiReceiving) error {
 	post := &models.CreatePostDTO{
 		ChannelId: dto.Channel,
-		IsPinned:  dto.Status == constants.StatusReceiving,
+		IsPinned:  true,
+		// IsPinned:  dto.Status == constants.StatusReceiving,
 	}
 
 	columns := []string{"Наименование СИ", "зав.№"}
@@ -352,34 +354,34 @@ func (s *NotificationService) sendInstruments(dto *models.SiReceiving) error {
 		{Key: "data_id", Value: strings.Join(instrumentIds, ",")},
 	}
 
-	if dto.Status == constants.StatusReceiving {
-		host := os.Getenv("HOST_URL")
-		url := host + "/api/v1/si/locations/receiving/dialogs"
+	// if dto.Status == constants.StatusReceiving {
+	host := os.Getenv("HOST_URL")
+	url := host + "/api/v1/si/locations/receiving/dialogs"
 
-		j, err := json.Marshal(dto.SI)
-		if err != nil {
-			return fmt.Errorf("failed to marshal json. error: %w", err)
-		}
-
-		action := &model.PostAction{
-			Id:    constants.StatusReceiving,
-			Name:  "Получить",
-			Style: "primary",
-			Integration: &model.PostActionIntegration{
-				URL: host + "/api/v1/si/locations/receiving/dialogs/open",
-				Context: map[string]interface{}{
-					"url":         url,
-					"title":       "Получение инструментов",
-					"description": "#### Отметьте полученные инструменты",
-					"callbackId":  "receiving_form",
-					"state":       fmt.Sprintf("Status:%s&SI:%s", dto.Status, string(j)),
-					"fields":      fields,
-				},
-			},
-		}
-
-		post.Actions = []*model.PostAction{action}
+	j, err := json.Marshal(dto.SI)
+	if err != nil {
+		return fmt.Errorf("failed to marshal json. error: %w", err)
 	}
+
+	action := &model.PostAction{
+		Id:    constants.StatusReceiving,
+		Name:  "Получить",
+		Style: "primary",
+		Integration: &model.PostActionIntegration{
+			URL: host + "/api/v1/si/locations/receiving/dialogs/open",
+			Context: map[string]interface{}{
+				"url":         url,
+				"title":       "Получение инструментов",
+				"description": "#### Отметьте полученные инструменты",
+				"callbackId":  "receiving_form",
+				"state":       fmt.Sprintf("Status:%s&SI:%s", dto.Status, string(j)),
+				"fields":      fields,
+			},
+		},
+	}
+
+	post.Actions = []*model.PostAction{action}
+	// }
 
 	if err := s.most.Post.Create(context.Background(), post); err != nil {
 		return err
@@ -393,13 +395,26 @@ func (s *NotificationService) updateInstruments(dto *models.SiReceiving) error {
 		IsPinned: false,
 	}
 
+	// lines := []string{
+	// 	"| Наименование СИ | зав.№ | Держатель |",
+	// 	"|:--|:--|:--|",
+	// }
+	columns := []string{"Наименование СИ", "зав.№"}
+	if dto.SI[0].Place != "" {
+		columns = append(columns, "Держатель")
+	}
 	lines := []string{
-		"| Наименование СИ | зав.№ | Держатель |",
-		"|:--|:--|:--|",
+		fmt.Sprintf("| %s |", strings.Join(columns, "|")),
+		fmt.Sprintf("| %s", strings.Repeat(":--|", len(columns))),
 	}
 
 	for _, si := range dto.SI {
-		lines = append(lines, fmt.Sprintf("|%s|%s|%s|", si.Name, si.FactoryNumber, si.Person))
+		// lines = append(lines, fmt.Sprintf("|%s|%s|%s|", si.Name, si.FactoryNumber, si.Person))
+		row := []string{si.Name, si.FactoryNumber}
+		if dto.SI[0].Place != "" {
+			row = append(row, si.Person)
+		}
+		lines = append(lines, fmt.Sprintf("|%s|", strings.Join(row, "|")))
 	}
 	post.Message = "#### Получены инструменты \n" + strings.Join(lines, "\n")
 	post.Props = []*models.Props{

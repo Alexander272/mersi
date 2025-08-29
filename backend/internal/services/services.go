@@ -75,8 +75,8 @@ func NewServices(deps *Deps) *Services {
 
 	document := NewDocumentService(deps.Repo.Document)
 	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
-	verification := NewVerificationService(deps.Repo.Verification, verificationDoc, document)
 	instrument := NewInstrumentService(deps.Repo.Instrument, document)
+	verification := NewVerificationService(deps.Repo.Verification, verificationDoc, instrument, document)
 
 	verificationFields := NewVerificationFieldService(deps.Repo.VerificationFields)
 	contextMenu := NewContextService(deps.Repo.ContextMenu, role)
@@ -130,6 +130,7 @@ func NewServices(deps *Deps) *Services {
 		Notification: notification,
 		User:         user,
 		Location:     location,
+		Documents:    document,
 	})
 
 	return &Services{

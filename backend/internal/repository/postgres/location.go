@@ -45,7 +45,7 @@ type Location interface {
 
 func (r *LocationRepo) Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, status, date_of_receiving, date_of_issue, need_confirmed, has_confirmed,
-		COALESCE(person, e.name, '') AS person, COALESCE(place, d.name, '') AS place,
+		COALESCE(NULLIF(person, ''), e.name, '') AS person, COALESCE(NULLIF(place, ''), d.name, '') AS place,
 		COALESCE(person_id::text, '') AS person_id, COALESCE(department_id::text, '') AS department_id
 		FROM %s AS l
 		LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.person_id::uuid=id) AS e ON true
@@ -126,11 +126,27 @@ func (r *LocationRepo) GetUsedByDepartment(ctx context.Context, req *models.GetL
 }
 
 func (r *LocationRepo) SelectByDepartment(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error) {
-	query := fmt.Sprintf(`SELECT s.instrument_id FROM %s AS m 
-		LEFT JOIN LATERAL (SELECT instrument_id, department_id  FROM %s WHERE instrument_id=m.instrument_id 
-			ORDER BY date_of_issue DESC, created_at DESC LIMIT 1) AS s ON TRUE
-		WHERE s.instrument_id=ANY($1) AND s.department_id=ANY($2) AND status=$3`,
-		LocationTable, LocationTable,
+	// этот запрос некорректно работает (выдает несколько строчек при одном инструменте если в перемещениях есть несколько записей для него)
+	// query := fmt.Sprintf(`SELECT s.instrument_id FROM %s AS m
+	// 	LEFT JOIN LATERAL (SELECT instrument_id, department_id  FROM %s WHERE instrument_id=m.instrument_id
+	// 		ORDER BY date_of_issue DESC, created_at DESC LIMIT 1) AS s ON TRUE
+	// 	WHERE s.instrument_id=ANY($1) AND s.department_id=ANY($2) AND status=$3`,
+	// 	LocationTable, LocationTable,
+	// )
+	// этот запрос нормально работает только если передать один инструмент
+	// query := fmt.Sprintf(`SELECT instrument_id FROM (
+	// 		SELECT instrument_id, department_id, status FROM %s
+	// 		WHERE instrument_id::text=ANY($1) AND department_id::text=ANY($2)
+	// 		ORDER BY date_of_issue DESC, created_at DESC LIMIT 1
+	// 	) AS s WHERE status=$3`,
+	// 	LocationTable,
+	// )
+	query := fmt.Sprintf(`SELECT instrument_id FROM (
+			SELECT DISTINCT ON (instrument_id) * FROM %s 
+				WHERE instrument_id::text=ANY($1) AND department_id::text=ANY($2) 
+				ORDER BY instrument_id, date_of_issue DESC
+		) AS s WHERE status=$3`,
+		LocationTable,
 	)
 	if dto.Status == "" {
 		dto.Status = constants.LocationStatusUsed

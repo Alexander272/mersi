@@ -14,6 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/karrick/godirwalk v1.17.0
 	github.com/lib/pq v1.10.9
 	github.com/mattermost/mattermost-server/v6 v6.7.2
 	github.com/pressly/goose/v3 v3.24.2

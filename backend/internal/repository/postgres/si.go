@@ -8,7 +8,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
-	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -121,9 +120,6 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 
 	params = append(params, req.Page.Limit, req.Page.Offset)
 
-	//TODO фильтр по людям может не работать т.к. person из locations обычно пустой
-	// возможно надо перенести COALESCE(person, e.emp, '') AS person в получение последней локации
-	// TODO он все таки не работает
 	query := fmt.Sprintf(`SELECT i.id, position, name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register, 
 		COALESCE(l.status, 'used') AS status, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
 		act_of_entering, act_of_entering_id, notes,
@@ -132,7 +128,7 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		COALESCE(p.date_start, 0) AS preservation, COALESCE(p.date_end, 0) AS de_preservation,
 		COALESCE(ts.date_start, 0) AS transfer_date, COALESCE(ts.date_end, 0) AS return_date, 
 		COALESCE(td.doc_name, '') AS transfer_to_dep, COALESCE(wo.doc_name, '') AS write_off,
-		COALESCE(person, e.emp, '') AS person, COALESCE(place, dep.dep, '') AS place, COALESCE(l.last_place, '') AS last_place,
+		COALESCE(person,'') AS person, COALESCE(place, '') AS place, COALESCE(l.last_place, '') AS last_place,
 		COUNT(*) OVER() AS total
 		FROM %s AS i
 		LEFT JOIN LATERAL (SELECT id, date, next_date FROM %s WHERE instrument_id=i.id ORDER BY date DESC, created_at DESC LIMIT 1) AS v ON TRUE
@@ -143,14 +139,14 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS ts ON TRUE
 		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS td ON TRUE
 		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS wo ON TRUE
-		LEFT JOIN LATERAL (SELECT (CASE WHEN status='%s' THEN NULLIF(place,'') WHEN status='%s' THEN 'Резерв' ELSE
+		LEFT JOIN LATERAL (SELECT (CASE WHEN status='%s' THEN COALESCE(NULLIF(place,''), dep.dep, '') WHEN status='%s' THEN 'Резерв' ELSE
 			(CASE WHEN last_place!='' OR (last_place_id!='' AND last_place_id IS NOT NULL)
 				THEN 'Перемещение из «'||COALESCE(lp.name,last_place)||'»' ELSE 'Перемещение' END) END) AS place, last_place, status,
-			NULLIF(person, '') AS person, person_id, department_id, last_place_id FROM %s AS l
+			COALESCE(NULLIF(person, ''), e.emp, '') AS person, person_id, department_id, last_place_id FROM %s AS l
 			LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.last_place_id=id::text) AS lp ON true
+			LEFT JOIN LATERAL (SELECT name as emp FROM %s WHERE l.person_id=id) AS e ON true
+			LEFT JOIN LATERAL (SELECT name as dep FROM %s WHERE l.department_id=id) AS dep ON true
 			WHERE instrument_id=i.id ORDER BY date_of_issue DESC, created_at DESC LIMIT 1) AS l ON TRUE
-		LEFT JOIN LATERAL (SELECT name as emp FROM %s WHERE l.person_id=id) AS e ON true
-		LEFT JOIN LATERAL (SELECT name as dep FROM %s WHERE l.department_id=id) AS dep ON true
 		WHERE section_id=$1 AND i.status=$2 %s%s%s LIMIT $%d OFFSET $%d`,
 		InstrumentsTable, VerificationTable, VerificationDocsTable, RepairTable, PreservationTable,
 		TransferToSaveTable, TransferToDepTable, WriteOffTable,
@@ -235,7 +231,6 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 			}
 		}
 	}
-	logger.Debug("get si", logger.StringAttr("filter", filter), logger.AnyAttr("params", params))
 
 	query := fmt.Sprintf(`SELECT i.id, i.name, factory_number, year_of_issue, state_register, measurement_limits, date, next_date,
 		COALESCE(person, e.emp, '') AS person, COALESCE(place, d.dep, '') AS place, COALESCE(l.last_place, lp.name, '') AS last_place,
@@ -263,6 +258,11 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 
 	data := []*models.SiReceiving{}
 	for i, s := range tmp {
+		status := constants.LocationStatusUsed
+		if s.Person == "" && s.Place == "" {
+			status = constants.LocationStatusReserve
+		}
+
 		si := &models.SI{
 			Id:                   s.Id,
 			Name:                 s.Name,
@@ -281,7 +281,7 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 		if i == 0 || data[len(data)-1].Channel != s.NotificationChannel || notEqualDeps {
 			data = append(data, &models.SiReceiving{
 				Channel: s.NotificationChannel,
-				Status:  constants.StatusReceiving,
+				Status:  status,
 				Place:   s.Place,
 				SI:      []*models.SI{si},
 			})

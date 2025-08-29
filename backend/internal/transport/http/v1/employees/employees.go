@@ -46,9 +46,10 @@ func Register(api *gin.RouterGroup, service services.Employee, middleware *middl
 func (h *EmployeeHandlers) GetAll(c *gin.Context) {
 	filter := make(map[string]string, 0)
 
-	realm := c.Query("realm")
-	if err := uuid.Validate(realm); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid realm param")
+	realm := c.GetHeader("realm")
+	err := uuid.Validate(realm)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid id param")
 		return
 	}
 	filter["realm_id"] = realm

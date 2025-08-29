@@ -54,6 +54,14 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 		return
 	}
 
+	realm := c.GetHeader("realm")
+	err := uuid.Validate(realm)
+	if realm != "" && err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid id param")
+		return
+	}
+	dto.Realm = realm
+
 	user, err := h.service.SignIn(c, dto)
 	if err != nil {
 		logger.Info("Неудачная попытка авторизации",

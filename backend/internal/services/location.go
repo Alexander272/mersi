@@ -160,7 +160,8 @@ func (s *LocationService) CreateSeveral(ctx context.Context, dto []*models.Locat
 		}
 
 		// при возвращении инструментов я отбрасываю те что не находятся в том же подразделении что и пользователь
-		filtered, err := s.SelectByDepartments(ctx, &models.SelectByDepsDTO{InstrumentIds: instrumentIds, DepartmentIds: ids})
+		depDTO := &models.SelectByDepsDTO{InstrumentIds: instrumentIds, DepartmentIds: ids}
+		filtered, err := s.SelectByDepartments(ctx, depDTO)
 		if err != nil {
 			return false, err
 		}

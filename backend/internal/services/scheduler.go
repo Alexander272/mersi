@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/config"
@@ -17,12 +18,14 @@ type SchedulerService struct {
 	notification Notification
 	user         User
 	location     Location
+	documents    Document
 }
 
 type SchedulerDeps struct {
 	Notification Notification
 	User         User
 	Location     Location
+	Documents    Document
 }
 
 func NewSchedulerService(deps *SchedulerDeps) *SchedulerService {
@@ -36,6 +39,7 @@ func NewSchedulerService(deps *SchedulerDeps) *SchedulerService {
 		notification: deps.Notification,
 		user:         deps.User,
 		location:     deps.Location,
+		documents:    deps.Documents,
 	}
 }
 
@@ -47,8 +51,12 @@ type Scheduler interface {
 // запуск заданий в cron
 func (s *SchedulerService) Start(conf *config.SchedulerConfig) error {
 	now := time.Now()
-	jobStart := time.Date(now.Year(), now.Month(), now.Day(), conf.StartTime, 0, 0, 0, now.Location())
-	if now.Hour() >= conf.StartTime {
+
+	hours := int(conf.StartTime.Hours())
+	minutes := int(math.Round(math.Mod(conf.StartTime.Hours(), 1) * 60))
+
+	jobStart := time.Date(now.Year(), now.Month(), now.Day(), hours, minutes, 0, 0, now.Location())
+	if now.Hour() > hours || (now.Hour() == hours && now.Minute() >= minutes) {
 		jobStart = jobStart.Add(24 * time.Hour)
 	}
 	// // вернуть нормальное время запуска
@@ -108,6 +116,13 @@ func (s *SchedulerService) job() {
 	// Синхронизация пользователей с keycloak
 	if err := s.user.Sync(context.Background()); err != nil {
 		logger.Error("user sync error:", logger.ErrAttr(err))
+		error_bot.Send(nil, err.Error(), nil)
+		return
+	}
+
+	// Удаление пустых папок
+	if err := s.documents.RemoveEmptyFolders(context.Background()); err != nil {
+		logger.Error("delete empty folders error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
 		return
 	}
