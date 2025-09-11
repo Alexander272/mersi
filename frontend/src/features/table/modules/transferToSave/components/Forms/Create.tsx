@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ITransferToSaveDTO } from '../../types/save'
+import { NullDate } from '@/constants/defaultValues'
 import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
 import {
@@ -39,6 +40,8 @@ export const Create: FC<Props> = ({ ids }) => {
 	const [create, { isLoading }] = useCreateTransferToSaveMutation()
 	const [update, { isLoading: isUpdating }] = useUpdateTransferToSaveMutation()
 
+	const isThisSave = last?.data.dateStart == NullDate || last?.data.dateEnd != NullDate
+
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'AddTransferToSave', isOpen: false }))
 	}
@@ -54,7 +57,7 @@ export const Create: FC<Props> = ({ ids }) => {
 		form.instrumentId = ids?.length ? ids[active] : ''
 
 		try {
-			if (!last?.data.dateStart || !!last?.data.dateEnd) {
+			if (isThisSave) {
 				await create(form).unwrap()
 			} else {
 				form.id = last.data.id
@@ -104,10 +107,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 			<Stack mt={2} component={'form'} onSubmit={saveHandler}>
 				<FormProvider {...methods}>
-					<Inputs
-						isThisSave={!last?.data.dateStart || !!last?.data.dateEnd}
-						min={last?.data.dateEnd || last?.data.dateStart}
-					/>
+					<Inputs isThisSave={isThisSave} min={last?.data.dateEnd || last?.data.dateStart} />
 				</FormProvider>
 
 				<Divider sx={{ width: '50%', alignSelf: 'center' }} />

@@ -3,6 +3,7 @@ import { Box } from '@mui/material'
 import dayjs from 'dayjs'
 
 import { DayjsFormat } from '@/constants/dateFormat'
+import { NullDate } from '@/constants/defaultValues'
 import { useGetLocationsQuery } from '../../locations/locationsApiSlice'
 import { NoRowsOverlay } from '@/features/table/components/NoRowsOverlay/components/NoRowsOverlay'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
@@ -40,13 +41,13 @@ export const Location: FC<Props> = ({ instrumentId }) => {
 					{data?.data.map(item => (
 						<TableRow key={item.id} sx={{ minHeight: 38, cursor: 'default' }}>
 							<TableCell width={230}>
-								<CellText value={dayjs(item.dateOfIssue * 1000).format(DayjsFormat)} />
+								<CellText value={dayjs(item.dateOfIssue).format(DayjsFormat)} />
 							</TableCell>
 							<TableCell width={230}>
 								<CellText
 									value={
-										item.dateOfReceiving
-											? dayjs(item.dateOfReceiving * 1000).format(DayjsFormat)
+										item.dateOfReceiving != NullDate
+											? dayjs(item.dateOfReceiving).format(DayjsFormat)
 											: '-'
 									}
 								/>

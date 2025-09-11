@@ -2,6 +2,7 @@ import { FC, useRef, useState } from 'react'
 import { Button, Divider, IconButton, Stack, Typography, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { IWriteOffDTO } from '../../types/writeoff'
@@ -25,7 +26,9 @@ export const Create: FC<Props> = ({ ids }) => {
 
 	const dispatch = useAppDispatch()
 
-	const methods = useForm<IWriteOffDTO>()
+	const methods = useForm<IWriteOffDTO>({
+		defaultValues: { date: dayjs().toISOString() },
+	})
 
 	const { data, isFetching } = useGetInstrumentByIdQuery(ids?.length ? ids[active] : '', {
 		skip: !ids?.length || !ids[active],

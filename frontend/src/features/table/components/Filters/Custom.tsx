@@ -53,7 +53,7 @@ const compareTypes = new Map([
 ])
 const defaultValues = new Map([
 	['text', ''],
-	['date', dayjs().unix().toString()],
+	['date', dayjs().toISOString()],
 	['number', ''],
 	// ['switch', 'false'],
 ])

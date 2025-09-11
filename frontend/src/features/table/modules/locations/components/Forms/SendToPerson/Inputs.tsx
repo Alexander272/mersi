@@ -1,22 +1,22 @@
+import { FC } from 'react'
 import { Stack } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers'
 import { Controller, useFormContext } from 'react-hook-form'
 import dayjs from 'dayjs'
 
 import type { ILocationForm } from '../../../types/location'
+import { useAppSelector } from '@/hooks/redux'
+import { getRealm } from '@/features/realms/realmSlice'
 import { DateTextField } from '@/components/DatePicker/DatePicker'
 import { Checkbox } from '@/components/Checkbox/Checkbox'
 import { DepartmentList } from './DepartmentList'
 import { EmployeeList } from './EmployeeList'
-import { FC } from 'react'
-import { useAppSelector } from '@/hooks/redux'
-import { getRealm } from '@/features/realms/realmSlice'
 
 type Props = {
-	minDate?: number
+	minDate?: string
 }
 
-export const Inputs: FC<Props> = ({ minDate = 1262286000 }) => {
+export const Inputs: FC<Props> = ({ minDate = '2000-01-01' }) => {
 	const { control } = useFormContext<ILocationForm>()
 	const realm = useAppSelector(getRealm)
 
@@ -56,12 +56,12 @@ export const Inputs: FC<Props> = ({ minDate = 1262286000 }) => {
 				render={({ field, fieldState: { error } }) => (
 					<DatePicker
 						{...field}
-						value={dayjs(field.value * 1000)}
-						onChange={value => field.onChange(value?.startOf('d').unix())}
+						value={dayjs(field.value)}
+						onChange={value => field.onChange(value?.startOf('d').toISOString())}
 						label={'Дата выдачи или поступления'}
 						showDaysOutsideCurrentMonth
 						fixedWeekNumber={6}
-						minDate={dayjs(minDate * 1000)}
+						minDate={dayjs(minDate)}
 						slots={{
 							textField: DateTextField,
 						}}

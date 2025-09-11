@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ILocationDTO, ILocationForm } from '../../../types/location'
+import { NullDate } from '@/constants/defaultValues'
 import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
 import { useCreateLocationMutation, useGetLastLocationQuery } from '../../../locationsApiSlice'
@@ -18,7 +19,7 @@ const def: ILocationForm = {
 	needConfirm: false,
 	department: '',
 	person: '',
-	dateOfIssue: dayjs().startOf('d').unix(),
+	dateOfIssue: dayjs().startOf('d').toISOString(),
 }
 
 type Props = {
@@ -70,7 +71,7 @@ export const Create: FC<Props> = ({ ids }) => {
 			person: form.isToReserve ? '' : form.person,
 			department: form.isToReserve ? '' : form.department,
 			dateOfIssue: form.dateOfIssue,
-			dateOfReceiving: !form.needConfirm || form.isToReserve ? form.dateOfIssue : 0,
+			dateOfReceiving: !form.needConfirm || form.isToReserve ? form.dateOfIssue : NullDate,
 			needConfirm: form.needConfirm,
 			status: !form.needConfirm ? (form.isToReserve ? 'reserve' : 'used') : 'moved',
 		}

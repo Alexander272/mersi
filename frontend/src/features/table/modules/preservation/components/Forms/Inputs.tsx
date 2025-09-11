@@ -8,10 +8,10 @@ import { DateTextField } from '@/components/DatePicker/DatePicker'
 
 type Props = {
 	isThisPreservation: boolean
-	min?: number
+	min?: string
 }
 
-export const Inputs: FC<Props> = ({ isThisPreservation, min = 1262286000 }) => {
+export const Inputs: FC<Props> = ({ isThisPreservation, min = '2000-01-01' }) => {
 	const { control } = useFormContext()
 
 	return (
@@ -22,12 +22,12 @@ export const Inputs: FC<Props> = ({ isThisPreservation, min = 1262286000 }) => {
 				render={({ field, fieldState: { error } }) => (
 					<DatePicker
 						{...field}
-						value={dayjs(field.value * 1000)}
-						onChange={value => field.onChange(value?.startOf('d').unix())}
+						value={field.value ? dayjs(field.value) : null}
+						onChange={value => field.onChange(value?.startOf('d').toISOString())}
 						label={`Дата ${isThisPreservation ? 'консервации' : 'расконсервации'}`}
 						showDaysOutsideCurrentMonth
 						fixedWeekNumber={6}
-						minDate={dayjs(min * 1000)}
+						minDate={dayjs(min)}
 						slots={{
 							textField: DateTextField,
 						}}

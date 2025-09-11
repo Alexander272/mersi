@@ -144,7 +144,7 @@ export const Filters = () => {
 								display: 'block',
 								position: 'absolute',
 								top: 0,
-								right: filter == 'default' ? '41%' : '29.3%',
+								right: filter == 'default' ? '41%' : '27.5%',
 								width: 10,
 								height: 10,
 								bgcolor: 'background.paper',

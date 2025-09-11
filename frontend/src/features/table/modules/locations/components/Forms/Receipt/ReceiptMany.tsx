@@ -13,21 +13,22 @@ import {
 	Typography,
 	useTheme,
 } from '@mui/material'
-import { IFilter } from '@/features/table/types/params'
-import { useCheckPermission } from '@/features/user/hooks/check'
+import { toast } from 'react-toastify'
+
+import type { IFetchError } from '@/app/types/error'
+import type { ISentSI } from '@/features/table/types/si'
+import type { IFilter } from '@/features/table/types/params'
 import { PermRules } from '@/constants/permissions'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useCheckPermission } from '@/features/user/hooks/check'
 import { useGetDepartmentsQuery } from '@/features/departments/departmentApiSlice'
 import { useGetResponsibleByUserQuery } from '@/features/departments/responsibleApiSlice'
 import { useGetSentSIQuery } from '@/features/table/siApiSlice'
-import { useAppDispatch, useAppSelector } from '@/hooks/redux'
-import { getSection } from '@/features/sections/sectionSlice'
-import type { ISentSI } from '@/features/table/types/si'
 import { useReceivingMutation } from '../../../locationsApiSlice'
+import { getSection } from '@/features/sections/sectionSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
-import { IFetchError } from '@/app/types/error'
-import { toast } from 'react-toastify'
-import { Fallback } from '@/components/Fallback/Fallback'
 import { CheckboxGroup } from '@/components/CheckboxGroup/CheckboxGroup'
+import { Fallback } from '@/components/Fallback/Fallback'
 
 const defFilter: IFilter[] = [
 	{

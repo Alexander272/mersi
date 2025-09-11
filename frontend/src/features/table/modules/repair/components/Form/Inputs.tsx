@@ -31,8 +31,8 @@ export const Inputs = () => {
 					render={({ field, fieldState: { error } }) => (
 						<DatePicker
 							{...field}
-							value={dayjs(field.value * 1000)}
-							onChange={value => field.onChange(value?.startOf('d').unix())}
+							value={dayjs(field.value)}
+							onChange={value => field.onChange(value?.startOf('d').toISOString())}
 							label={'Начало ремонта'}
 							showDaysOutsideCurrentMonth
 							fixedWeekNumber={6}
@@ -55,8 +55,8 @@ export const Inputs = () => {
 					render={({ field, fieldState: { error } }) => (
 						<DatePicker
 							{...field}
-							value={dayjs(field.value * 1000)}
-							onChange={value => field.onChange(value?.startOf('d').unix())}
+							value={dayjs(field.value)}
+							onChange={value => field.onChange(value?.startOf('d').toISOString())}
 							label={'Конец ремонта'}
 							showDaysOutsideCurrentMonth
 							fixedWeekNumber={6}

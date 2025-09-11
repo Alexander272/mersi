@@ -1,5 +1,5 @@
 export interface IPeriod {
-	gte: number
-	lte: number
+	gte: string
+	lte: string
 	section: string
 }

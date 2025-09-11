@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
+import { NullDate } from '@/constants/defaultValues'
 import { localKeys } from '../../constants/storage'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetCreateFormStepsQuery } from '@/features/sections/modules/form/formApiSlice'
@@ -77,18 +78,22 @@ export const CreateForm: FC<Props> = () => {
 			form.verification.notes = form.verification.notes?.trim()
 			form.verification.registerLink = form.verification.registerLink?.trim()
 
-			if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval) {
-				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
+			if (
+				form.verification.verificationDate &&
+				form.verification.verificationDate != '' &&
+				form.instrument.interVerificationInterval
+			) {
+				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate)
 					.add(+form.instrument.interVerificationInterval, 'month')
-					.unix()
+					.toISOString()
 			}
 			if (form.verification.notVerified) {
 				form.instrument.interVerificationInterval = 0
-				form.verification.verificationDate = 0
-				form.verification.nextVerificationDate = 0
+				form.verification.verificationDate = NullDate
+				form.verification.nextVerificationDate = NullDate
 			}
 		}
-		if (form?.verification.docs?.length) {
+		if (form?.verification?.docs?.length) {
 			form.verification.docs = form.verification.docs.filter(d => d.doc && d.doc != '')
 		}
 
@@ -96,7 +101,8 @@ export const CreateForm: FC<Props> = () => {
 			const isToReserve = form.location.isToReserve
 			form.location.department = isToReserve ? '' : form.location.department
 			form.location.person = isToReserve ? '' : form.location.person
-			form.location.dateOfReceiving = !form.location.needConfirm || isToReserve ? form.location.dateOfIssue : 0
+			form.location.dateOfReceiving =
+				!form.location.needConfirm || isToReserve ? form.location.dateOfIssue : NullDate
 			form.location.status = form.location.needConfirm ? 'moved' : isToReserve ? 'reserve' : 'used'
 		}
 

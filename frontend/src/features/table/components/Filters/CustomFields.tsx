@@ -161,8 +161,8 @@ const DateFilter: FC<Props> = ({ index }) => {
 				render={({ field, fieldState: { error } }) => (
 					<DatePicker
 						{...field}
-						value={dayjs(+field.value * 1000)}
-						onChange={value => field.onChange(value?.startOf('d').unix())}
+						value={dayjs(+field.value)}
+						onChange={value => field.onChange(value?.startOf('d').toISOString())}
 						label={'Значение'}
 						showDaysOutsideCurrentMonth
 						fixedWeekNumber={6}

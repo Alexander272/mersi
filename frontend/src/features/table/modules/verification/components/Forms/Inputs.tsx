@@ -20,10 +20,10 @@ const docsGroup = 'verifications'
 type Props = {
 	instrumentId: string
 	interval?: number
-	minDate?: number
+	minDate?: string
 }
 
-export const Inputs: FC<Props> = ({ instrumentId, interval, minDate = 1262286000 }) => {
+export const Inputs: FC<Props> = ({ instrumentId, interval, minDate = '2000-01-01' }) => {
 	const section = useAppSelector(getSection)
 
 	const { data, isFetching } = useGetVerificationFieldsQuery(
@@ -58,10 +58,10 @@ type FieldProps = {
 	instrumentId?: string
 }
 
-const DateField: FC<FieldProps & { minDate: number; interval?: number }> = ({ label, field, minDate, interval }) => {
+const DateField: FC<FieldProps & { minDate: string; interval?: number }> = ({ label, field, minDate, interval }) => {
 	const { control, watch, setValue } = useFormContext()
 
-	let date = 0
+	let date = ''
 	let status = ''
 	if (field == 'nextVerificationDate') {
 		date = watch('verificationDate')
@@ -71,10 +71,7 @@ const DateField: FC<FieldProps & { minDate: number; interval?: number }> = ({ la
 	useEffect(() => {
 		if (field == 'nextVerificationDate') {
 			if (interval && date) {
-				const newDate = dayjs(date * 1000)
-					.add(interval, 'M')
-					.subtract(1, 'd')
-					.unix()
+				const newDate = dayjs(date).add(interval, 'M').subtract(1, 'd').toISOString()
 				setValue('nextVerificationDate', newDate)
 			}
 		}
@@ -88,12 +85,12 @@ const DateField: FC<FieldProps & { minDate: number; interval?: number }> = ({ la
 			render={({ field, fieldState: { error } }) => (
 				<DatePicker
 					{...field}
-					value={dayjs(field.value * 1000)}
-					onChange={value => field.onChange(value?.startOf('d').unix())}
+					value={dayjs(field.value)}
+					onChange={value => field.onChange(value?.startOf('d').toISOString)}
 					label={label}
 					showDaysOutsideCurrentMonth
 					fixedWeekNumber={6}
-					minDate={dayjs(minDate * 1000)}
+					minDate={dayjs(minDate)}
 					slots={{
 						textField: DateTextField,
 					}}

@@ -15,7 +15,7 @@ export const DateField: FC<Props> = ({ data }) => {
 	const watchField = watch(data.hide)
 
 	let interval = 0
-	let date = 0
+	let date = ''
 	if (data.field == 'nextVerificationDate') {
 		interval = watch('instrument.interVerificationInterval')
 		date = watch('verification.verificationDate')
@@ -24,10 +24,7 @@ export const DateField: FC<Props> = ({ data }) => {
 	useEffect(() => {
 		if (data.field == 'nextVerificationDate') {
 			if (interval && date) {
-				const newDate = dayjs(date * 1000)
-					.add(interval, 'M')
-					.subtract(1, 'd')
-					.unix()
+				const newDate = dayjs(date).add(interval, 'M').subtract(1, 'd').toISOString()
 				setValue('verification.nextVerificationDate', newDate)
 			}
 		}
@@ -42,9 +39,9 @@ export const DateField: FC<Props> = ({ data }) => {
 			render={({ field, fieldState: { error } }) => (
 				<DatePicker
 					{...field}
-					value={dayjs(field.value * 1000)}
+					value={field.value ? dayjs(field.value) : null}
 					onChange={value => {
-						field.onChange(value?.startOf('d').unix())
+						field.onChange(value?.startOf('d').toISOString())
 					}}
 					label={data.fieldName}
 					showDaysOutsideCurrentMonth

@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ILocationDTO } from '../../../types/location'
+import { NullDate } from '@/constants/defaultValues'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetSIQuery } from '@/features/table/siApiSlice'
 import { useCreateSeveralLocationsMutation } from '../../../locationsApiSlice'
@@ -32,7 +33,7 @@ export const SendToReserve: FC<Props> = ({ ids }) => {
 	}
 
 	const saveHandler = async () => {
-		const date = dayjs().startOf('d').unix()
+		const date = dayjs().startOf('d').toISOString()
 		const locations: ILocationDTO[] = []
 
 		ids.forEach(id => {
@@ -41,7 +42,7 @@ export const SendToReserve: FC<Props> = ({ ids }) => {
 				department: '',
 				person: '',
 				dateOfIssue: date,
-				dateOfReceiving: 0,
+				dateOfReceiving: NullDate,
 				needConfirm: true,
 				status: 'moved',
 			})

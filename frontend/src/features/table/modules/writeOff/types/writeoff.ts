@@ -1,7 +1,7 @@
 export interface IWriteOff {
 	id: string
 	instrumentId: string
-	date: number
+	date: string
 	notes: string
 	docId: string
 	docName: string
@@ -11,7 +11,7 @@ export interface IWriteOff {
 export interface IWriteOffDTO {
 	id: string
 	instrumentId: string
-	date: number
+	date: string
 	notes: string
 	docId: string
 	docName: string

@@ -2,8 +2,8 @@ import { IVerDocs } from './verificationDocs'
 
 export interface IVerification {
 	id: string
-	verificationDate: number
-	nextVerificationDate: number
+	verificationDate: string
+	nextVerificationDate: string
 	registerLink: string
 	notVerified: boolean
 	status: string
@@ -14,8 +14,8 @@ export interface IVerification {
 export interface IVerificationDTO {
 	id: string
 	instrumentId: string
-	verificationDate: number
-	nextVerificationDate: number
+	verificationDate: string
+	nextVerificationDate: string
 	registerLink: string
 	notVerified: boolean
 	status: string

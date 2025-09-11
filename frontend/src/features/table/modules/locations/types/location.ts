@@ -7,8 +7,8 @@ export interface ILocation {
 	personId?: string
 	departmentId?: string
 	lastPlaceId?: string
-	dateOfIssue: number
-	dateOfReceiving: number
+	dateOfIssue: string
+	dateOfReceiving: string
 	needConfirm: boolean
 	hasConfirmed?: boolean
 	status: string
@@ -19,8 +19,8 @@ export interface ILocationDTO {
 	instrumentId: string
 	person: string
 	department: string
-	dateOfIssue: number
-	dateOfReceiving: number
+	dateOfIssue: string
+	dateOfReceiving: string
 	needConfirm: boolean
 	status: string
 	isToReserve?: boolean
@@ -30,7 +30,7 @@ export interface ILocationForm {
 	id?: string
 	department: string
 	person: string
-	dateOfIssue: number
+	dateOfIssue: string
 	needConfirm: boolean
 	isToReserve?: boolean
 }

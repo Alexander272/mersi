@@ -74,7 +74,7 @@ export const Default = () => {
 				field: 'nextVerificationDate',
 				fieldType: 'date',
 				compareType: 'lte',
-				value: dayjs().startOf('d').unix().toString(),
+				value: dayjs().startOf('d').toISOString(),
 			},
 		])
 	}
@@ -89,13 +89,13 @@ export const Default = () => {
 				field: 'nextVerificationDate',
 				fieldType: 'date',
 				compareType: 'gte',
-				value: date.startOf('month').unix().toString(),
+				value: date.startOf('month').toISOString(),
 			},
 			{
 				field: 'nextVerificationDate',
 				fieldType: 'date',
 				compareType: 'lte',
-				value: date.endOf('month').unix().toString(),
+				value: date.endOf('month').toISOString(),
 			},
 		])
 	}
@@ -107,13 +107,13 @@ export const Default = () => {
 				field: 'nextVerificationDate',
 				fieldType: 'date',
 				compareType: 'gte',
-				value: date.startOf('month').unix().toString(),
+				value: date.startOf('month').toISOString(),
 			},
 			{
 				field: 'nextVerificationDate',
 				fieldType: 'date',
 				compareType: 'lte',
-				value: date.endOf('month').unix().toString(),
+				value: date.endOf('month').toISOString(),
 			},
 		])
 	}

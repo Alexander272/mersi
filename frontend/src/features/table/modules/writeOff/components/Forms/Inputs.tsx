@@ -11,7 +11,7 @@ import { UploadButton } from '@/features/files/components/UploadButton/UploadBut
 import { DateTextField } from '@/components/DatePicker/DatePicker'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 
-const min = 1262286000
+const min = '2000-01-01'
 const docsGroup = 'writeOff'
 
 type Props = {
@@ -52,12 +52,12 @@ export const Inputs: FC<Props> = ({ instrumentId }) => {
 				render={({ field, fieldState: { error } }) => (
 					<DatePicker
 						{...field}
-						value={dayjs(field.value * 1000)}
-						onChange={value => field.onChange(value?.startOf('d').unix())}
+						value={dayjs(field.value)}
+						onChange={value => field.onChange(value?.startOf('d').toISOString())}
 						label={`Дата списания`}
 						showDaysOutsideCurrentMonth
 						fixedWeekNumber={6}
-						minDate={dayjs(min * 1000)}
+						minDate={dayjs(min)}
 						slots={{
 							textField: DateTextField,
 						}}

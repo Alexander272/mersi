@@ -24,7 +24,7 @@ export const Header = () => {
 
 	return (
 		<Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'} mt={1} mb={0.5} mx={2}>
-			<Stack direction={'row'} spacing={1}>
+			<Stack direction={'row'} spacing={1} sx={{ mr: 1 }}>
 				<ActiveSection />
 
 				{useCheckPermission(PermRules.SI.Write) ? (

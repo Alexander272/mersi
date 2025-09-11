@@ -71,7 +71,7 @@ export const SelectWithFilter: FC<Props> = ({ label, headerLabel, values, option
 				sx={{
 					width: anchor.current ? anchor.current.clientWidth + 2 : 'auto',
 					border: '1px solid #e1e4e8',
-					boxShadow: `0 8px 24px ${'rgba(149, 157, 165, 0.2)'}`,
+					boxShadow: `0 8px 24px rgba(149, 157, 165, 0.2)`,
 					color: '#24292e',
 					backgroundColor: '#fff',
 					borderRadius: 2,

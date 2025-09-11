@@ -1,7 +1,7 @@
 export interface IPreservation {
 	id: string
-	dateStart: number
-	dateEnd: number
+	dateStart: string
+	dateEnd: string
 	notesStart: string
 	notesEnd: string
 	created: string
@@ -10,8 +10,8 @@ export interface IPreservation {
 export interface IPreservationDTO {
 	id: string
 	instrumentId: string
-	dateStart: number
-	dateEnd: number
+	dateStart: string
+	dateEnd: string
 	notesStart: string
 	notesEnd: string
 }

@@ -2,6 +2,7 @@ import { FC, useRef, useState } from 'react'
 import { Button, Divider, IconButton, Stack, Typography, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { IRepairDTO } from '../../types/repair'
@@ -29,7 +30,9 @@ export const Create: FC<Props> = ({ ids }) => {
 	})
 	const [create, { isLoading }] = useCreateRepairMutation()
 
-	const methods = useForm<IRepairDTO>()
+	const methods = useForm<IRepairDTO>({
+		defaultValues: { periodStart: dayjs().toISOString(), periodEnd: dayjs().toISOString() },
+	})
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'AddRepair', isOpen: false }))
@@ -56,6 +59,8 @@ export const Create: FC<Props> = ({ ids }) => {
 		}
 	})
 
+	//TODO надо дать возможность частичного создания (только с датой начала ремонта и перемещать инструмент в группу "в ремонте")
+	// а при попытке добавить сведения если есть частичные данные показывать их и обновлять
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
 	return (
 		<Stack position={'relative'} mt={-2}>

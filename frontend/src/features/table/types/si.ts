@@ -7,7 +7,7 @@ export interface ISI {
 	id: string
 	position: number
 	name: string
-	dateOfReceipt: number
+	dateOfReceipt: string
 	type: string
 	factoryNumber: string
 	measurementLimits: string
@@ -22,15 +22,15 @@ export interface ISI {
 	actOfEntering: string
 	actOfEnteringId: string
 	notes: string
-	verificationDate: number
-	nextVerificationDate: number
+	verificationDate: string
+	nextVerificationDate: string
 	certificate: string
 	certificateId: string
 	repair: string
-	preservationDate: number
-	dePreservationDate: number
-	transferDate: number
-	returnDate: number
+	preservationDate: string
+	dePreservationDate: string
+	transferDate: string
+	returnDate: string
 	transferToDepartment: string
 	writeOff: string
 	person: string

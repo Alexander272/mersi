@@ -1,15 +1,15 @@
 import { FC } from 'react'
 import { ListItemIcon, MenuItem } from '@mui/material'
+import dayjs from 'dayjs'
 
-import { ExchangeIcon } from '@/components/Icons/ExchangeIcon'
-import { useGetLastLocationQuery } from '../../locations/locationsApiSlice'
+import { PermRules } from '@/constants/permissions'
 import { useAppSelector } from '@/hooks/redux'
+import { useCheckPermission } from '@/features/user/hooks/check'
+import { useGetLastLocationQuery } from '../../locations/locationsApiSlice'
 import { getContextMenu } from '@/features/table/tableSlice'
 import { FileSyncIcon } from '@/components/Icons/FileSyncIcon'
 import { CancelIcon } from '@/components/Icons/CancelIcon'
-import dayjs from 'dayjs'
-import { useCheckPermission } from '@/features/user/hooks/check'
-import { PermRules } from '@/constants/permissions'
+import { ExchangeIcon } from '@/components/Icons/ExchangeIcon'
 
 type Props = {
 	onClick?: () => void
@@ -92,8 +92,9 @@ export const Cancel: FC<Props> = ({ onClick, label }) => {
 	if ((loc && data?.data.lastPlaceId != '') || (reserve && data?.data.lastPlaceId == '')) return null
 
 	// if (data?.data.lastPlaceId == '') return null
-	if (!data?.data || (data.data.dateOfIssue != dayjs().startOf('d').unix() && data.data.status != 'moved'))
+	if (!data?.data || (data.data.dateOfIssue != dayjs().startOf('d').toISOString() && data.data.status != 'moved'))
 		return null
+
 	return (
 		<MenuItem onClick={onClick}>
 			<ListItemIcon>

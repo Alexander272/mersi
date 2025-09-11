@@ -12,11 +12,11 @@ import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { DateTextField } from '@/components/DatePicker/DatePicker'
 
 const defaultValues: IPeriod = {
-	gte: dayjs().startOf('D').startOf('M').unix(),
-	lte: dayjs().add(1, 'M').startOf('D').startOf('M').unix(),
+	gte: dayjs().startOf('D').startOf('M').toISOString(),
+	lte: dayjs().add(1, 'M').startOf('D').startOf('M').toISOString(),
 	section: '',
 }
-const min = 1262286000
+const min = '2000-01-01'
 
 export const PeriodForm: FC = () => {
 	const section = useAppSelector(getSection)
@@ -47,12 +47,12 @@ export const PeriodForm: FC = () => {
 						render={({ field, fieldState: { error } }) => (
 							<DatePicker
 								{...field}
-								value={dayjs(field.value * 1000)}
-								onChange={value => field.onChange(value?.startOf('d').unix())}
+								value={dayjs(field.value)}
+								onChange={value => field.onChange(value?.startOf('d').toISOString())}
 								label={'Начало периода'}
 								showDaysOutsideCurrentMonth
 								fixedWeekNumber={6}
-								minDate={dayjs(min * 1000)}
+								minDate={dayjs(min)}
 								slots={{
 									textField: DateTextField,
 								}}
@@ -72,12 +72,12 @@ export const PeriodForm: FC = () => {
 						render={({ field, fieldState: { error } }) => (
 							<DatePicker
 								{...field}
-								value={dayjs(field.value * 1000)}
-								onChange={value => field.onChange(value?.startOf('d').unix())}
+								value={dayjs(field.value)}
+								onChange={value => field.onChange(value?.startOf('d').toISOString())}
 								label={'Конец периода'}
 								showDaysOutsideCurrentMonth
 								fixedWeekNumber={6}
-								minDate={dayjs(min * 1000)}
+								minDate={dayjs(min)}
 								slots={{
 									textField: DateTextField,
 								}}

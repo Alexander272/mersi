@@ -3,6 +3,7 @@ import { Box, Chip, Stack } from '@mui/material'
 import dayjs from 'dayjs'
 
 import type { IVerDocs } from '../../verification/types/verificationDocs'
+import { NullDate } from '@/constants/defaultValues'
 import { useAppSelector } from '@/hooks/redux'
 import { useLazyDownloadFileQuery } from '@/features/files/fileApiSlice'
 import { useGetVerificationFieldsQuery, useGetVerificationsQuery } from '../../verification/verificationApiSlice'
@@ -49,7 +50,7 @@ const Statuses = {
 
 const Formatter = (field: string, value: string) => {
 	if (field == 'verificationDate' || field == 'nextVerificationDate') {
-		if (value != '') return dayjs(+value * 1000).format('DD.MM.YYYY')
+		if (value != NullDate) return dayjs(value).format('DD.MM.YYYY')
 		return '-'
 	}
 	if (field == 'status') return Statuses[value as 'work' | 'repair' | 'decommissioning']

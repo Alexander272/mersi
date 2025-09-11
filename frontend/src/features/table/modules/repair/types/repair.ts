@@ -2,8 +2,8 @@ export interface IRepair {
 	id: string
 	defect: string
 	work: string
-	periodStart: number
-	periodEnd: number
+	periodStart: string
+	periodEnd: string
 	description: string
 	created: string
 }
@@ -13,7 +13,7 @@ export interface IRepairDTO {
 	instrumentId: string
 	defect: string
 	work: string
-	periodStart: number
-	periodEnd: number
+	periodStart: string
+	periodEnd: string
 	description: string
 }

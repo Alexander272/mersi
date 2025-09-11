@@ -15,7 +15,7 @@ import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
 import { Inputs } from './Inputs'
 
 const def = {
-	verificationDate: dayjs().unix(),
+	verificationDate: dayjs().toISOString(),
 	registerLink: '',
 	status: 'work',
 	notes: '',
@@ -56,10 +56,10 @@ export const Create: FC<Props> = ({ ids }) => {
 		console.log('save', form, methods.formState.dirtyFields)
 
 		form.instrumentId = data.data.id
-		if (!form.nextVerificationDate || form.nextVerificationDate == 0) {
-			form.nextVerificationDate = dayjs(form.verificationDate * 1000)
+		if (!form.nextVerificationDate || form.nextVerificationDate == '') {
+			form.nextVerificationDate = dayjs(form.verificationDate)
 				.add(+(data.data.interVerificationInterval || 0), 'month')
-				.unix()
+				.toISOString()
 		}
 
 		form.docs = form.docs?.filter(d => d.doc && d.doc != '')

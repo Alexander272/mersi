@@ -38,10 +38,12 @@ export const Status = () => {
 		>
 			<MenuItem value={'work'}>Основные</MenuItem>
 			<MenuItem value={'repair'}>На ремонте</MenuItem>
+			{section?.id == '46ba9e17-65c7-474b-8c47-7975ab4319d5' && [
+				<MenuItem value={'archived'}>Законсервированные</MenuItem>,
+				<MenuItem value={'saved'}>На хранении</MenuItem>,
+				<MenuItem value={'transferred'}>Переданные</MenuItem>,
+			]}
 			<MenuItem value={'decommissioning'}>Непригодные</MenuItem>
-			{section?.id == '46ba9e17-65c7-474b-8c47-7975ab4319d5' && (
-				<MenuItem value={'transferred'}>Переданные</MenuItem>
-			)}
 		</Select>
 	)
 }

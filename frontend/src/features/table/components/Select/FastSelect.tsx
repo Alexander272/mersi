@@ -48,7 +48,7 @@ export const FastSelect = () => {
 			field: 'nextVerificationDate',
 			fieldType: 'date',
 			compareType: 'lte',
-			value: dayjs().startOf('d').unix().toString(),
+			value: dayjs().startOf('d').toISOString(),
 		}
 
 		fetching(filters ? [...filters, newFilter] : [newFilter])
@@ -60,13 +60,13 @@ export const FastSelect = () => {
 				field: 'nextVerificationDate',
 				fieldType: 'date',
 				compareType: 'gte',
-				value: dayjs().add(value, 'M').startOf('month').unix().toString(),
+				value: dayjs().add(value, 'M').startOf('month').toISOString(),
 			},
 			{
 				field: 'nextVerificationDate',
 				fieldType: 'date',
 				compareType: 'lte',
-				value: dayjs().add(value, 'M').endOf('month').unix().toString(),
+				value: dayjs().add(value, 'M').endOf('month').toISOString(),
 			},
 		]
 

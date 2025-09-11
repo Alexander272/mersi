@@ -3,7 +3,7 @@ export interface IInstrumentDTO {
 	sectionId: string
 	position: number
 	name: string
-	dateOfReceipt: number
+	dateOfReceipt: string
 	type: string
 	factoryNumber: string
 	measurementLimits: string

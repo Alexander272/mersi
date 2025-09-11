@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 
 import type { IColumn } from '@/features/sections/modules/columns/types/columns'
 import type { ISI } from '../../types/si'
+import { NullDate } from '@/constants/defaultValues'
 import { Formatter } from '../../utils/formatter'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
@@ -56,24 +57,20 @@ export const Row: FC<Props> = ({ item, sx }) => {
 
 	const getStyles = () => {
 		const styles = { background: '' }
-		if (status != 'work' && !selected[item.id]) return styles
+		if (status != 'work' && !selected[item.id] && contextMenu?.active != item.id) return styles
 
-		if (item.interVerificationInterval && !item.verificationDate) styles.background = RowColors.reverse
+		if (item.interVerificationInterval && item.verificationDate == NullDate) styles.background = RowColors.reverse
 		if (item.status == 'reserve') styles.background = RowColors.reverse
 
 		if (realm?.id == 'c0d7fd4e-da02-4265-be05-9023bac5ff0d') {
-			const deadline = dayjs()
-				.add(1, 'month')
-				.isAfter(dayjs(item.nextVerificationDate * 1000))
-			if (deadline && item.nextVerificationDate) styles.background = RowColors.deadlineOr
+			const deadline = dayjs().add(1, 'month').isAfter(dayjs(item.nextVerificationDate))
+			if (deadline && item.nextVerificationDate != NullDate) styles.background = RowColors.deadlineOr
 		} else {
-			const deadline = dayjs()
-				.add(15, 'd')
-				.isAfter(dayjs(item.nextVerificationDate * 1000))
-			if (deadline && item.nextVerificationDate) styles.background = RowColors.deadlineRed
+			const deadline = dayjs().add(15, 'd').isAfter(dayjs(item.nextVerificationDate))
+			if (deadline && item.nextVerificationDate != NullDate) styles.background = RowColors.deadlineRed
 		}
-		const overdue = dayjs().isAfter(dayjs(item.nextVerificationDate * 1000))
-		if (overdue && item.nextVerificationDate) styles.background = RowColors.overdue
+		const overdue = dayjs().isAfter(dayjs(item.nextVerificationDate))
+		if (overdue && item.nextVerificationDate != NullDate) styles.background = RowColors.overdue
 
 		if (item.status == 'moved') styles.background = RowColors.moved
 

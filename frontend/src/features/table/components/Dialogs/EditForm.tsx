@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
+import { NullDate } from '@/constants/defaultValues'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetCreateFormStepsQuery } from '@/features/sections/modules/form/formApiSlice'
 import { useDeleteSIMutation, useGetSIByIdQuery, useUpdateSIMutation } from '../../siApiSlice'
@@ -79,16 +80,16 @@ export const EditForm: FC<Props> = ({ id }) => {
 			form.verification.notes = form.verification.notes?.trim()
 			form.verification.registerLink = form.verification.registerLink?.trim()
 
-			if (form.verification.verificationDate != 0 && form.instrument.interVerificationInterval) {
-				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate * 1000)
+			if (form.verification.verificationDate != '' && form.instrument.interVerificationInterval) {
+				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate)
 					.add(+form.instrument.interVerificationInterval, 'month')
-					.unix()
+					.toISOString()
 			}
 
 			if (form.verification.notVerified) {
 				form.instrument.interVerificationInterval = 0
-				form.verification.verificationDate = 0
-				form.verification.nextVerificationDate = 0
+				form.verification.verificationDate = NullDate
+				form.verification.nextVerificationDate = NullDate
 			}
 		}
 		if (form?.verification?.docs?.length) {
