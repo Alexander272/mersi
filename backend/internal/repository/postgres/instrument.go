@@ -82,7 +82,7 @@ func (r *InstrumentRepo) GetUniqueData(ctx context.Context, req *models.GetUniqu
 }
 
 func (r *InstrumentRepo) Create(ctx context.Context, dto *models.InstrumentDTO) error {
-	maxQuery := fmt.Sprintf(`SELECT MAX(position) FROM %s WHERE section_id=$1`, InstrumentsTable)
+	maxQuery := fmt.Sprintf(`SELECT COALESCE(MAX(position), 0) FROM %s WHERE section_id=$1`, InstrumentsTable)
 	var maxPosition int
 	if err := r.db.GetContext(ctx, &maxPosition, maxQuery, dto.SectionId); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)

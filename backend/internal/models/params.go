@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type Page struct {
 	Limit  int
 	Offset int
@@ -21,9 +23,9 @@ type FilterValue struct {
 }
 
 type Period struct {
-	StartAt   int64  `json:"startAt"`
-	FinishAt  int64  `json:"finishAt"`
-	SectionId string `json:"sectionId"`
+	StartAt   time.Time `json:"startAt"`
+	FinishAt  time.Time `json:"finishAt"`
+	SectionId string    `json:"sectionId"`
 }
 
 type Search struct {

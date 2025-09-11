@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS public.preservation
 (
     id uuid NOT NULL,
     instrument_id uuid NOT NULL,
-    date_start integer NOT NULL,
-    date_end integer DEFAULT 0,
+    date_start timestamp with time zone NOT NULL,
+    date_end timestamp with time zone DEFAULT '0001-01-01'::DATE,
     notes_start text COLLATE pg_catalog."default" DEFAULT ''::text,
     notes_end text COLLATE pg_catalog."default" DEFAULT ''::text,
     created_at timestamp with time zone DEFAULT now(),

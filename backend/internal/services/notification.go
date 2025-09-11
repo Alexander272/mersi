@@ -95,8 +95,8 @@ func (s *NotificationService) CheckUsed() error {
 	finishAt := time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location())
 
 	period := &models.Period{
-		StartAt:  startAt.Unix(),
-		FinishAt: finishAt.Unix(),
+		StartAt:  startAt,
+		FinishAt: finishAt,
 	}
 
 	data, err := s.si.GetUsed(context.Background(), period)
@@ -165,8 +165,8 @@ func (s *NotificationService) CheckVerification() error {
 		logger.Debug("Check verification", logger.AnyAttr("section", item))
 
 		dto := &models.Period{
-			StartAt:   time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()).Unix(),
-			FinishAt:  time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location()).Unix(),
+			StartAt:   time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()),
+			FinishAt:  time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location()),
 			SectionId: item.ID,
 		}
 
@@ -231,7 +231,7 @@ func (s *NotificationService) sendVerificationTable(dto *models.SiVerification) 
 
 	if dto.BidType == "ointo_eq" {
 		tableHeader = "| Наименование ИО | Марка, тип| зав.№ | Следующая аттестация |"
-		title = "В следующем месяце подходит срок поверки у следующего оборудования"
+		title = "В следующем месяце подходит срок аттестации у следующего оборудования"
 	}
 
 	table := []string{
@@ -241,7 +241,7 @@ func (s *NotificationService) sendVerificationTable(dto *models.SiVerification) 
 
 	for _, d := range dto.SI {
 		table = append(table, fmt.Sprintf("| %s| %s | %s | %s |",
-			d.Name, d.Type, d.FactoryNumber, time.Unix(d.NextVerificationDate, 0).Format("02.01.2006")),
+			d.Name, d.Type, d.FactoryNumber, d.NextVerificationDate.Format("02.01.2006")),
 		)
 	}
 

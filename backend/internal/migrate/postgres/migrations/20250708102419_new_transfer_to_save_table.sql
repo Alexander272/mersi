@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS public.transfer_to_save
 (
     id uuid NOT NULL,
     instrument_id uuid NOT NULL,
-    date_start integer NOT NULL,
+    date_start timestamp with time zone NOT NULL,
     notes_start text COLLATE pg_catalog."default" DEFAULT ''::text,
-    date_end integer DEFAULT 0,
+    date_end timestamp with time zone DEFAULT '0001-01-1'::DATE,
     notes_end text COLLATE pg_catalog."default" DEFAULT ''::text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),

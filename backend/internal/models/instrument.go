@@ -1,11 +1,15 @@
 package models
 
+import "time"
+
 type InstrumentStatus string
 
 const (
 	InstrumentStatusWork        InstrumentStatus = "work"
 	InstrumentStatusRepair      InstrumentStatus = "repair"
 	InstrumentStatusDec         InstrumentStatus = "decommissioning"
+	InstrumentStatusArchived    InstrumentStatus = "archived"
+	InstrumentStatusSaved       InstrumentStatus = "saved"
 	InstrumentStatusTransferred InstrumentStatus = "transferred"
 	InstrumentDeleted           InstrumentStatus = "deleted"
 	InstrumentDraft             InstrumentStatus = "draft"
@@ -15,7 +19,7 @@ type Instrument struct {
 	Id                        string           `json:"id" db:"id"`
 	Position                  int              `json:"position" db:"position"`
 	Name                      string           `json:"name" db:"name"`
-	DateOfReceipt             int64            `json:"dateOfReceipt" db:"date_of_receipt"`
+	DateOfReceipt             time.Time        `json:"dateOfReceipt" db:"date_of_receipt"`
 	Type                      string           `json:"type" db:"type"`
 	FactoryNumber             string           `json:"factoryNumber" db:"factory_number"`
 	MeasurementLimits         string           `json:"measurementLimits" db:"measurement_limits"`
@@ -50,9 +54,9 @@ type InstrumentDTO struct {
 	Id                        string           `json:"id" db:"id"`
 	SectionId                 string           `json:"sectionId" db:"section_id"`
 	UserId                    string           `json:"userId" db:"user_id"`
-	Position                  int              `json:"position" db:"position" binding:"required"`
+	Position                  int              `json:"position" db:"position"`
 	Name                      string           `json:"name" db:"name" binding:"required"`
-	DateOfReceipt             int64            `json:"dateOfReceipt" db:"date_of_receipt"`
+	DateOfReceipt             time.Time        `json:"dateOfReceipt" db:"date_of_receipt"`
 	Type                      string           `json:"type" db:"type"`
 	FactoryNumber             string           `json:"factoryNumber" db:"factory_number"`
 	MeasurementLimits         string           `json:"measurementLimits" db:"measurement_limits"`

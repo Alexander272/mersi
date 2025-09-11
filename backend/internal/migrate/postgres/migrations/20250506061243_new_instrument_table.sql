@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS public.instruments
     user_id uuid,
     position integer,
     name text COLLATE pg_catalog."default" NOT NULL,
-    date_of_receipt integer NOT NULL,
+    date_of_receipt timestamp with time zone NOT NULL,
     type text COLLATE pg_catalog."default" DEFAULT ''::text,
     factory_number text COLLATE pg_catalog."default" NOT NULL,
     measurement_limits text COLLATE pg_catalog."default" DEFAULT ''::text,

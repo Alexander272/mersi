@@ -10,12 +10,14 @@ import (
 )
 
 type TransferToSaveService struct {
-	repo repository.TransferToSave
+	repo       repository.TransferToSave
+	instrument Instrument
 }
 
-func NewTransferToSaveService(repo repository.TransferToSave) *TransferToSaveService {
+func NewTransferToSaveService(repo repository.TransferToSave, instrument Instrument) *TransferToSaveService {
 	return &TransferToSaveService{
-		repo: repo,
+		repo:       repo,
+		instrument: instrument,
 	}
 }
 
@@ -51,23 +53,41 @@ func (s *TransferToSaveService) Create(ctx context.Context, dto *models.Transfer
 	if err != nil && !errors.Is(err, models.ErrNoRows) {
 		return err
 	}
-	if candidate != nil && candidate.DateEnd > dto.DateStart {
+	// if candidate != nil && candidate.DateEnd > dto.DateStart {
+	if candidate != nil && candidate.DateEnd.After(dto.DateStart) {
 		return models.ErrNotValid
 	}
 
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create transfer to save. error: %w", err)
 	}
+
+	instrumentDTO := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatusSaved,
+	}
+	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (s *TransferToSaveService) Update(ctx context.Context, dto *models.TransferToSaveDTO) error {
-	if dto.DateEnd < dto.DateStart {
+	// if dto.DateEnd < dto.DateStart {
+	if dto.DateEnd.Before(dto.DateStart) {
 		return models.ErrNotValid
 	}
 
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update transfer to save. error: %w", err)
+	}
+
+	instrumentDTO := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatusWork,
+	}
+	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
+		return err
 	}
 	return nil
 }

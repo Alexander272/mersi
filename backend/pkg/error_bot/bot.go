@@ -52,8 +52,8 @@ func Send(c *gin.Context, e string, request interface{}) {
 
 	message := &Message{
 		Service: &Service{
-			Id:   "sia",
-			Name: "SI Accounting",
+			Id:   "mersi",
+			Name: "МЕРСИ",
 		},
 		Data: data,
 	}

@@ -10,12 +10,14 @@ import (
 )
 
 type PreservationService struct {
-	repo repository.Preservation
+	repo       repository.Preservation
+	instrument Instrument
 }
 
-func NewPreservationService(repo repository.Preservation) *PreservationService {
+func NewPreservationService(repo repository.Preservation, instrument Instrument) *PreservationService {
 	return &PreservationService{
-		repo: repo,
+		repo:       repo,
+		instrument: instrument,
 	}
 }
 
@@ -51,23 +53,41 @@ func (s *PreservationService) Create(ctx context.Context, dto *models.Preservati
 	if err != nil && !errors.Is(err, models.ErrNoRows) {
 		return err
 	}
-	if candidate != nil && candidate.DateEnd > dto.DateStart {
+	// if candidate != nil && candidate.DateEnd > dto.DateStart {
+	if candidate != nil && candidate.DateEnd.After(dto.DateStart) {
 		return models.ErrNotValid
 	}
 
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create preservation. error: %w", err)
 	}
+
+	instrumentDTO := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatusArchived,
+	}
+	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (s *PreservationService) Update(ctx context.Context, dto *models.PreservationDTO) error {
-	if dto.DateEnd < dto.DateStart {
+	// if dto.DateEnd < dto.DateStart {
+	if dto.DateEnd.Before(dto.DateStart) {
 		return models.ErrNotValid
 	}
 
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update preservation. error: %w", err)
+	}
+
+	instrumentDTO := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatusWork,
+	}
+	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
+		return err
 	}
 	return nil
 }

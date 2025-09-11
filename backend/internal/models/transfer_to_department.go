@@ -5,7 +5,7 @@ import "time"
 type TransferToDepartment struct {
 	Id           string    `json:"id" db:"id"`
 	InstrumentId string    `json:"instrumentId" db:"instrument_id"`
-	Date         int64     `json:"date" db:"date"`
+	Date         time.Time `json:"date" db:"date"`
 	Notes        string    `json:"notes" db:"notes"`
 	DocId        string    `json:"docId" db:"doc_id"`
 	DocName      string    `json:"docName" db:"doc_name"`
@@ -17,13 +17,13 @@ type GetTransferToDepDTO struct {
 }
 
 type TransferToDepartmentDTO struct {
-	Id           string `json:"id" db:"id"`
-	InstrumentId string `json:"instrumentId" db:"instrument_id"`
-	Date         int64  `json:"date" db:"date"`
-	Notes        string `json:"notes" db:"notes"`
-	DocId        string `json:"docId" db:"doc_id"`
-	DocName      string `json:"docName" db:"doc_name"`
-	UserId       string `json:"userId" db:"user_id"`
+	Id           string    `json:"id" db:"id"`
+	InstrumentId string    `json:"instrumentId" db:"instrument_id"`
+	Date         time.Time `json:"date" db:"date"`
+	Notes        string    `json:"notes" db:"notes"`
+	DocId        string    `json:"docId" db:"doc_id"`
+	DocName      string    `json:"docName" db:"doc_name"`
+	UserId       string    `json:"userId" db:"user_id"`
 }
 
 type DeleteTransferToDepDTO struct {

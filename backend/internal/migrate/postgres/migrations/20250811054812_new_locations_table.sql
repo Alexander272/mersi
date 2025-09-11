@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS public.locations
 (
     id uuid NOT NULL,
     instrument_id uuid NOT NULL,
-    date_of_receiving integer DEFAULT 0,
-    date_of_issue integer DEFAULT 0,
+    date_of_receiving timestamp with time zone DEFAULT '0001-01-01'::DATE,
+    date_of_issue timestamp with time zone DEFAULT '0001-01-01'::DATE,
     status text COLLATE pg_catalog."default" NOT NULL,
     has_confirmed boolean DEFAULT false,
     need_confirmed boolean DEFAULT false,

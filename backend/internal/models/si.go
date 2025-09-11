@@ -1,10 +1,12 @@
 package models
 
+import "time"
+
 type SI struct {
 	Id                        string           `json:"id" db:"id"`
 	Position                  int              `json:"position" db:"position"`
 	Name                      string           `json:"name" db:"name"`
-	DateOfReceipt             int64            `json:"dateOfReceipt" db:"date_of_receipt"`
+	DateOfReceipt             time.Time        `json:"dateOfReceipt" db:"date_of_receipt"`
 	Type                      string           `json:"type" db:"type"`
 	FactoryNumber             string           `json:"factoryNumber" db:"factory_number"`
 	MeasurementLimits         string           `json:"measurementLimits" db:"measurement_limits"`
@@ -19,15 +21,15 @@ type SI struct {
 	ActOfEntering             string           `json:"actOfEntering" db:"act_of_entering"`
 	ActOfEnteringId           string           `json:"actOfEnteringId" db:"act_of_entering_id"`
 	Notes                     string           `json:"notes" db:"notes"`
-	VerificationDate          int64            `json:"verificationDate" db:"date"`
-	NextVerificationDate      int64            `json:"nextVerificationDate" db:"next_date"`
+	VerificationDate          time.Time        `json:"verificationDate" db:"date"`
+	NextVerificationDate      time.Time        `json:"nextVerificationDate" db:"next_date"`
 	Certificate               string           `json:"certificate" db:"certificate"`
 	CertificateId             string           `json:"certificateId" db:"certificate_id"`
 	RepairInfo                string           `json:"repairInfo" db:"repair"`
-	PreservationDate          int64            `json:"preservationDate" db:"preservation"`
-	DePreservationDate        int64            `json:"dePreservationDate" db:"de_preservation"`
-	TransferDate              int64            `json:"transferDate" db:"transfer_date"`
-	ReturnDate                int64            `json:"returnDate" db:"return_date"`
+	PreservationDate          time.Time        `json:"preservationDate" db:"preservation"`
+	DePreservationDate        time.Time        `json:"dePreservationDate" db:"de_preservation"`
+	TransferDate              time.Time        `json:"transferDate" db:"transfer_date"`
+	ReturnDate                time.Time        `json:"returnDate" db:"return_date"`
 	TransferToDepartment      string           `json:"transferToDepartment" db:"transfer_to_dep"`
 	WriteOff                  string           `json:"writeOff" db:"write_off"`
 	Person                    string           `json:"person" db:"person"`

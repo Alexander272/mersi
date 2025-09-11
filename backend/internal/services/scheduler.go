@@ -117,13 +117,11 @@ func (s *SchedulerService) job() {
 	if err := s.user.Sync(context.Background()); err != nil {
 		logger.Error("user sync error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
-		return
 	}
 
 	// Удаление пустых папок
 	if err := s.documents.RemoveEmptyFolders(context.Background()); err != nil {
 		logger.Error("delete empty folders error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
-		return
 	}
 }

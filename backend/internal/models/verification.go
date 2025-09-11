@@ -1,10 +1,12 @@
 package models
 
+import "time"
+
 type Verification struct {
 	Id           string             `json:"id" db:"id"`
 	InstrumentId string             `json:"instrumentId" db:"instrument_id"`
-	Date         int64              `json:"verificationDate" db:"date"`
-	NextDate     int64              `json:"nextVerificationDate" db:"next_date"`
+	Date         time.Time          `json:"verificationDate" db:"date"`
+	NextDate     time.Time          `json:"nextVerificationDate" db:"next_date"`
 	RegisterLink string             `json:"registerLink" db:"register_link"`
 	NotVerified  bool               `json:"notVerified" db:"not_verified"`
 	Notes        string             `json:"notes" db:"notes"`
@@ -20,8 +22,8 @@ type VerificationDTO struct {
 	Id           string                `json:"id" db:"id"`
 	InstrumentId string                `json:"instrumentId" db:"instrument_id"`
 	UserId       string                `json:"userId" db:"user_id"`
-	Date         int64                 `json:"verificationDate" db:"date"`
-	NextDate     int64                 `json:"nextVerificationDate" db:"next_date"`
+	Date         time.Time             `json:"verificationDate" db:"date"`
+	NextDate     time.Time             `json:"nextVerificationDate" db:"next_date"`
 	RegisterLink string                `json:"registerLink" db:"register_link"`
 	NotVerified  bool                  `json:"notVerified" db:"not_verified"`
 	Notes        string                `json:"notes" db:"notes"`

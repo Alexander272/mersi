@@ -1,20 +1,22 @@
 package models
 
+import "time"
+
 type Location struct {
 	Id           string `json:"id" db:"id"`
 	InstrumentId string `json:"instrumentId" db:"instrument_id"`
 	Person       string `json:"person" db:"person"`
 	// Department      string `json:"department" db:"department"`
-	Place           string `json:"place" db:"place"`
-	PersonId        string `json:"personId" db:"person_id"`
-	DepartmentId    string `json:"departmentId" db:"department_id"`
-	DateOfIssue     int64  `json:"dateOfIssue" db:"date_of_issue"`
-	DateOfReceiving int64  `json:"dateOfReceiving" db:"date_of_receiving"`
-	NeedConfirm     bool   `json:"needConfirm" db:"need_confirmed"`
-	HasConfirmed    bool   `json:"hasConfirmed" db:"has_confirmed"`
-	LastPlace       string `json:"lastPlace" db:"last_place"`
-	LastPlaceId     string `json:"lastPlaceId" db:"last_place_id"`
-	Status          string `json:"status" db:"status"`
+	Place           string    `json:"place" db:"place"`
+	PersonId        string    `json:"personId" db:"person_id"`
+	DepartmentId    string    `json:"departmentId" db:"department_id"`
+	DateOfIssue     time.Time `json:"dateOfIssue" db:"date_of_issue"`
+	DateOfReceiving time.Time `json:"dateOfReceiving" db:"date_of_receiving"`
+	NeedConfirm     bool      `json:"needConfirm" db:"need_confirmed"`
+	HasConfirmed    bool      `json:"hasConfirmed" db:"has_confirmed"`
+	LastPlace       string    `json:"lastPlace" db:"last_place"`
+	LastPlaceId     string    `json:"lastPlaceId" db:"last_place_id"`
+	Status          string    `json:"status" db:"status"`
 }
 
 type GetLocationDTO struct {
@@ -39,11 +41,11 @@ type LocationDTO struct {
 	DepartmentId string `json:"department" db:"department_id"`
 	// ReceiptDate     string `json:"receiptDate" db:"receipt_date"`
 	// DeliveryDate    string `json:"deliveryDate" db:"delivery_date"`
-	DateOfIssue     int64  `json:"dateOfIssue" db:"date_of_issue" binding:"required,gte=1000000"`
-	DateOfReceiving int64  `json:"dateOfReceiving" db:"date_of_receiving" binding:"gte=0"`
-	NeedConfirm     bool   `json:"needConfirm" db:"need_confirmed"`
-	Status          string `json:"status" db:"status"`
-	UserId          string `json:"userId" db:"user_id"`
+	DateOfIssue     time.Time `json:"dateOfIssue" db:"date_of_issue" binding:"required,gte=1000000"`
+	DateOfReceiving time.Time `json:"dateOfReceiving" db:"date_of_receiving" binding:"gte=0"`
+	NeedConfirm     bool      `json:"needConfirm" db:"need_confirmed"`
+	Status          string    `json:"status" db:"status"`
+	UserId          string    `json:"userId" db:"user_id"`
 }
 
 type DeleteLocationDTO struct {

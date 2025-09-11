@@ -283,11 +283,11 @@ func (r *LocationRepo) SetDepartment(ctx context.Context, id string) error {
 
 func (r *LocationRepo) Receiving(ctx context.Context, dto *models.ReceivingDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET status=$1, date_of_receiving=$2, has_confirmed=$3 
-		WHERE ARRAY[instrument_id] <@ $4 AND date_of_receiving=0`,
+		WHERE ARRAY[instrument_id] <@ $4 AND date_of_receiving='0001-01-01'::DATE`,
 		LocationTable,
 	)
 
-	_, err := r.db.ExecContext(ctx, query, dto.Status, time.Now().Unix(), dto.HasConfirmed, pq.Array(dto.InstrumentIds))
+	_, err := r.db.ExecContext(ctx, query, dto.Status, time.Now(), dto.HasConfirmed, pq.Array(dto.InstrumentIds))
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
@@ -296,11 +296,11 @@ func (r *LocationRepo) Receiving(ctx context.Context, dto *models.ReceivingDTO) 
 
 func (r *LocationRepo) ForcedReceipt(ctx context.Context, dto *models.ForcedReceiptDTO) error {
 	query := fmt.Sprintf(`UPDATE %s AS m SET date_of_receiving=$1, status='used' 
-		WHERE instrument_id=$2 AND date_of_receiving=0`,
+		WHERE instrument_id=$2 AND date_of_receiving='0001-01-01'::DATE`,
 		LocationTable,
 	)
 
-	_, err := r.db.ExecContext(ctx, query, time.Now().Unix(), dto.InstrumentId)
+	_, err := r.db.ExecContext(ctx, query, time.Now(), dto.InstrumentId)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
@@ -310,13 +310,13 @@ func (r *LocationRepo) ForcedReceipt(ctx context.Context, dto *models.ForcedRece
 func (r *LocationRepo) ForcedReceiptAll(ctx context.Context) error {
 	query := fmt.Sprintf(`UPDATE %s AS m SET date_of_receiving=$1, status=(
 			SELECT CASE WHEN status='used' THEN 'reserve' ELSE 'used' END FROM %s
-			WHERE instrument_id=m.instrument_id AND date_of_receiving!=0 ORDER BY date_of_issue DESC LIMIT 1
-		) WHERE date_of_receiving=0 AND date_of_issue < $2`,
+			WHERE instrument_id=m.instrument_id AND date_of_receiving!='0001-01-01'::DATE ORDER BY date_of_issue DESC LIMIT 1
+		) WHERE date_of_receiving='0001-01-01'::DATE AND date_of_issue < $2`,
 		LocationTable, LocationTable,
 	)
 
-	limit := time.Now().Add(-time.Hour * 24 * 20).Unix() //20 days ago
-	_, err := r.db.ExecContext(ctx, query, time.Now().Unix(), limit)
+	limit := time.Now().Add(-time.Hour * 24 * 20) //20 days ago
+	_, err := r.db.ExecContext(ctx, query, time.Now(), limit)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}

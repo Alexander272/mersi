@@ -1,9 +1,9 @@
 package export
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -82,8 +82,10 @@ func (h *Handler) makeScheduler(c *gin.Context) {
 		return
 	}
 
-	start, errStart := strconv.ParseInt(period["gte"], 10, 64)
-	end, errEnd := strconv.ParseInt(period["lte"], 10, 64)
+	// start, errStart := strconv.ParseInt(period["gte"], 10, 64)
+	// end, errEnd := strconv.ParseInt(period["lte"], 10, 64)
+	start, errStart := time.Parse(time.RFC3339, period["gte"])
+	end, errEnd := time.Parse(time.RFC3339, period["lte"])
 	if errStart != nil || errEnd != nil {
 		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Период не задан")
 		return
@@ -97,6 +99,11 @@ func (h *Handler) makeScheduler(c *gin.Context) {
 
 	buffer, err := h.service.MakeScheduler(c, req)
 	if err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "В заданном периоде ничего не найдено")
+			return
+		}
+
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), req)
 		return

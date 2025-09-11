@@ -36,6 +36,8 @@ func (s *RepairService) Get(ctx context.Context, req *models.GetRepairDTO) ([]*m
 }
 
 func (s *RepairService) Create(ctx context.Context, dto *models.RepairDTO) error {
+	//TODO надо дать возможность частичного создания (только с датой начала ремонта и перемещать инструмент в группу "в ремонте")
+
 	if err := s.repo.Create(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create repair info. error: %w", err)
 	}

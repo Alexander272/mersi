@@ -120,20 +120,21 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 
 	params = append(params, req.Page.Limit, req.Page.Offset)
 
+	//TODO проверить
 	query := fmt.Sprintf(`SELECT i.id, position, name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register, 
 		COALESCE(l.status, 'used') AS status, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
 		act_of_entering, act_of_entering_id, notes,
-		COALESCE(v.date, 0) AS date, COALESCE(v.next_date, 0) AS next_date,
+		COALESCE(v.date, '0001-01-01'::DATE) AS date, COALESCE(v.next_date, '0001-01-01'::DATE) AS next_date,
 		COALESCE(cert, '') AS certificate, COALESCE(cert_id, '') AS certificate_id, COALESCE(repair, '') AS repair,
-		COALESCE(p.date_start, 0) AS preservation, COALESCE(p.date_end, 0) AS de_preservation,
-		COALESCE(ts.date_start, 0) AS transfer_date, COALESCE(ts.date_end, 0) AS return_date, 
+		COALESCE(p.date_start, '0001-01-01'::DATE) AS preservation, COALESCE(p.date_end, '0001-01-01'::DATE) AS de_preservation,
+		COALESCE(ts.date_start, '0001-01-01'::DATE) AS transfer_date, COALESCE(ts.date_end, '0001-01-01'::DATE) AS return_date, 
 		COALESCE(td.doc_name, '') AS transfer_to_dep, COALESCE(wo.doc_name, '') AS write_off,
 		COALESCE(person,'') AS person, COALESCE(place, '') AS place, COALESCE(l.last_place, '') AS last_place,
 		COUNT(*) OVER() AS total
 		FROM %s AS i
 		LEFT JOIN LATERAL (SELECT id, date, next_date FROM %s WHERE instrument_id=i.id ORDER BY date DESC, created_at DESC LIMIT 1) AS v ON TRUE
 		LEFT JOIN LATERAL (SELECT name AS cert, doc_id::text AS cert_id FROM %s WHERE verification_id=v.id) AS d ON TRUE
-		LEFT JOIN LATERAL (SELECT date_part('year', to_timestamp(period_end)) || ' (' || work || ')' AS repair FROM %s 
+		LEFT JOIN LATERAL (SELECT date_part('year', period_end) || ' (' || work || ')' AS repair FROM %s 
 			WHERE instrument_id=i.id ORDER BY period_end DESC LIMIT 1) AS r ON TRUE
 		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS p ON TRUE
 		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS ts ON TRUE
@@ -169,14 +170,15 @@ func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*mo
 		LEFT JOIN %s AS r ON r.id=realm_id
 		LEFT JOIN LATERAL (SELECT date, next_date FROM %s WHERE instrument_id=i.id ORDER BY date DESC, created_at DESC LIMIT 1) AS v ON TRUE
 		LEFT JOIN LATERAL (SELECT date AS write_off FROM %s WHERE instrument_id=i.id) AS w ON TRUE
-		LEFT JOIN LATERAL (SELECT date_start AS preservation FROM %s WHERE instrument_id=i.id AND date_end=0) AS p ON TRUE 
-		LEFT JOIN LATERAL (SELECT date_start AS transferred FROM %s WHERE instrument_id=i.id AND date_end=0) AS t ON TRUE
+		LEFT JOIN LATERAL (SELECT date_start AS preservation FROM %s WHERE instrument_id=i.id AND date_end='0001-01-01'::DATE) AS p ON TRUE 
+		LEFT JOIN LATERAL (SELECT date_start AS transferred FROM %s WHERE instrument_id=i.id AND date_end='0001-01-01'::DATE) AS t ON TRUE
  		WHERE next_date>=$1 AND next_date<=$2 AND (CASE WHEN $3!='' THEN section_id::text=$3 ELSE true END) AND 
 		is_active=true AND expiration_notice=true AND notification_channel!='' AND 
 		deleted IS NULL AND write_off IS NULL AND preservation IS NULL AND transferred IS NULL
 		ORDER BY notification_channel, i.position`,
 		InstrumentsTable, SectionTable, RealmTable, VerificationTable, WriteOffTable, PreservationTable, TransferToSaveTable,
 	)
+	//TODO проверить
 
 	tmp := []*pq_models.SI{}
 	if err := r.db.SelectContext(ctx, &tmp, query, req.StartAt, req.FinishAt, req.SectionId); err != nil {

@@ -127,14 +127,17 @@ func (s *FileService) Export(ctx context.Context, dto *models.ExportDTO) (buffer
 			value := data.FieldByName(field)
 
 			if value.IsValid() {
-				if value.Kind() == reflect.Int64 && c.Type == "date" {
-					newValue := value.Int()
-					if newValue == 0 {
+				if value.Kind() == reflect.Struct && c.Type == "date" {
+					newValue, ok := value.Interface().(time.Time)
+					if !ok {
+						return nil, fmt.Errorf("failed to convert value to time.Time")
+					}
+					if newValue.IsZero() {
 						values = append(values, "")
 						continue
 					}
 
-					date := time.Unix(newValue, 0).Format(constants.DateFormat)
+					date := newValue.Format(constants.DateFormat)
 					values = append(values, date)
 					continue
 				}
@@ -223,13 +226,13 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.
 	switch dto.BidType {
 	case "ointo_si":
 		columnNames = []string{
-			"№ п/п", "Наименование", "Заводской номер", "Производитель", "Метрологические характеристики СИ", "Периодичность поверки",
-			"Дата последней поверки", "Дата следующей поверки", "Примечание",
+			"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал поверки, мес.",
+			"Дата последней поверки", "Дата следующей поверки", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
 		}
 	case "ointo_eq":
 		columnNames = []string{
-			"№ п/п", "Наименование", "Заводской номер", "Производитель", "Периодичность аттестации",
-			"Дата последней аттестации", "Дата следующей аттестации", "Примечание",
+			"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал аттестации, мес.",
+			"Дата последней аттестации", "Дата следующей аттестации", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
 		}
 	default:
 		columnNames = []string{
@@ -247,7 +250,7 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.
 		return nil, fmt.Errorf("failed to get column name. error: %w", err)
 	}
 
-	if err := file.SetColWidth(sheetName, "A", endColumn, 25); err != nil {
+	if err := file.SetColWidth(sheetName, "A", endColumn, 20); err != nil {
 		return nil, fmt.Errorf("failed to set column width. error: %w", err)
 	}
 	if err = file.SetCellStyle(sheetName, "A1", endColumn+"1", headerStyle); err != nil {
@@ -256,21 +259,29 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.
 
 	for i, d := range dto.SI {
 		values := make([]interface{}, 0, len(columnNames))
-		date := time.Unix(d.VerificationDate, 0).Format(constants.DateFormat)
-		nextDate := time.Unix(d.NextVerificationDate, 0).Format(constants.DateFormat)
+		date := d.VerificationDate.Format(constants.ShortDateFormat)
+		nextDate := d.NextVerificationDate.Format(constants.ShortDateFormat)
+		// monthArray := make([]string, 12)
+		// monthArray[int(d.NextVerificationDate.Month())-1] = "⨯"
 
 		switch dto.BidType {
 		case "ointo_si":
 			values = []interface{}{
-				i + 1, d.Name, d.FactoryNumber, d.Manufacturer, d.MeasurementLimits, d.InterVerificationInterval,
-				date, nextDate, d.Notes,
+				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
 			}
+			num := len(values)
+			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
+			values[num+int(d.NextVerificationDate.Month())-1] = "*"
 		case "ointo_eq":
 			values = []interface{}{
-				i + 1, d.Name, d.FactoryNumber, d.Manufacturer, d.InterVerificationInterval,
-				date, nextDate, d.Notes,
+				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
 			}
+			num := len(values)
+			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
+			values[num+int(d.NextVerificationDate.Month())-1] = "*"
 		default:
+			date := d.VerificationDate.Format(constants.DateFormat)
+			nextDate := d.NextVerificationDate.Format(constants.DateFormat)
 			values = []interface{}{
 				i + 1, d.Name, d.FactoryNumber, d.MeasurementLimits, d.InterVerificationInterval,
 				date, nextDate, d.Notes,
@@ -283,6 +294,10 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.
 		if err = file.SetCellStyle(sheetName, fmt.Sprintf("A%d", i+2), fmt.Sprintf("%s%d", endColumn, i+2), mainStyle); err != nil {
 			return nil, fmt.Errorf("failed to set style. error: %w", err)
 		}
+
+		// if dto.BidType == "ointo_si" || dto.BidType == "ointo_eq" {
+		// 	// file.SetCellFormula()
+		// }
 	}
 
 	buffer, err := file.WriteToBuffer()
