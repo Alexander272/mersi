@@ -23,6 +23,22 @@ const repairApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
+		getLastRepair: builder.query<{ data: IRepair }, string>({
+			query: instrument => ({
+				url: `${API.si.repair}/last`,
+				params: new URLSearchParams({ instrument }),
+			}),
+			providesTags: [{ type: 'SI', id: 'Repair' }],
+			onQueryStarted: async (_arg, api) => {
+				try {
+					await api.queryFulfilled
+				} catch (error) {
+					const fetchError = (error as IBaseFetchError).error
+					if (fetchError.status == 404) return
+					toast.error(fetchError.data.message, { autoClose: false })
+				}
+			},
+		}),
 
 		createRepair: builder.mutation<null, IRepairDTO>({
 			query: body => ({
@@ -35,7 +51,19 @@ const repairApiSlice = apiSlice.injectEndpoints({
 				{ type: 'SI', id: 'ALL' },
 			],
 		}),
+		updateRepair: builder.mutation<null, IRepairDTO>({
+			query: body => ({
+				url: `${API.si.repair}/${body.id}`,
+				method: 'PUT',
+				body,
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'Repair' },
+				{ type: 'SI', id: 'ALL' },
+			],
+		}),
 	}),
 })
 
-export const { useGetRepairQuery, useCreateRepairMutation } = repairApiSlice
+export const { useGetRepairQuery, useGetLastRepairQuery, useCreateRepairMutation, useUpdateRepairMutation } =
+	repairApiSlice

@@ -101,11 +101,13 @@ const FilterItem: FC<FilterItemProps> = ({ index, remove }) => {
 							label={'Колонка'}
 							error={Boolean(error)}
 						>
-							{data?.data.map(c => (
-								<MenuItem key={c.field} value={`${c.field}@${c.type}`}>
-									{c.name}
-								</MenuItem>
-							))}
+							{data?.data
+								.filter(c => c.allowFilter)
+								.map(c => (
+									<MenuItem key={c.field} value={`${c.field}@${c.type}`}>
+										{c.name}
+									</MenuItem>
+								))}
 						</Select>
 					</FormControl>
 				)}

@@ -55,7 +55,7 @@ export const Inputs = () => {
 					render={({ field, fieldState: { error } }) => (
 						<DatePicker
 							{...field}
-							value={dayjs(field.value)}
+							value={field.value ? dayjs(field.value) : null}
 							onChange={value => field.onChange(value?.startOf('d').toISOString())}
 							label={'Конец ремонта'}
 							showDaysOutsideCurrentMonth

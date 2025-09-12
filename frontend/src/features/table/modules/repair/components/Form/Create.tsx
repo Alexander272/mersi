@@ -1,4 +1,4 @@
-import { FC, useRef, useState } from 'react'
+import { FC, useEffect, useRef, useState } from 'react'
 import { Button, Divider, IconButton, Stack, Typography, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
@@ -6,9 +6,10 @@ import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { IRepairDTO } from '../../types/repair'
+import { NullDate } from '@/constants/defaultValues'
 import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
-import { useCreateRepairMutation } from '../../repairApiSlice'
+import { useCreateRepairMutation, useGetLastRepairQuery, useUpdateRepairMutation } from '../../repairApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
@@ -28,11 +29,21 @@ export const Create: FC<Props> = ({ ids }) => {
 	const { data, isFetching } = useGetInstrumentByIdQuery(ids?.length ? ids[active] : '', {
 		skip: !ids?.length || !ids[active],
 	})
+	const { data: last, isFetching: isFetchingLast } = useGetLastRepairQuery(ids?.length ? ids[active] : '', {
+		skip: !ids?.length || !ids[active],
+	})
 	const [create, { isLoading }] = useCreateRepairMutation()
+	const [update, { isLoading: isUpdating }] = useUpdateRepairMutation()
 
 	const methods = useForm<IRepairDTO>({
-		defaultValues: { periodStart: dayjs().toISOString(), periodEnd: dayjs().toISOString() },
+		defaultValues: { periodStart: dayjs().toISOString() },
 	})
+
+	useEffect(() => {
+		if (last?.data.periodStart != NullDate && last?.data.periodEnd == NullDate) {
+			methods.reset({ ...last.data, periodEnd: dayjs().toISOString() })
+		}
+	}, [last?.data, methods])
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'AddRepair', isOpen: false }))
@@ -48,7 +59,12 @@ export const Create: FC<Props> = ({ ids }) => {
 
 		form.instrumentId = ids[active]
 		try {
-			await create(form).unwrap()
+			if (!last?.data || last?.data.periodEnd != NullDate) {
+				await create(form).unwrap()
+			} else {
+				form.id = last.data.id
+				await update(form).unwrap()
+			}
 			toast.success('Данные о ремонте добавлены')
 			savedIds.current.add(ids[active])
 			setActive(prev => prev + 1)
@@ -59,12 +75,10 @@ export const Create: FC<Props> = ({ ids }) => {
 		}
 	})
 
-	//TODO надо дать возможность частичного создания (только с датой начала ремонта и перемещать инструмент в группу "в ремонте")
-	// а при попытке добавить сведения если есть частичные данные показывать их и обновлять
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
 	return (
 		<Stack position={'relative'} mt={-2}>
-			{isFetching || isLoading ? <BoxFallback /> : null}
+			{isFetching || isFetchingLast || isLoading || isUpdating ? <BoxFallback /> : null}
 
 			<Stack spacing={2} direction={'row'} paddingX={3}>
 				{ids.length > 1 && (

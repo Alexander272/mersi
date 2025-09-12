@@ -30,4 +30,7 @@ export const PermRules = Object.freeze({
 		Read: 'realms:read' as const,
 		Write: 'realms:write' as const,
 	},
+	Import: {
+		Write: 'import:write' as const,
+	},
 })

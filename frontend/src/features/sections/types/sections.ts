@@ -10,6 +10,7 @@ export interface ISection {
 	realmId: string
 	name: string
 	position: number
+	bidType: string
 	created: Date
 }
 

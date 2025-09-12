@@ -34,7 +34,7 @@ export const Repair: FC<Props> = ({ instrumentId }) => {
 
 				<TableBody>
 					{data?.data.map(item => (
-						<TableRow key={item.id} height={38}>
+						<TableRow key={item.id} sx={{ minHeight: 38, cursor: 'default' }}>
 							<TableCell width={288}>{Formatter('text', item.defect)}</TableCell>
 							<TableCell width={288}>{Formatter('text', item.work)}</TableCell>
 							<TableCell width={288}>{`${Formatter('date', item.periodStart)} - ${Formatter(
@@ -44,6 +44,26 @@ export const Repair: FC<Props> = ({ instrumentId }) => {
 							<TableCell width={288}>{Formatter('text', item.description)}</TableCell>
 						</TableRow>
 					))}
+
+					{/* <TableRow key={item.id}>
+							<TableCell width={288}>
+								<CellText value={Formatter('text', item.defect)} />
+							</TableCell>
+							<TableCell width={288}>
+								<CellText value={Formatter('text', item.work)} />
+							</TableCell>
+							<TableCell width={288}>
+								<CellText
+									value={`${Formatter('date', item.periodStart)} - ${Formatter(
+										'date',
+										item.periodEnd
+									)}`}
+								/>
+							</TableCell>
+							<TableCell width={288}>
+								<CellText value={Formatter('text', item.description)} />
+							</TableCell>
+						</TableRow> */}
 				</TableBody>
 			</Box>
 		</Table>

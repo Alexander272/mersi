@@ -5,4 +5,5 @@ export const AppRoutes = Object.freeze({
 	Employees: '/employees' as const,
 	Places: '/places' as const,
 	Sections: '/sections' as const,
+	Import: '/import' as const,
 })

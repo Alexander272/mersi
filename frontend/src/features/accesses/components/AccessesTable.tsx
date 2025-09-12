@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 import {
 	Button,
 	Stack,
@@ -15,13 +15,13 @@ import { toast } from 'react-toastify'
 import type { IFetchError } from '@/app/types/error'
 import type { IAccesses } from '../types/accesses'
 import { useAppDispatch } from '@/hooks/redux'
+import { useDeleteAccessMutation, useGetAccessesQuery } from '../accessesApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { Confirm } from '@/components/Confirm/Confirm'
 import { Fallback } from '@/components/Fallback/Fallback'
 import { CloseIcon } from '@/components/Icons/CloseIcon'
 import { EditIcon } from '@/components/Icons/EditIcon'
 import { AccessDialog } from './AccessDialog'
-import { useDeleteAccessMutation, useGetAccessesQuery } from '../accessesApiSlice'
 
 type Props = {
 	realm: string

@@ -33,7 +33,7 @@ export const Preservation: FC<Props> = ({ instrumentId }) => {
 
 				<TableBody>
 					{data?.data.map(item => (
-						<TableRow key={item.id} height={38}>
+						<TableRow key={item.id} sx={{ minHeight: 38, cursor: 'default' }}>
 							<TableCell width={300}>
 								{Formatter('date', item.dateStart)} / {Formatter('date', item.dateEnd)}
 							</TableCell>
