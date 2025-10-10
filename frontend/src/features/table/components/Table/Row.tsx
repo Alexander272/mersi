@@ -55,6 +55,8 @@ export const Row: FC<Props> = ({ item, sx }) => {
 		dispatch(setContextMenu(menu))
 	}
 
+	// TODO выделять другим цветом инструменты что сданы в поверку
+
 	const getStyles = () => {
 		const styles = { background: '' }
 		if (status != 'work' && !selected[item.id] && contextMenu?.active != item.id) return styles

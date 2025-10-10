@@ -27,6 +27,7 @@ import { Fallback } from '@/components/Fallback/Fallback'
 import { SaveIcon } from '@/components/Icons/SaveIcon'
 import { Confirm } from '@/components/Confirm/Confirm'
 import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
+import { useGetRealmsQuery } from '@/features/realms/realmsApiSlice'
 
 type Props = {
 	section: string
@@ -35,15 +36,19 @@ type Props = {
 
 type Form = Omit<ISection, 'id' | 'created'>
 
+// TODO
 const defaultValues: Form = {
 	name: '',
 	realmId: '',
 	position: 1,
+	bidType: '',
+	verificationDay: 5,
 }
 
 export const Form: FC<Props> = ({ section, setSection }) => {
 	const { palette } = useTheme()
 
+	const { data: realms } = useGetRealmsQuery({ all: true })
 	const { data, isFetching } = useGetGroupedSectionsQuery(null)
 
 	const [create, { isLoading: isCreating }] = useCreateSectionMutation()
@@ -82,7 +87,12 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 			if (section == 'new') form.position = position + 1
 		}
 
-		const newData = { ...form, id: section || '', maxPosition: form.position }
+		const newData = {
+			...form,
+			id: section || '',
+			maxPosition: form.position,
+			verificationDay: +form.verificationDay,
+		}
 		try {
 			if (section == 'new') {
 				const payload = await create(newData).unwrap()
@@ -137,15 +147,30 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 									Выберите область
 								</MenuItem>
 
-								{data?.data.map(item => (
+								{realms?.data.map(item => (
 									<MenuItem key={item.id} value={item.id}>
-										{item.title}
+										{item.name}
 									</MenuItem>
 								))}
 							</Select>
 						)}
 					/>
 				</FormControl>
+			</Stack>
+			<Stack direction={'row'} flexGrow={1} spacing={2} mb={2}>
+				<Controller
+					control={control}
+					name={'bidType'}
+					render={({ field }) => <TextField {...field} label={'Тип'} fullWidth />}
+				/>
+
+				<Controller
+					control={control}
+					name={'verificationDay'}
+					render={({ field }) => (
+						<TextField {...field} label={'День месяца для уведомлений о поверке'} fullWidth />
+					)}
+				/>
 			</Stack>
 
 			<Stack direction={'row'} flexGrow={1} spacing={2} mb={2} alignItems={'center'}>

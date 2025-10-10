@@ -11,6 +11,7 @@ export interface ISection {
 	name: string
 	position: number
 	bidType: string
+	verificationDay: number
 	created: Date
 }
 
@@ -19,5 +20,7 @@ export interface ISectionDTO {
 	name: string
 	position: number
 	maxPosition: number
+	bidType: string
+	verificationDay: number
 	realmId: string
 }

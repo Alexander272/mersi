@@ -2,6 +2,7 @@ import { FC, useEffect } from 'react'
 import { Autocomplete, TextField } from '@mui/material'
 import { Controller, RegisterOptions, useFormContext } from 'react-hook-form'
 
+import type { IEmployee } from '@/features/employees/types/employee'
 import type { ILocationForm } from '../../../types/location'
 import { useGetEmployeesQuery } from '@/features/employees/employeesApiSlice'
 
@@ -31,14 +32,14 @@ export const EmployeeList: FC<Props> = ({ label, name, rules, disabled }) => {
 			disabled={disabled}
 			render={({ field, fieldState: { error } }) => (
 				<Autocomplete
-					value={data?.data.find(d => d.id == field.value) || ''}
+					value={data?.data.find(d => d.id == field.value) || ({ name: '', id: '' } as IEmployee)}
 					onChange={(_event, value) => {
 						field.onChange(typeof value == 'string' ? value : value.id)
 					}}
 					options={data?.data || []}
 					loading={isFetching}
 					getOptionLabel={option => (typeof option === 'string' ? option : option.name)}
-					freeSolo
+					// freeSolo
 					disableClearable
 					noOptionsText='Ничего не найдено'
 					loadingText='Загрузка...'

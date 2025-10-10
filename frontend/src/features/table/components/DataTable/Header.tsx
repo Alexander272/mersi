@@ -1,4 +1,4 @@
-import { Button, Stack, useTheme } from '@mui/material'
+import { Button, Divider, Stack, useTheme } from '@mui/material'
 
 import { PermRules } from '@/constants/permissions'
 import { useAppDispatch } from '@/hooks/redux'
@@ -24,14 +24,15 @@ export const Header = () => {
 
 	return (
 		<Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'} mt={1} mb={0.5} mx={2}>
-			<Stack direction={'row'} spacing={1} sx={{ mr: 1 }}>
+			<Stack direction={'row'} sx={{ mr: 1 }}>
 				<ActiveSection />
 
 				{useCheckPermission(PermRules.SI.Write) ? (
 					<>
 						<Status />
+						<Divider orientation='vertical' flexItem />
 
-						<Button onClick={createHandler} variant='outlined'>
+						<Button onClick={createHandler} sx={{ textTransform: 'inherit', ml: 0.5, p: '6px 12px' }}>
 							<PlusIcon fontSize={12} mr={1} fill={palette.primary.main} /> Добавить
 						</Button>
 					</>
@@ -40,7 +41,7 @@ export const Header = () => {
 
 			<Search />
 
-			<Stack direction={'row'} spacing={2}>
+			<Stack direction={'row'} spacing={{ xl: 2, lg: 1 }} sx={{ ml: 1 }}>
 				<Setting />
 				<FastSelect />
 				<Filters />

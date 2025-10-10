@@ -34,6 +34,7 @@ export const ActiveSection = () => {
 			value={section?.id || ''}
 			onChange={changeHandler}
 			disabled={isFetching}
+			// IconComponent={(data?.data.length || 0) > 1 ? ExpandMoreIcon : 'span'}
 			sx={{
 				color: palette.primary.main,
 				fontSize: '1.2rem',
@@ -46,6 +47,7 @@ export const ActiveSection = () => {
 					border: 0,
 				},
 				'.MuiOutlinedInput-input': { padding: '6.5px 10px' },
+				'& .MuiSvgIcon-root': { display: (data?.data.length || 0) < 2 ? 'none' : 'inherit' },
 			}}
 		>
 			<MenuItem value='' disabled>

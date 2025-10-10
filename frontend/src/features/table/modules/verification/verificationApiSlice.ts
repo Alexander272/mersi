@@ -53,6 +53,7 @@ const verificationApiSlice = apiSlice.injectEndpoints({
 					await api.queryFulfilled
 				} catch (error) {
 					const fetchError = (error as IBaseFetchError).error
+					if (fetchError.status == HttpCodes.NOT_FOUND) return
 					toast.error(fetchError.data.message, { autoClose: false })
 				}
 			},

@@ -31,7 +31,7 @@ const importApiSlice = apiSlice.injectEndpoints({
 
 				return { data: result.data as { message: string } }
 			},
-			invalidatesTags: ['SI'],
+			invalidatesTags: ['SI', 'Instrument'],
 		}),
 	}),
 })
