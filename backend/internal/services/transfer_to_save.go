@@ -72,6 +72,17 @@ func (s *TransferToSaveService) Create(ctx context.Context, dto *models.Transfer
 	return nil
 }
 
+func (s *TransferToSaveService) CreateSeveral(ctx context.Context, dto []*models.TransferToSaveDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
+
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create transfer to save. error: %w", err)
+	}
+	return nil
+}
+
 func (s *TransferToSaveService) Update(ctx context.Context, dto *models.TransferToSaveDTO) error {
 	// if dto.DateEnd < dto.DateStart {
 	if dto.DateEnd.Before(dto.DateStart) {

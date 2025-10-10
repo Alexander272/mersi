@@ -6,6 +6,7 @@ import (
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -97,6 +98,7 @@ func (r *SectionRepo) Create(ctx context.Context, dto *models.SectionDTO) error 
 		VALUES (:id, :name, :realm_id, :position, :bid_type, :verification_day)`,
 		SectionTable,
 	)
+	dto.ID = uuid.NewString()
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)

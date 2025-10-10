@@ -29,6 +29,7 @@ type Verification interface {
 	Get(ctx context.Context, req *models.GetVerificationDTO) ([]*models.Verification, error)
 	GetLast(ctx context.Context, req *models.GetVerificationDTO) (*models.Verification, error)
 	Create(ctx context.Context, dto *models.VerificationDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.VerificationDTO) error
 	Update(ctx context.Context, dto *models.VerificationDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerificationDTO) error
 }
@@ -100,6 +101,29 @@ func (s *VerificationService) Create(ctx context.Context, dto *models.Verificati
 		Status: models.InstrumentStatus(dto.Status),
 	}
 	if err := s.instrument.ChangeStatus(ctx, instDTO); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *VerificationService) CreateSeveral(ctx context.Context, dto []*models.VerificationDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
+
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create verifications. error: %w", err)
+	}
+
+	docs := []*models.VerificationDocDTO{}
+	for i := range dto {
+		for j := range dto[i].Docs {
+			dto[i].Docs[j].VerificationId = dto[i].Id
+		}
+		docs = append(docs, dto[i].Docs...)
+	}
+	if err := s.verDocs.CreateSeveral(ctx, docs); err != nil {
 		return err
 	}
 

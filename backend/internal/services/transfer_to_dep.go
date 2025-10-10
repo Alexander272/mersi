@@ -25,6 +25,7 @@ func NewTransferToDepService(repo repository.TransferToDepartment, instrument In
 type TransferToDepartment interface {
 	Get(ctx context.Context, req *models.GetTransferToDepDTO) ([]*models.TransferToDepartment, error)
 	Create(ctx context.Context, dto *models.TransferToDepartmentDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.TransferToDepartmentDTO) error
 	Update(ctx context.Context, dto *models.TransferToDepartmentDTO) error
 	Delete(ctx context.Context, dto *models.DeleteTransferToDepDTO) error
 }
@@ -61,6 +62,17 @@ func (s *TransferToDepService) Create(ctx context.Context, dto *models.TransferT
 		return fmt.Errorf("failed to change instrument status. error: %w", err)
 	}
 
+	return nil
+}
+
+func (s *TransferToDepService) CreateSeveral(ctx context.Context, dto []*models.TransferToDepartmentDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
+
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create several transfers to department. error: %w", err)
+	}
 	return nil
 }
 

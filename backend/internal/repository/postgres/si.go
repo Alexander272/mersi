@@ -8,6 +8,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
+	"github.com/goodsign/monday"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -48,6 +49,7 @@ func (r *SIRepo) formatField(field string) string {
 	format["interVerificationInterval"] = "inter_verification_interval"
 	format["actOfEntering"] = "act_of_entering"
 	format["actOfEnteringId"] = "act_of_entering_id"
+	format["repairInfo"] = "r.period_start"
 	format["notes"] = "notes"
 	format["verificationDate"] = "date"
 	format["nextVerificationDate"] = "next_date"
@@ -60,7 +62,7 @@ func (r *SIRepo) formatField(field string) string {
 }
 
 func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, error) {
-	data := []*models.SI{}
+	tmp := []*pq_models.SI{}
 	params := []interface{}{req.SectionId, req.Status}
 	count := len(params) + 1
 
@@ -125,7 +127,8 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		COALESCE(l.status, 'used') AS status, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
 		act_of_entering, act_of_entering_id, notes,
 		COALESCE(v.date, '0001-01-01'::DATE) AS date, COALESCE(v.next_date, '0001-01-01'::DATE) AS next_date,
-		COALESCE(cert, '') AS certificate, COALESCE(cert_id, '') AS certificate_id, COALESCE(repair, '') AS repair,
+		COALESCE(cert, '') AS certificate, COALESCE(cert_id, '') AS certificate_id, COALESCE(r.work, '') AS repair_work,
+		COALESCE(r.period_start, '0001-01-01'::DATE) AS repair_start, COALESCE(r.period_end, '0001-01-01'::DATE) AS repair_end, 
 		COALESCE(p.date_start, '0001-01-01'::DATE) AS preservation, COALESCE(p.date_end, '0001-01-01'::DATE) AS de_preservation,
 		COALESCE(ts.date_start, '0001-01-01'::DATE) AS transfer_date, COALESCE(ts.date_end, '0001-01-01'::DATE) AS return_date, 
 		COALESCE(td.doc_name, '') AS transfer_to_dep, COALESCE(wo.doc_name, '') AS write_off,
@@ -134,8 +137,8 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		FROM %s AS i
 		LEFT JOIN LATERAL (SELECT id, date, next_date FROM %s WHERE instrument_id=i.id ORDER BY date DESC, created_at DESC LIMIT 1) AS v ON TRUE
 		LEFT JOIN LATERAL (SELECT name AS cert, doc_id::text AS cert_id FROM %s WHERE verification_id=v.id) AS d ON TRUE
-		LEFT JOIN LATERAL (SELECT date_part('year', period_end) || ' (' || work || ')' AS repair FROM %s 
-			WHERE instrument_id=i.id ORDER BY period_end DESC LIMIT 1) AS r ON TRUE
+		LEFT JOIN LATERAL (SELECT period_start, period_end, work FROM %s 
+			WHERE instrument_id=i.id ORDER BY period_start DESC LIMIT 1) AS r ON TRUE
 		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS p ON TRUE
 		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS ts ON TRUE
 		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS td ON TRUE
@@ -156,9 +159,61 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 	)
 	// logger.Debug("get si", logger.StringAttr("query", query))
 
-	if err := r.db.SelectContext(ctx, &data, query, params...); err != nil {
+	if err := r.db.SelectContext(ctx, &tmp, query, params...); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
+
+	data := []*models.SI{}
+	for _, d := range tmp {
+		repair := ""
+		if !d.RepairStart.IsZero() {
+			repair = monday.Format(d.RepairStart, "Jan 2006", monday.LocaleRuRU)
+		}
+		if !d.RepairEnd.IsZero() {
+			repair += " - " + monday.Format(d.RepairEnd, "Jan 2006", monday.LocaleRuRU)
+		}
+		if d.RepairWork != "" {
+			repair += " (" + d.RepairWork + ")"
+		}
+
+		data = append(data, &models.SI{
+			Id:                        d.Id,
+			Position:                  d.Position,
+			Name:                      d.Name,
+			DateOfReceipt:             d.DateOfReceipt,
+			Type:                      d.Type,
+			FactoryNumber:             d.FactoryNumber,
+			MeasurementLimits:         d.MeasurementLimits,
+			Accuracy:                  d.Accuracy,
+			StateRegister:             d.StateRegister,
+			CountryOfProduce:          d.CountryOfProduce,
+			Manufacturer:              d.Manufacturer,
+			Responsible:               d.Responsible,
+			Inventory:                 d.Inventory,
+			YearOfIssue:               d.YearOfIssue,
+			InterVerificationInterval: d.InterVerificationInterval,
+			ActOfEntering:             d.ActOfEntering,
+			ActOfEnteringId:           d.ActOfEnteringId,
+			Notes:                     d.Notes,
+			VerificationDate:          d.VerificationDate,
+			NextVerificationDate:      d.NextVerificationDate,
+			Certificate:               d.Certificate,
+			CertificateId:             d.CertificateId,
+			RepairInfo:                repair,
+			PreservationDate:          d.PreservationDate,
+			DePreservationDate:        d.DePreservationDate,
+			TransferDate:              d.TransferDate,
+			ReturnDate:                d.ReturnDate,
+			TransferToDepartment:      d.TransferToDepartment,
+			WriteOff:                  d.WriteOff,
+			Person:                    d.Person,
+			Place:                     d.Place,
+			LastPlace:                 d.LastPlace,
+			Status:                    d.Status,
+			Total:                     d.Total,
+		})
+	}
+
 	return data, nil
 }
 

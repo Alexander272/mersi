@@ -28,6 +28,7 @@ type Instrument interface {
 	GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error)
 	GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error)
 	Create(ctx context.Context, dto *models.InstrumentDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.InstrumentDTO) error
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
 	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
@@ -65,7 +66,7 @@ func (r *InstrumentRepo) GetUniqueData(ctx context.Context, req *models.GetUniqu
 		return nil, fmt.Errorf("field is not allowed")
 	}
 
-	query := fmt.Sprintf(`SELECT DISTINCT(%s) AS item FROM %s WHERE %s!='' AND %s IS NOT NULL AND section_id=$1`,
+	query := fmt.Sprintf(`SELECT DISTINCT(%s) AS item FROM %s WHERE %s!='' AND %s IS NOT NULL AND section_id=$1 ORDER BY item`,
 		req.Field, InstrumentsTable, req.Field, req.Field,
 	)
 	tmp := []pq_models.UniqueData{}
@@ -101,6 +102,34 @@ func (r *InstrumentRepo) Create(ctx context.Context, dto *models.InstrumentDTO) 
 	dto.Status = models.InstrumentStatusWork
 	if dto.ActOfEnteringId == "" {
 		dto.ActOfEnteringId = uuid.Nil.String()
+	}
+
+	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *InstrumentRepo) CreateSeveral(ctx context.Context, dto []*models.InstrumentDTO) error {
+	maxQuery := fmt.Sprintf(`SELECT COALESCE(MAX(position), 0) FROM %s WHERE section_id=$1`, InstrumentsTable)
+	var maxPosition int
+	if err := r.db.GetContext(ctx, &maxPosition, maxQuery, dto[0].SectionId); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+
+	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, user_id, position, name, date_of_receipt, type, factory_number, measurement_limits, 
+		accuracy, state_register, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
+		act_of_entering, act_of_entering_id, notes, status) 
+		VALUES (:id, :section_id, :user_id, :position, :name, :date_of_receipt, :type, :factory_number, :measurement_limits, 
+		:accuracy, :state_register, :country_of_produce, :manufacturer, :responsible, :inventory, :year_of_issue, :inter_verification_interval, 
+		:act_of_entering, :act_of_entering_id, :notes, :status)`,
+		InstrumentsTable,
+	)
+
+	for i := range dto {
+		dto[i].Id = uuid.NewString()
+		dto[i].ActOfEnteringId = uuid.Nil.String()
+		dto[i].Position = maxPosition + i + 1
 	}
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {

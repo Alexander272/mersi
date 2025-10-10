@@ -1,6 +1,7 @@
 package repair
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -30,6 +31,7 @@ func Register(api *gin.RouterGroup, service services.Repair, middleware *middlew
 	repair := api.Group("repair", middleware.CheckPermissions(constants.Repair, constants.Read))
 	{
 		repair.GET("", handler.get)
+		repair.GET("/last", handler.getLast)
 
 		write := repair.Group("", middleware.CheckPermissions(constants.Repair, constants.Write))
 		{
@@ -55,6 +57,28 @@ func (h *Handler) get(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
+}
+
+func (h *Handler) getLast(c *gin.Context) {
+	instrument := c.Query("instrument")
+	if err := uuid.Validate(instrument); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+	req := &models.GetRepairDTO{InstrumentId: instrument}
+
+	data, err := h.service.GetLast(c, req)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), "Данные не найдены")
+			return
+		}
+
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), req)
+		return
+	}
+	c.JSON(http.StatusOK, response.DataResponse{Data: data})
 }
 
 func (h *Handler) create(c *gin.Context) {

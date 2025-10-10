@@ -22,6 +22,7 @@ func NewWriteOffRepo(db *sqlx.DB) *WriteOffRepo {
 type WriteOff interface {
 	Get(ctx context.Context, req *models.GetWriteOffDTO) ([]*models.WriteOff, error)
 	Create(ctx context.Context, dto *models.WriteOffDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.WriteOffDTO) error
 	Update(ctx context.Context, dto *models.WriteOffDTO) error
 	Delete(ctx context.Context, dto *models.DeleteWriteOffDTO) error
 }
@@ -47,6 +48,24 @@ func (r *WriteOffRepo) Create(ctx context.Context, dto *models.WriteOffDTO) erro
 	dto.Id = uuid.NewString()
 	if dto.DocId == "" {
 		dto.DocId = uuid.Nil.String()
+	}
+
+	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *WriteOffRepo) CreateSeveral(ctx context.Context, dto []*models.WriteOffDTO) error {
+	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date, notes, doc_id, doc_name) 
+		VALUES (:id, :instrument_id, :date, :notes, :doc_id, :doc_name)`,
+		WriteOffTable,
+	)
+	for i := range dto {
+		dto[i].Id = uuid.NewString()
+		if dto[i].DocId == "" {
+			dto[i].DocId = uuid.Nil.String()
+		}
 	}
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {

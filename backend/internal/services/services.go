@@ -47,6 +47,7 @@ type Services struct {
 	Responsible
 	Most *most.MostService
 	Export
+	ImportFile
 }
 
 type Deps struct {
@@ -111,11 +112,6 @@ func NewServices(deps *Deps) *Services {
 		Most:    most,
 		Conf:    deps.CheckUsedConf,
 	})
-	export := NewExportService(&ExportDeps{
-		File:    file,
-		SI:      si,
-		Columns: columns,
-	})
 	location := NewLocationService(&LocationDeps{
 		Repo:         deps.Repo.Location,
 		Responsible:  responsible,
@@ -125,6 +121,21 @@ func NewServices(deps *Deps) *Services {
 	department := NewDepartmentService(deps.Repo.Department, location)
 	employee := NewEmployeeService(deps.Repo.Employee, location)
 	channel := NewChannelService(deps.Repo.Channel)
+
+	export := NewExportService(&ExportDeps{
+		File:    file,
+		SI:      si,
+		Columns: columns,
+	})
+	importFile := NewImportService(&ImportDeps{
+		Instrument:     instrument,
+		Verification:   verification,
+		Repair:         repair,
+		Preservation:   preservation,
+		TransferToSave: transferToSave,
+		TransferToDep:  transferToDep,
+		WriteOff:       writeOff,
+	})
 
 	scheduler := NewSchedulerService(&SchedulerDeps{
 		Notification: notification,
@@ -174,5 +185,6 @@ func NewServices(deps *Deps) *Services {
 		Scheduler:    scheduler,
 		Most:         most,
 		Export:       export,
+		ImportFile:   importFile,
 	}
 }

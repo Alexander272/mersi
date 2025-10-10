@@ -25,6 +25,7 @@ func NewWriteOffService(repo repository.WriteOff, instrument Instrument, docs Do
 type WriteOff interface {
 	Get(ctx context.Context, req *models.GetWriteOffDTO) ([]*models.WriteOff, error)
 	Create(ctx context.Context, dto *models.WriteOffDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.WriteOffDTO) error
 	Update(ctx context.Context, dto *models.WriteOffDTO) error
 	Delete(ctx context.Context, dto *models.DeleteWriteOffDTO) error
 }
@@ -59,6 +60,13 @@ func (s *WriteOffService) Create(ctx context.Context, dto *models.WriteOffDTO) e
 	}
 	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *WriteOffService) CreateSeveral(ctx context.Context, dto []*models.WriteOffDTO) error {
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create several write offs. error: %w", err)
 	}
 	return nil
 }

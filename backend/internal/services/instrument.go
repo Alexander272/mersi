@@ -25,6 +25,7 @@ type Instrument interface {
 	GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error)
 	GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error)
 	Create(ctx context.Context, dto *models.InstrumentDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.InstrumentDTO) error
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
 	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
@@ -67,6 +68,17 @@ func (s *InstrumentService) Create(ctx context.Context, dto *models.InstrumentDT
 		}
 	}
 
+	return nil
+}
+
+func (s *InstrumentService) CreateSeveral(ctx context.Context, dto []*models.InstrumentDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
+
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create several instruments. error: %w", err)
+	}
 	return nil
 }
 

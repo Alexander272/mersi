@@ -25,6 +25,7 @@ type Verification interface {
 	Get(ctx context.Context, req *models.GetVerificationDTO) ([]*models.Verification, error)
 	GetLast(ctx context.Context, req *models.GetVerificationDTO) (*models.Verification, error)
 	Create(ctx context.Context, dto *models.VerificationDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.VerificationDTO) error
 	Update(ctx context.Context, dto *models.VerificationDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerificationDTO) error
 }
@@ -64,6 +65,21 @@ func (r *VerificationRepo) Create(ctx context.Context, dto *models.VerificationD
 		VerificationTable,
 	)
 	dto.Id = uuid.NewString()
+
+	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *VerificationRepo) CreateSeveral(ctx context.Context, dto []*models.VerificationDTO) error {
+	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date, next_date, register_link, not_verified, notes, status)
+		VALUES (:id, :instrument_id, :date, :next_date, :register_link, :not_verified, :notes, :status)`,
+		VerificationTable,
+	)
+	for i := range dto {
+		dto[i].Id = uuid.NewString()
+	}
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)

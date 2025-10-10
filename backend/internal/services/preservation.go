@@ -25,6 +25,7 @@ type Preservation interface {
 	Get(ctx context.Context, req *models.GetPreservationsDTO) ([]*models.Preservation, error)
 	GetLast(ctx context.Context, req *models.GetPreservationsDTO) (*models.Preservation, error)
 	Create(ctx context.Context, dto *models.PreservationDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.PreservationDTO) error
 	Update(ctx context.Context, dto *models.PreservationDTO) error
 	Delete(ctx context.Context, dto *models.DeletePreservationDTO) error
 }
@@ -68,6 +69,13 @@ func (s *PreservationService) Create(ctx context.Context, dto *models.Preservati
 	}
 	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *PreservationService) CreateSeveral(ctx context.Context, dto []*models.PreservationDTO) error {
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create several preservations. error: %w", err)
 	}
 	return nil
 }

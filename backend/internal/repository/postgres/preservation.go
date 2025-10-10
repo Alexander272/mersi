@@ -25,6 +25,7 @@ type Preservation interface {
 	Get(ctx context.Context, req *models.GetPreservationsDTO) ([]*models.Preservation, error)
 	GetLast(ctx context.Context, req *models.GetPreservationsDTO) (*models.Preservation, error)
 	Create(ctx context.Context, dto *models.PreservationDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.PreservationDTO) error
 	Update(ctx context.Context, dto *models.PreservationDTO) error
 	Delete(ctx context.Context, dto *models.DeletePreservationDTO) error
 }
@@ -64,6 +65,21 @@ func (r *PreservationRepo) Create(ctx context.Context, dto *models.PreservationD
 		PreservationTable,
 	)
 	dto.Id = uuid.NewString()
+
+	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *PreservationRepo) CreateSeveral(ctx context.Context, dto []*models.PreservationDTO) error {
+	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date_start, date_end, notes_start, notes_end)
+		VALUES (:id, :instrument_id, :date_start, :date_end, :notes_start, :notes_end)`,
+		PreservationTable,
+	)
+	for i := range dto {
+		dto[i].Id = uuid.NewString()
+	}
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
