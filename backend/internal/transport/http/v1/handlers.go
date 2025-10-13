@@ -24,6 +24,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sections"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/sorting"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/status"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/tools_menu"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_dep"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/transfer_to_save"
@@ -83,4 +84,5 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	roles.Register(secure, h.services.Role, h.middleware)
 	export.Register(secure, h.services.Export, h.middleware)
 	import_file.Register(secure, h.services.ImportFile, h.middleware)
+	status.Register(secure, h.services.SiStatus, h.middleware)
 }

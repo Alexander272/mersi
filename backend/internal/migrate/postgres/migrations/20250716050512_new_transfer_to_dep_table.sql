@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.transfer_to_department
 (
     id uuid NOT NULL,
     instrument_id uuid NOT NULL,
-    date timestamp with time zone NOT NULL,
+    date timestamp without time zone NOT NULL,
     notes text COLLATE pg_catalog."default" DEFAULT ''::text,
     doc_id uuid,
     doc_name text COLLATE pg_catalog."default" DEFAULT ''::text,

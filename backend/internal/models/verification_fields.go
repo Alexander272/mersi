@@ -8,6 +8,7 @@ type VerificationField struct {
 	Type      string `json:"type" db:"type"`
 	Position  int    `json:"position" db:"position"`
 	Group     string `json:"group" db:"group"`
+	Width     int    `json:"width" db:"width"`
 }
 
 type GetVerFieldsDTO struct {
@@ -23,6 +24,7 @@ type VerificationFieldDTO struct {
 	Type      string `json:"type" db:"type"`
 	Position  int    `json:"position" db:"position"`
 	Group     string `json:"group" db:"group"`
+	Width     int    `json:"width" db:"width"`
 }
 
 type DeleteVerFieldDTO struct {

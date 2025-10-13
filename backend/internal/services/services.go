@@ -21,6 +21,7 @@ type Services struct {
 	Section
 	Columns
 	CreateForm
+	SiStatus
 	Instrument
 	Document
 	VerificationDoc
@@ -73,6 +74,7 @@ func NewServices(deps *Deps) *Services {
 	section := NewSectionService(deps.Repo.Section)
 	columns := NewColumnsService(deps.Repo.Columns)
 	createForm := NewCreateFormService(deps.Repo.CreateForm)
+	status := NewStatusService(deps.Repo.SiStatus)
 
 	document := NewDocumentService(deps.Repo.Document)
 	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
@@ -158,6 +160,7 @@ func NewServices(deps *Deps) *Services {
 		Section:              section,
 		Columns:              columns,
 		CreateForm:           createForm,
+		SiStatus:             status,
 		Instrument:           instrument,
 		Document:             document,
 		VerificationDoc:      verificationDoc,

@@ -27,7 +27,7 @@ type VerificationFields interface {
 }
 
 func (r *VerificationFieldRepo) Get(ctx context.Context, req *models.GetVerFieldsDTO) ([]*models.VerificationField, error) {
-	query := fmt.Sprintf(`SELECT id, section_id, field, label, type, position FROM %s WHERE section_id=$1 and "group"=$2 
+	query := fmt.Sprintf(`SELECT id, section_id, field, label, type, position, width FROM %s WHERE section_id=$1 and "group"=$2 
 		ORDER BY position`,
 		VerificationFieldsTable,
 	)
@@ -40,8 +40,8 @@ func (r *VerificationFieldRepo) Get(ctx context.Context, req *models.GetVerField
 }
 
 func (r *VerificationFieldRepo) Create(ctx context.Context, dto *models.VerificationFieldDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, field, label, type, position, "group")
-		VALUES (:id, :section_id, :field, :label, :type, :position, :group)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, field, label, type, position, "group", width)
+		VALUES (:id, :section_id, :field, :label, :type, :position, :group, :width)`,
 		VerificationFieldsTable,
 	)
 	dto.Id = uuid.NewString()
@@ -53,7 +53,8 @@ func (r *VerificationFieldRepo) Create(ctx context.Context, dto *models.Verifica
 }
 
 func (r *VerificationFieldRepo) Update(ctx context.Context, dto *models.VerificationFieldDTO) error {
-	query := fmt.Sprintf(`UPDATE %s SET field=:field, label=:label, type=:type, position=:position, "group"=:group WHERE id=:id`,
+	query := fmt.Sprintf(`UPDATE %s SET field=:field, label=:label, type=:type, position=:position, "group"=:group, width=:width 
+		WHERE id=:id`,
 		VerificationFieldsTable,
 	)
 

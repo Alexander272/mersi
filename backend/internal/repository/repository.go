@@ -57,6 +57,9 @@ type CustomContextMenu interface {
 type ToolsMenu interface {
 	postgres.ToolsMenu
 }
+type SiStatus interface {
+	postgres.Status
+}
 type Repair interface {
 	postgres.Repair
 }
@@ -110,6 +113,7 @@ type Repository struct {
 	Section
 	Columns
 	CreateForm
+	SiStatus
 	Document
 	Instrument
 	Verification
@@ -146,6 +150,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Section:              postgres.NewSectionRepo(db),
 		Columns:              postgres.NewColumnRepo(db),
 		CreateForm:           postgres.NewCreateFormRepo(db),
+		SiStatus:             postgres.NewStatusRepo(db),
 		Instrument:           postgres.NewInstrumentRepo(db),
 		Document:             postgres.NewDocumentRepo(db),
 		Verification:         postgres.NewVerificationRepo(db),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -167,9 +168,11 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 	for _, d := range tmp {
 		repair := ""
 		if !d.RepairStart.IsZero() {
+			d.RepairStart = d.RepairStart.In(time.Local)
 			repair = monday.Format(d.RepairStart, "Jan 2006", monday.LocaleRuRU)
 		}
 		if !d.RepairEnd.IsZero() {
+			d.RepairEnd = d.RepairEnd.In(time.Local)
 			repair += " - " + monday.Format(d.RepairEnd, "Jan 2006", monday.LocaleRuRU)
 		}
 		if d.RepairWork != "" {

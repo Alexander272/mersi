@@ -103,6 +103,7 @@ func (s *SIService) Create(ctx context.Context, dto *models.SiDTO) error {
 	}
 	if dto.Verification != nil {
 		dto.Verification.InstrumentId = dto.Instrument.Id
+		dto.Verification.UserId = dto.Instrument.UserId
 		dto.Verification.Status = string(models.InstrumentStatusWork)
 		if err := s.verification.Create(ctx, dto.Verification); err != nil {
 			s.instrument.Delete(ctx, dto.Instrument.Id)

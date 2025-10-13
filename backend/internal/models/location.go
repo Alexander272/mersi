@@ -41,8 +41,8 @@ type LocationDTO struct {
 	DepartmentId string `json:"department" db:"department_id"`
 	// ReceiptDate     string `json:"receiptDate" db:"receipt_date"`
 	// DeliveryDate    string `json:"deliveryDate" db:"delivery_date"`
-	DateOfIssue     time.Time `json:"dateOfIssue" db:"date_of_issue" binding:"required,gte=1000000"`
-	DateOfReceiving time.Time `json:"dateOfReceiving" db:"date_of_receiving" binding:"gte=0"`
+	DateOfIssue     time.Time `json:"dateOfIssue" db:"date_of_issue" binding:"required"`
+	DateOfReceiving time.Time `json:"dateOfReceiving" db:"date_of_receiving"`
 	NeedConfirm     bool      `json:"needConfirm" db:"need_confirmed"`
 	Status          string    `json:"status" db:"status"`
 	UserId          string    `json:"userId" db:"user_id"`

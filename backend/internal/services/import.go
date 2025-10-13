@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
-	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -114,7 +113,7 @@ func (s *ImportService) LoadOintoSi(ctx context.Context, dto *models.ImportDTO) 
 		if err != nil {
 			return fmt.Errorf("failed to get columns. error: %w", err)
 		}
-		row := make([]string, 23)
+		row := make([]string, 28)
 		copy(row, origRow)
 
 		if len(row) == 0 || row[0] == "" || row[0] == "Дата поступления" {
@@ -154,7 +153,7 @@ func (s *ImportService) LoadOintoSi(ctx context.Context, dto *models.ImportDTO) 
 			list = strings.Split(repairString, ";")
 		}
 		for _, l := range list {
-			logger.Debug("Repair", logger.StringAttr("line", l))
+			// logger.Debug("Repair", logger.StringAttr("line", l))
 
 			parts := strings.Split(l, "-")
 			dateString := dateRe.FindString(parts[0])
@@ -195,7 +194,7 @@ func (s *ImportService) LoadOintoSi(ctx context.Context, dto *models.ImportDTO) 
 			list = strings.Split(archiveString, ";")
 		}
 		for _, l := range list {
-			logger.Debug("Archive", logger.StringAttr("line", l))
+			// logger.Debug("Archive", logger.StringAttr("line", l))
 
 			parts := strings.Split(l, "-")
 
@@ -291,12 +290,12 @@ func (s *ImportService) LoadOintoSi(ctx context.Context, dto *models.ImportDTO) 
 
 		for i := template.VerificationDate; i < len(row); i++ {
 			item := row[i]
-			logger.Debug("Verification", logger.StringAttr("item", item))
+			// logger.Debug("Verification", logger.StringAttr("item", item))
 			if item != "" && item != "-" && item != "−" {
 				verificationsByIndex[index] = append(verificationsByIndex[index], strings.Split(item, ";")...)
 			}
 		}
-		logger.Debug("Verifications", logger.AnyAttr("array", verificationsByIndex[index]))
+		// logger.Debug("Verifications", logger.AnyAttr("array", verificationsByIndex[index]))
 
 		index++
 	}
@@ -322,7 +321,7 @@ func (s *ImportService) LoadOintoSi(ctx context.Context, dto *models.ImportDTO) 
 			nextDate := date.AddDate(0, si[i].InterVerificationInterval, 0)
 
 			status := "work"
-			if strings.Contains(strings.ToLower(verString), "списан") {
+			if strings.Contains(strings.ToLower(verString), "списан") || strings.Contains(strings.ToLower(verString), "непригод") {
 				status = "decommissioning"
 			}
 

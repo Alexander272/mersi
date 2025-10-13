@@ -32,4 +32,5 @@ const (
 	EmployeeTable           = "public.employee"
 	UserTable               = "public.users"
 	ResponsibleTable        = "public.responsible"
+	SiStatusTable           = "public.si_status"
 )

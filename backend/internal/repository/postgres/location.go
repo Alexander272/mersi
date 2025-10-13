@@ -167,8 +167,8 @@ func (r *LocationRepo) SelectByDepartment(ctx context.Context, dto *models.Selec
 func (r *LocationRepo) Create(ctx context.Context, dto *models.LocationDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, 
 		person_id, department_id, last_place_id, user_id)
-		SELECT id::uuid, instrument_id::uuid, date_of_issue::integer, date_of_receiving::integer, status, need_confirmed::boolean, person_id::uuid, 
-			s.department_id::uuid, COALESCE(m.department_id::text, ''), s.user_id::uuid
+		SELECT id::uuid, instrument_id::uuid, date_of_issue::DATE, date_of_receiving::DATE, 
+			status, need_confirmed::boolean, person_id::uuid, s.department_id::uuid, COALESCE(m.department_id::text, ''), s.user_id::uuid
 		FROM (VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9))
 		AS s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, person_id, department_id, user_id) 
 		LEFT JOIN LATERAL (SELECT department_id FROM %s WHERE instrument_id=s.instrument_id::uuid ORDER BY created_at DESC LIMIT 1) AS m ON true`,
@@ -229,8 +229,8 @@ func (r *LocationRepo) CreateSeveral(ctx context.Context, dto []*models.Location
 
 	query := fmt.Sprintf(`INSERT INTO %s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, 
 		person_id, department_id, last_place_id, user_id)
-		SELECT id::uuid, instrument_id::uuid, date_of_issue::integer, date_of_receiving::integer, status, need_confirmed::boolean, 
-			person_id::uuid, s.department_id::uuid, COALESCE(m.department_id::text, ''), s.user_id::uuid
+		SELECT id::uuid, instrument_id::uuid, date_of_issue::DATE, date_of_receiving::DATE, 
+			status, need_confirmed::boolean, person_id::uuid, s.department_id::uuid, COALESCE(m.department_id::text, ''), s.user_id::uuid
 		FROM (VALUES %s) AS s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, person_id, department_id, user_id)
 		LEFT JOIN LATERAL (SELECT place, department_id FROM %s WHERE instrument_id=s.instrument_id::uuid ORDER BY created_at DESC LIMIT 1) AS m ON true`,
 		LocationTable, strings.Join(values, ", "), LocationTable,
