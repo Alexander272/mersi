@@ -64,6 +64,7 @@ export const apiSlice = createApi({
 	baseQuery: baseQueryWithReAuth,
 	tagTypes: [
 		'SI',
+		'Status',
 		'Instrument',
 		'Verification',
 		'Location',

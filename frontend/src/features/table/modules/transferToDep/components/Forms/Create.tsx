@@ -37,7 +37,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'AddTransferToDep', isOpen: false }))
-		dispatch(setSelected([]))
+		dispatch(setSelected())
 	}
 
 	const activeHandler = (type: 'prev' | 'next') => () => {

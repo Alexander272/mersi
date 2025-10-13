@@ -2,7 +2,6 @@ import { type PayloadAction, createSlice } from '@reduxjs/toolkit'
 
 import type { IChangedColumns, IContextMenu, ISelect } from './types/table'
 import type { IFilter, ISearch, ISort } from './types/params'
-import type { Status } from './types/si'
 import { Size } from '@/constants/defaultValues'
 import { RootState } from '@/app/store'
 import { localKeys } from './constants/storage'
@@ -12,7 +11,7 @@ import { setRealm } from '../realms/realmSlice'
 interface ITableSlice {
 	page: number
 	size: number
-	status: Status
+	status: string
 	sort: ISort
 	filters: IFilter[]
 	search: ISearch
@@ -48,7 +47,7 @@ const tableSlice = createSlice({
 			state.size = action.payload
 			localStorage.setItem(localKeys.size, action.payload.toString())
 		},
-		setStatus: (state, action: PayloadAction<Status>) => {
+		setStatus: (state, action: PayloadAction<string>) => {
 			state.status = action.payload
 			state.page = 1
 			state.selected = {}

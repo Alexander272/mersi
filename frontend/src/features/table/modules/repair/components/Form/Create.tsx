@@ -11,6 +11,7 @@ import { useAppDispatch } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
 import { useCreateRepairMutation, useGetLastRepairQuery, useUpdateRepairMutation } from '../../repairApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
+import { setSelected } from '@/features/table/tableSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
 import { Inputs } from './Inputs'
@@ -47,6 +48,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'AddRepair', isOpen: false }))
+		dispatch(setSelected())
 	}
 
 	const activeHandler = (type: 'prev' | 'next') => () => {

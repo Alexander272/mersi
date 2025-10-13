@@ -7,6 +7,7 @@ export type DialogVariants =
 	| 'ChangePosition'
 	| 'NewVerification'
 	| 'SeveralVerifications'
+	| 'SendToVerification'
 	| 'NewLocation'
 	| 'SeveralLocations'
 	| 'DeleteLocation'

@@ -1,9 +1,9 @@
 import { MenuItem, Select, SelectChangeEvent, useTheme } from '@mui/material'
 
-import type { Status as StatusType } from '../../types/si'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useGetStatusesQuery } from '../../statusApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
-import { getStatus, setStatus } from '../../tableSlice'
+import { getStatus, setStatus } from '@/features/table/tableSlice'
 
 export const Status = () => {
 	const { palette } = useTheme()
@@ -12,8 +12,10 @@ export const Status = () => {
 	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
 
+	const { data, isFetching } = useGetStatusesQuery(section?.id || '', { skip: !section?.id })
+
 	const changeHandler = (event: SelectChangeEvent) => {
-		const value = event.target.value as StatusType
+		const value = event.target.value
 		dispatch(setStatus(value))
 	}
 
@@ -21,7 +23,7 @@ export const Status = () => {
 		<Select
 			value={status}
 			onChange={changeHandler}
-			// disabled={isFetching}
+			disabled={isFetching}
 			sx={{
 				color: palette.primary.main,
 				fontSize: '1.2rem',
@@ -36,14 +38,20 @@ export const Status = () => {
 				'.MuiOutlinedInput-input': { padding: '6.5px 10px' },
 			}}
 		>
-			<MenuItem value={'work'}>Основные</MenuItem>
+			{data?.data.map(s => (
+				<MenuItem key={s.id} value={s.value}>
+					{s.label}
+				</MenuItem>
+			))}
+
+			{/* <MenuItem value={'work'}>Основные</MenuItem>
 			<MenuItem value={'repair'}>На ремонте</MenuItem>
 			{section?.id == '46ba9e17-65c7-474b-8c47-7975ab4319d5' && [
 				<MenuItem value={'archived'}>Законсервированные</MenuItem>,
 				<MenuItem value={'saved'}>На хранении</MenuItem>,
 				<MenuItem value={'transferred'}>Переданные</MenuItem>,
 			]}
-			<MenuItem value={'decommissioning'}>Непригодные</MenuItem>
+			<MenuItem value={'decommissioning'}>Непригодные</MenuItem> */}
 		</Select>
 	)
 }

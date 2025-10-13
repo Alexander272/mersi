@@ -4,9 +4,9 @@ import { useFieldArray, useFormContext } from 'react-hook-form'
 import dayjs from 'dayjs'
 
 import type { IFilter } from '../../types/params'
-import { SelectWithFilter, type Option } from '@/components/SelectWithFilter/SelectWithFilter'
 import { localKeys } from '@/constants/localKeys'
 import { PermRules } from '@/constants/permissions'
+import { NullDate } from '@/constants/defaultValues'
 import { useAppSelector } from '@/hooks/redux'
 import { useCheckPermission } from '@/features/user/hooks/check'
 import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
@@ -14,6 +14,8 @@ import { useGetDepartmentsQuery } from '@/features/departments/departmentApiSlic
 import { useGetUniqueEmployeeQuery } from '@/features/employees/employeesApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
 import { getRealm } from '@/features/realms/realmSlice'
+import { getFilters } from '../../tableSlice'
+import { SelectWithFilter, type Option } from '@/components/SelectWithFilter/SelectWithFilter'
 import { Checkbox } from '@/components/Checkbox/Checkbox'
 import { Fallback } from '@/components/Fallback/Fallback'
 
@@ -35,10 +37,12 @@ const months = [
 type ActiveType = 'overdue' | 'month' | 'empty' | 'place' | 'person'
 
 export const Default = () => {
+	const filters = useAppSelector(getFilters)
+
 	const [active, setActive] = useState<ActiveType | undefined>(
 		(localStorage.getItem(localKeys.activeFilters) as ActiveType) || undefined
 	)
-	const [month, setMonth] = useState(dayjs().get('month'))
+	const [month, setMonth] = useState(active == 'month' ? dayjs(filters[0]?.value).get('month') : dayjs().get('month'))
 	const section = useAppSelector(getSection)
 
 	const { control } = useFormContext<{ filters: IFilter[] }>()
@@ -62,7 +66,7 @@ export const Default = () => {
 		const isActive = activeHandler('empty')
 		if (!isActive) return
 
-		replace([{ field: 'nextVerificationDate', fieldType: 'date', compareType: 'eq', value: '0' }])
+		replace([{ field: 'nextVerificationDate', fieldType: 'date', compareType: 'eq', value: NullDate }])
 	}
 
 	const overdueHandler = () => {
@@ -122,23 +126,13 @@ export const Default = () => {
 		const isActive = activeHandler('place')
 		if (!isActive) return
 		replace([{ field: 'place', fieldType: 'list', compareType: 'in', value: '' }])
-		// setPlace([])
 	}
-	// const setPlaceHandler = (values: string[]) => {
-	// 	setPlace(values)
-	// 	setFilters([{ field: 'place', fieldType: 'list', compareType: 'in', value: values.join(',') }])
-	// }
 
 	const personHandler = () => {
 		const isActive = activeHandler('person')
 		if (!isActive) return
 		replace([{ field: 'person', fieldType: 'list', compareType: 'in', value: '' }])
-		// setPerson([])
 	}
-	// const setPersonHandler = (values: string[]) => {
-	// 	setPerson(values)
-	// 	setFilters([{ field: 'person', fieldType: 'list', compareType: 'in', value: values.join(',') }])
-	// }
 
 	return (
 		<Stack spacing={1}>

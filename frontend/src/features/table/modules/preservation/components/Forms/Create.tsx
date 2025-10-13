@@ -14,6 +14,7 @@ import {
 	useUpdatePreservationMutation,
 } from '../../preservationApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
+import { setSelected } from '@/features/table/tableSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
 import { Inputs } from './Inputs'
@@ -42,6 +43,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'AddPreservation', isOpen: false }))
+		dispatch(setSelected())
 	}
 
 	const activeHandler = (type: 'prev' | 'next') => () => {

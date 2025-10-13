@@ -18,8 +18,6 @@ export const AutocompleteField: FC<Props> = ({ data }) => {
 	const { control, watch } = useFormContext()
 	const watchField = watch(data.hide)
 
-	// const { data: options, isFetching } = useGetUniqueInstrumentDataQuery(data.field, { skip: !data.field })
-
 	const [getUnique, { isLoading }] = useLazyGetUniqueInstrumentDataQuery()
 
 	const focusHandler = async () => {
@@ -56,6 +54,7 @@ export const AutocompleteField: FC<Props> = ({ data }) => {
 							error={Boolean(error)}
 							helperText={error?.message}
 							inputRef={ref}
+							multiline
 						/>
 					)}
 				/>

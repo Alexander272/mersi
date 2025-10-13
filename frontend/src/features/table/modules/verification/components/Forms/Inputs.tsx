@@ -70,8 +70,11 @@ const DateField: FC<FieldProps & { minDate: string; interval?: number }> = ({ la
 
 	useEffect(() => {
 		if (field == 'nextVerificationDate') {
+			console.log(date, interval)
 			if (interval && date) {
 				const newDate = dayjs(date).add(interval, 'M').subtract(1, 'd').toISOString()
+				console.log(newDate)
+
 				setValue('nextVerificationDate', newDate)
 			}
 		}
@@ -85,8 +88,8 @@ const DateField: FC<FieldProps & { minDate: string; interval?: number }> = ({ la
 			render={({ field, fieldState: { error } }) => (
 				<DatePicker
 					{...field}
-					value={dayjs(field.value)}
-					onChange={value => field.onChange(value?.startOf('d').toISOString)}
+					value={field.value ? dayjs(field.value) : null}
+					onChange={value => field.onChange(value?.startOf('d').toISOString())}
 					label={label}
 					showDaysOutsideCurrentMonth
 					fixedWeekNumber={6}

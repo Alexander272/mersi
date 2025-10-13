@@ -27,21 +27,6 @@ const FileTypes = {
 	sheet: <SheetIcon ml={0.8} />,
 }
 
-const widths = new Map([
-	[
-		'46ba9e17-65c7-474b-8c47-7975ab4319d5',
-		{ verificationDate: 180, nextVerificationDate: 180, status: 160, notes: 315, docs: 315 },
-	],
-	[
-		'5f86ac32-9477-4f48-ae27-e9ef94d848f8',
-		{ verificationDate: 240, nextVerificationDate: 240, notes: 335, docs: 335 },
-	],
-	[
-		'062ae3f3-1f2a-4b1c-b098-683249e41584',
-		{ verificationDate: 180, nextVerificationDate: 180, registerLink: 180, status: 140, docs: 235, notes: 235 },
-	],
-])
-
 const Statuses = {
 	work: 'Пригоден',
 	repair: 'Нужен ремонт',
@@ -82,9 +67,8 @@ export const Verification: FC<Props> = ({ instrumentId }) => {
 			<TableHead>
 				<TableRow height={80}>
 					{fields?.data.map(item => {
-						const sizes = widths.get(section?.id || '')
 						return (
-							<TableCell key={item.id} width={sizes?.[item.field as 'notes']}>
+							<TableCell key={item.id} width={item.width}>
 								{item.label}
 							</TableCell>
 						)
@@ -97,12 +81,16 @@ export const Verification: FC<Props> = ({ instrumentId }) => {
 					{data?.data.map(item => (
 						<TableRow key={item.id} sx={{ minHeight: 38, cursor: 'default' }}>
 							{fields?.data.map(f => {
-								const sizes = widths.get(section?.id || '')
-
 								if (f.field == 'docs') {
 									return (
-										<TableCell key={f.id} width={sizes?.[f.field as 'notes']}>
-											<Stack direction={'row'} justifyContent={'center'} alignItems={'center'}>
+										<TableCell key={f.id} width={f.width}>
+											<Stack
+												direction={'row'}
+												justifyContent={'center'}
+												alignItems={'center'}
+												maxWidth={f.width}
+												m={0.25}
+											>
 												{item.docs?.map(d => (
 													<Chip
 														key={d.id}
@@ -111,6 +99,15 @@ export const Verification: FC<Props> = ({ instrumentId }) => {
 														onClick={downloadHandler(d)}
 														variant='outlined'
 														clickable={d.docId != ''}
+														sx={{
+															height: 'auto',
+															minHeight: 32,
+															textAlign: 'center',
+															'& .MuiChip-label': {
+																display: 'block',
+																whiteSpace: 'normal',
+															},
+														}}
 													/>
 												))}
 											</Stack>
@@ -119,7 +116,7 @@ export const Verification: FC<Props> = ({ instrumentId }) => {
 								}
 
 								return (
-									<TableCell key={f.id} width={sizes?.[f.field as 'notes']}>
+									<TableCell key={f.id} width={f.width}>
 										<CellText value={Formatter(f.field, item[f.field as 'notes'])} />
 									</TableCell>
 								)

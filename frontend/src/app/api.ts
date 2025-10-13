@@ -67,6 +67,7 @@ export const API = {
 		base: '/sections' as const,
 		grouped: '/sections/grouped' as const,
 	},
+	status: '/status' as const,
 	columns: '/columns' as const,
 	createForm: '/forms/create',
 	import: '/import' as const,

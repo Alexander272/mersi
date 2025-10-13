@@ -8,10 +8,10 @@ import { PlusIcon } from '@/components/Icons/PlusIcon'
 import { CreateDialog } from '../Dialogs/CreateDialog'
 import { ActiveSection } from '@/features/sections/components/Active/Active'
 import { ToolsMenu } from '../../modules/tools/components/ToolsMenuLazy'
+import { Status } from '../../modules/status/components/Status/Status'
 import { Search } from '../Search/Search'
 import { Filters } from '../Filters/Filters'
 import { FastSelect } from '../Select/FastSelect'
-import { Status } from '../Status/Status'
 import { Setting } from '../Setting/SettingLazy'
 
 export const Header = () => {

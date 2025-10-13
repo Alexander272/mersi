@@ -5,4 +5,5 @@ export interface IVerificationField {
 	label: string
 	type: string
 	position: number
+	width: number
 }

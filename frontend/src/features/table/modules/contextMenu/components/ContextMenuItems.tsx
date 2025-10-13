@@ -10,6 +10,7 @@ import { ProductReplace } from '@/components/Icons/ProductReplace'
 import { ProductReturn } from '@/components/Icons/ProductReturn'
 import { HistoryIcon } from '@/components/Icons/HistoryIcon'
 import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
+import { VerifyInProgressIcon } from '@/components/Icons/VerifyInProgressIcon'
 
 type Props = {
 	onClick?: () => void
@@ -40,6 +41,15 @@ export const Verification: FC<Props> = ({ onClick, label }) => (
 			<VerifyIcon fontSize={18} fill={'#757575'} />
 		</ListItemIcon>
 		{label ? label : 'Добавить поверку'}
+	</MenuItem>
+)
+
+export const SendToVerification: FC<Props> = ({ onClick, label }) => (
+	<MenuItem onClick={onClick}>
+		<ListItemIcon>
+			<VerifyInProgressIcon fontSize={18} fill={'#757575'} />
+		</ListItemIcon>
+		{label ? label : 'Отправить на поверку'}
 	</MenuItem>
 )
 
