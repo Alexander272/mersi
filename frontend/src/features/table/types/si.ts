@@ -54,7 +54,7 @@ export interface ISiDTO {
 export type Status = 'work' | 'repair' | 'decommissioning' | 'transferred'
 export interface IGetSiDTO {
 	section: string
-	status?: Status
+	status?: string
 	all?: boolean
 	page?: number
 	size?: number
