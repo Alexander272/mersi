@@ -20,6 +20,7 @@ import { CreateLocationDialog } from '../../locations/components/Dialogs/Create'
 import { SendToReserveDialog } from '../../locations/components/Dialogs/SendToReserve'
 import { ReceiptDialog } from '../../locations/components/Dialogs/Receipt'
 import { MenuItems } from './ToolsMenuItems'
+import { SendToVerificationDialog } from '../../status/components/SendToVerification/SendToVerification'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
@@ -103,6 +104,7 @@ export const ToolsMenu = () => {
 
 			<CreateRepairDialog />
 			<CreateVerificationDialog title={MenuItems.get('verification')?.label || ''} />
+			<SendToVerificationDialog title={MenuItems.get('send-to-verification')?.label || ''} />
 			<CreateLocationDialog />
 			<SendToReserveDialog />
 			<ReceiptDialog />

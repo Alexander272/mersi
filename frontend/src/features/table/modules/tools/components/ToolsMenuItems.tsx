@@ -28,6 +28,7 @@ import { ExchangeIcon } from '@/components/Icons/ExchangeIcon'
 import { FileSyncIcon } from '@/components/Icons/FileSyncIcon'
 import { EditEmployeeIcon } from '@/components/Icons/EditEmployeeIcon'
 import { AppRoutes } from '@/pages/router/routes'
+import { VerifyInProgressIcon } from '@/components/Icons/VerifyInProgressIcon'
 
 type Props = { onClick?: () => void; item: IToolsMenu; label?: string }
 type MenuItem = { el: FC<Props>; action?: DialogVariants; link?: string; label?: string }
@@ -36,6 +37,7 @@ export const Icons = new Map<string, JSX.Element>([
 	['graphic', <DocumentCheckIcon fontSize={20} fill={'#757575'} />],
 	['export', <FileDownloadIcon fontSize={20} fill={'#757575'} />],
 	['verification', <VerifyIcon fontSize={18} fill={'#757575'} />],
+	['send-to-verification', <VerifyInProgressIcon fontSize={18} fill={'#757575'} />],
 	['locations', <ExchangeIcon fontSize={18} fill={'#757575'} />],
 	['reserve', <ExchangeIcon fontSize={18} fill={'#757575'} />],
 	['receive', <FileSyncIcon fontSize={18} fill={'#757575'} />],
@@ -95,6 +97,7 @@ export const MenuItems = new Map<string, MenuItem>([
 	['export', { el: ToolsItem, action: 'Export' }],
 	['graphic', { el: ToolsItem, action: 'Schedule' }],
 	['verification', { el: ToolsItem, action: 'NewVerification' }],
+	['send-to-verification', { el: ToolsItem, action: 'SendToVerification' }],
 	['locations', { el: ToolsItem, action: 'NewLocation' }],
 	['reserve', { el: ToolsItem, action: 'SendToReserve' }],
 	['receive', { el: ToolsItem, action: 'Receive' }],

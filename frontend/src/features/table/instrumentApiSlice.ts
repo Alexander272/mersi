@@ -35,6 +35,19 @@ const instrumentApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
+
+		changeStatus: builder.mutation<{ data: IInstrumentDTO }, { id: string; status: string }[]>({
+			query: data => ({
+				url: `${API.si.instruments.base}/status`,
+				method: 'POST',
+				body: data,
+			}),
+			invalidatesTags: [{ type: 'SI', id: 'ALL' }],
+			// invalidatesTags: (_res, _err, arg) => [
+			// 	{ type: 'Instrument', id: arg.id },
+			// 	{ type: 'SI', id: 'ALL' },
+			// ],
+		}),
 	}),
 })
 
@@ -43,4 +56,5 @@ export const {
 	useLazyGetInstrumentByIdQuery,
 	useGetUniqueInstrumentDataQuery,
 	useLazyGetUniqueInstrumentDataQuery,
+	useChangeStatusMutation,
 } = instrumentApiSlice

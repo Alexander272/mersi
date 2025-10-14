@@ -23,7 +23,7 @@ export const SendToReserve: FC<Props> = ({ ids }) => {
 
 	const filter = { field: 'id', value: ids?.join(','), fieldType: 'list' as const, compareType: 'in' as const }
 	const { data, isFetching } = useGetSIQuery(
-		{ section: section?.id || '', status: 'work', filters: [filter], size: 9999999 },
+		{ section: section?.id || '', status: 'work', filters: [filter], size: 9999999, all: true },
 		{ skip: !ids }
 	)
 	const [create, { isLoading }] = useCreateSeveralLocationsMutation()
