@@ -32,6 +32,7 @@ type Instrument interface {
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
 	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
+	ChangeSeveralStatuses(ctx context.Context, dto []*models.UpdateStatus) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -185,6 +186,30 @@ func (r *InstrumentRepo) ChangeStatus(ctx context.Context, dto *models.UpdateSta
 	query := fmt.Sprintf(`UPDATE %s SET status=:status WHERE id=:id`, InstrumentsTable)
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+func (r *InstrumentRepo) ChangeSeveralStatuses(ctx context.Context, dto []*models.UpdateStatus) error {
+	values := []string{}
+	args := []interface{}{}
+	for i, v := range dto {
+		tmp := []interface{}{v.Id, v.Status}
+		args = append(args, tmp...)
+		numbers := []string{}
+		for j := range tmp {
+			numbers = append(numbers, fmt.Sprintf("$%d", i*len(tmp)+j+1))
+		}
+		values = append(values, fmt.Sprintf("(%s)", strings.Join(numbers, ",")))
+	}
+
+	query := fmt.Sprintf(`UPDATE %s AS t SET status=s.status
+		FROM (VALUES %s) AS s(id, status)
+		WHERE t.id=s.id::uuid`,
+		InstrumentsTable, strings.Join(values, ","),
+	)
+
+	if _, err := r.db.ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

@@ -37,6 +37,7 @@ func Register(api *gin.RouterGroup, service services.Instrument, middleware *mid
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)
+			write.POST("/status", handler.changeStatus)
 		}
 	}
 }
@@ -161,4 +162,31 @@ func (h *Handler) update(c *gin.Context) {
 	)
 
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные об инструменте успешно обновлены"})
+}
+
+func (h *Handler) changeStatus(c *gin.Context) {
+	dto := []*models.UpdateStatus{}
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		return
+	}
+
+	if err := h.service.ChangeSeveralStatuses(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+
+	var user models.User
+	u, exists := c.Get(constants.CtxUser)
+	if exists {
+		user = u.(models.User)
+	}
+
+	logger.Info("Статус инструментов обновлен",
+		logger.StringAttr("user_id", user.ID),
+		logger.StringAttr("username", user.Name),
+	)
+
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные об инструментах успешно обновлены"})
 }

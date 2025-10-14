@@ -29,6 +29,7 @@ type Instrument interface {
 	Update(ctx context.Context, dto *models.InstrumentDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
 	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
+	ChangeSeveralStatuses(ctx context.Context, dto []*models.UpdateStatus) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -99,6 +100,12 @@ func (s *InstrumentService) ChangePosition(ctx context.Context, dto *models.Chan
 func (s *InstrumentService) ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error {
 	if err := s.repo.ChangeStatus(ctx, dto); err != nil {
 		return fmt.Errorf("failed to change instrument status. error: %w", err)
+	}
+	return nil
+}
+func (s *InstrumentService) ChangeSeveralStatuses(ctx context.Context, dto []*models.UpdateStatus) error {
+	if err := s.repo.ChangeSeveralStatuses(ctx, dto); err != nil {
+		return fmt.Errorf("failed to change several instrument statuses. error: %w", err)
 	}
 	return nil
 }
