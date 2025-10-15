@@ -21,8 +21,11 @@ func NewStatusService(repo repository.SiStatus) *StatusService {
 type SiStatus interface {
 	Get(ctx context.Context, req *models.GetSiStatusDTO) ([]*models.SiStatus, error)
 	Create(ctx context.Context, dto *models.SiStatusDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.SiStatusDTO) error
 	Update(ctx context.Context, dto *models.SiStatusDTO) error
+	UpdateSeveral(ctx context.Context, dto []*models.SiStatusDTO) error
 	Delete(ctx context.Context, dto *models.DeleteSiStatusDTO) error
+	DeleteSeveral(ctx context.Context, dto []string) error
 }
 
 func (s *StatusService) Get(ctx context.Context, req *models.GetSiStatusDTO) ([]*models.SiStatus, error) {
@@ -40,6 +43,13 @@ func (s *StatusService) Create(ctx context.Context, dto *models.SiStatusDTO) err
 	return nil
 }
 
+func (s *StatusService) CreateSeveral(ctx context.Context, dto []*models.SiStatusDTO) error {
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create si status. error: %w", err)
+	}
+	return nil
+}
+
 func (s *StatusService) Update(ctx context.Context, dto *models.SiStatusDTO) error {
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update si status. error: %w", err)
@@ -47,8 +57,22 @@ func (s *StatusService) Update(ctx context.Context, dto *models.SiStatusDTO) err
 	return nil
 }
 
+func (s *StatusService) UpdateSeveral(ctx context.Context, dto []*models.SiStatusDTO) error {
+	if err := s.repo.UpdateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to update si status. error: %w", err)
+	}
+	return nil
+}
+
 func (s *StatusService) Delete(ctx context.Context, dto *models.DeleteSiStatusDTO) error {
 	if err := s.repo.Delete(ctx, dto); err != nil {
+		return fmt.Errorf("failed to delete si status. error: %w", err)
+	}
+	return nil
+}
+
+func (s *StatusService) DeleteSeveral(ctx context.Context, dto []string) error {
+	if err := s.repo.DeleteSeveral(ctx, dto); err != nil {
 		return fmt.Errorf("failed to delete si status. error: %w", err)
 	}
 	return nil
