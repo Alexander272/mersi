@@ -1,0 +1,136 @@
+import { FC } from 'react'
+import { Button, Stack } from '@mui/material'
+import { FormProvider, useFieldArray, useForm } from 'react-hook-form'
+import { ReactSortable, SortableEvent } from 'react-sortablejs'
+import { toast } from 'react-toastify'
+
+import type { IFetchError } from '@/app/types/error'
+import type { IStatusDTO, IStatusForm } from '../../types/status'
+import { useAppDispatch } from '@/hooks/redux'
+import {
+	useCreateStatusesMutation,
+	useDeleteStatusesMutation,
+	useGetStatusesQuery,
+	useUpdateStatusesMutation,
+} from '../../statusApiSlice'
+import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
+import { BoxFallback } from '@/components/Fallback/BoxFallback'
+import { StatusDialog } from '../Dialog/Dialog'
+import { StatusItem } from './StatusItem'
+import { sortableOptions } from './options'
+
+type Props = {
+	section: string
+}
+
+export const StatusesList: FC<Props> = ({ section }) => {
+	const dispatch = useAppDispatch()
+
+	const { data, isFetching } = useGetStatusesQuery(section, { skip: !section || section == 'new' })
+	const [create, { isLoading: creating }] = useCreateStatusesMutation()
+	const [updateAll, { isLoading: updating }] = useUpdateStatusesMutation()
+	const [removeAll, { isLoading: removing }] = useDeleteStatusesMutation()
+
+	const methods = useForm<{ data: IStatusForm[] }>({
+		values: { data: data?.data.map(d => ({ ...d, status: 'none' })) || [] },
+	})
+	const {
+		control,
+		handleSubmit,
+		formState: { dirtyFields },
+	} = methods
+	const { fields, move, update, append, remove } = useFieldArray({ control, name: 'data', keyName: '_id' })
+
+	const dropHandler = (event: SortableEvent) => {
+		// console.log('event', event)
+		if (event.oldIndex == undefined || event.newIndex == undefined || event.oldIndex == event.newIndex) return
+
+		//! update работает не правильно потому что используется move, а не swap
+		// update(event.newIndex, { ...fields[event.newIndex], position: event.oldIndex + 1, status: 'moved' })
+		update(event.oldIndex, { ...fields[event.oldIndex], position: event.newIndex + 1, status: 'moved' })
+		move(event.oldIndex, event.newIndex)
+	}
+
+	const openDialog = () => {
+		dispatch(changeDialogIsOpen({ variant: 'EditStatus', isOpen: true }))
+	}
+
+	const submitHandler = (data: IStatusForm) => {
+		if (data.status == 'updated' || data.status == 'deleted') update(data.position - 1, data)
+		if (data.status == 'new') {
+			if (data.position == 1) append({ ...data, position: fields.length + 1 })
+			else update(data.position - 1, data)
+		}
+		if (data.status == undefined) remove(data.position - 1)
+	}
+
+	const updateHandler = handleSubmit(async form => {
+		console.log('save', form)
+
+		const updated: IStatusDTO[] = []
+		const created: IStatusDTO[] = []
+		const deleted: string[] = []
+
+		form.data.forEach((item, idx) => {
+			if (item.position != idx + 1) {
+				item.status = 'moved'
+				item.position = idx + 1
+			}
+
+			if (item.status == 'updated' || item.status == 'moved') updated.push({ ...item, sectionId: section })
+			if (item.status == 'new') created.push({ ...item, sectionId: section })
+			if (item.status == 'deleted') deleted.push(item.id)
+		})
+		if (!updated.length && !created.length && !deleted.length) return
+
+		try {
+			if (updated.length) await updateAll(updated).unwrap()
+			if (created.length) await create(created).unwrap()
+			if (deleted.length) await removeAll(deleted).unwrap()
+			methods.reset()
+			toast.success('Статусы сохранены')
+		} catch (error) {
+			const fetchError = error as IFetchError
+			toast.error(fetchError.data.message, { autoClose: false })
+		}
+	})
+
+	return (
+		<>
+			<Stack component={'form'} onSubmit={updateHandler}>
+				{isFetching || creating || updating || removing ? <BoxFallback /> : null}
+
+				<Stack direction={'row'} justifyContent={'space-between'} mb={2.5} mx={2}>
+					<Button onClick={openDialog} variant='outlined' sx={{ width: 160, textTransform: 'inherit' }}>
+						Добавить
+					</Button>
+
+					<Button
+						type={'submit'}
+						disabled={!Object.keys(dirtyFields).length}
+						variant='outlined'
+						sx={{ width: 160, textTransform: 'inherit' }}
+					>
+						Сохранить
+					</Button>
+				</Stack>
+
+				<FormProvider {...methods}>
+					<ReactSortable
+						list={fields}
+						setList={() => {}}
+						onEnd={dropHandler}
+						handle='.drag'
+						{...sortableOptions}
+					>
+						{fields.map(item => (
+							<StatusItem key={item._id} data={item} />
+						))}
+					</ReactSortable>
+				</FormProvider>
+			</Stack>
+
+			<StatusDialog submit={submitHandler} />
+		</>
+	)
+}

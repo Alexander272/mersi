@@ -43,7 +43,7 @@ export const PeriodForm: FC = () => {
 					<Controller
 						control={methods.control}
 						name={'gte'}
-						rules={{ required: true, min: 1000000000 }}
+						rules={{ required: true }}
 						render={({ field, fieldState: { error } }) => (
 							<DatePicker
 								{...field}
@@ -68,7 +68,7 @@ export const PeriodForm: FC = () => {
 					<Controller
 						control={methods.control}
 						name={'lte'}
-						rules={{ required: true, min: 1000000000 }}
+						rules={{ required: true }}
 						render={({ field, fieldState: { error } }) => (
 							<DatePicker
 								{...field}

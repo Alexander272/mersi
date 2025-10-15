@@ -66,8 +66,10 @@ export const departmentApiSlice = apiSlice.injectEndpoints({
 				body: data,
 			}),
 			invalidatesTags: (_arg, _err, data) => [
-				{ type: 'Departments', id: 'all' },
+				{ type: 'Departments', id: 'ALL' },
 				{ type: 'Departments', id: data.id },
+				{ type: 'SI', id: 'ALL' },
+				{ type: 'Location' },
 			],
 		}),
 

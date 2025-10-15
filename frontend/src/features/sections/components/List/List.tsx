@@ -7,9 +7,10 @@ import { useGetGroupedSectionsQuery } from '../../sectionsApiSlice'
 type Props = {
 	item: string
 	setItem: (item: string) => void
+	readonly?: boolean
 }
 
-export const List: FC<Props> = ({ item, setItem }) => {
+export const List: FC<Props> = ({ item, setItem, readonly }) => {
 	const { palette } = useTheme()
 	const { data, isFetching } = useGetGroupedSectionsQuery(null)
 
@@ -40,6 +41,7 @@ export const List: FC<Props> = ({ item, setItem }) => {
 				<Tab
 					label='Добавить'
 					value='new'
+					disabled={readonly}
 					sx={{
 						mt: 0.5,
 						textTransform: 'inherit',

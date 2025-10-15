@@ -11,7 +11,7 @@ import { DateTextField } from '@/components/DatePicker/DatePicker'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 
 const min = '2000-01-01'
-const docsGroup = 'writeOff'
+const docsGroup = 'transferToDep'
 
 type Props = {
 	instrumentId: string

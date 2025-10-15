@@ -39,7 +39,7 @@ export const LayoutHeader = () => {
 						<NavButton>
 							<ActiveRealm sx={{ mr: -0.5 }} />
 						</NavButton>
-						{showRealmsSetting && <NavLink to={AppRoutes.Realm}>Области</NavLink>}
+						{showRealmsSetting && <NavLink to={AppRoutes.Settings}>Настройки</NavLink>}
 						<NavButton onClick={signOutHandler}>Выйти</NavButton>
 					</Stack>
 				)}

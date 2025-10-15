@@ -7,7 +7,8 @@ import type { IRepairDTO } from '../../types/repair'
 import { DateTextField } from '@/components/DatePicker/DatePicker'
 
 export const Inputs = () => {
-	const { control } = useFormContext<IRepairDTO>()
+	const { control, watch } = useFormContext<IRepairDTO>()
+	const periodStart = watch('periodStart')
 
 	return (
 		<Stack spacing={2} mb={2}>
@@ -52,6 +53,7 @@ export const Inputs = () => {
 				<Controller
 					control={control}
 					name='periodEnd'
+					rules={{ validate: value => dayjs(value).isAfter(dayjs(periodStart)) }}
 					render={({ field, fieldState: { error } }) => (
 						<DatePicker
 							{...field}
@@ -68,6 +70,7 @@ export const Inputs = () => {
 									error: Boolean(error),
 								},
 							}}
+							minDate={dayjs(periodStart)}
 							sx={{ width: '100%' }}
 						/>
 					)}

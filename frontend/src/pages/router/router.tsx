@@ -10,6 +10,7 @@ import { Realms } from '@/pages/realms/RealmsLazy'
 import { Places } from '@/pages/places/PlacesLazy'
 import { Employees } from '@/pages/employee/EmployeesLazy'
 import { Import } from '@/pages/import/ImportLazy'
+import { Settings } from '@/pages/settings/SettingsLazy'
 import PrivateRoute from './PrivateRoute'
 
 const config: RouteObject[] = [
@@ -38,16 +39,20 @@ const config: RouteObject[] = [
 						element: <Places />,
 					},
 					{
+						path: AppRoutes.Import,
+						element: <Import />,
+					},
+					{
+						path: AppRoutes.Settings,
+						element: <Settings />,
+					},
+					{
 						path: AppRoutes.Realm,
 						element: <Realms />,
 					},
 					{
 						path: AppRoutes.Sections,
 						element: <Sections />,
-					},
-					{
-						path: AppRoutes.Import,
-						element: <Import />,
 					},
 				],
 			},

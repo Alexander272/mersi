@@ -76,6 +76,9 @@ export const Create: FC<Props> = ({ ids }) => {
 		}
 	})
 
+	let min = last?.data.dateEnd
+	if (min == NullDate) min = last?.data.dateStart
+
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
 	return (
 		<Stack position={'relative'} mt={-2.5}>
@@ -110,7 +113,7 @@ export const Create: FC<Props> = ({ ids }) => {
 				<FormProvider {...methods}>
 					<Inputs
 						isThisPreservation={last?.data.dateStart == NullDate || last?.data.dateEnd != NullDate}
-						min={last?.data.dateEnd || last?.data.dateStart}
+						min={min}
 					/>
 				</FormProvider>
 

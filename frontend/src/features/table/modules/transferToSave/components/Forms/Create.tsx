@@ -77,6 +77,9 @@ export const Create: FC<Props> = ({ ids }) => {
 		}
 	})
 
+	let min = last?.data.dateEnd
+	if (min == NullDate) min = last?.data.dateStart
+
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
 	return (
 		<Stack position={'relative'} mt={-2.5}>
@@ -109,7 +112,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 			<Stack mt={2} component={'form'} onSubmit={saveHandler}>
 				<FormProvider {...methods}>
-					<Inputs isThisSave={isThisSave} min={last?.data.dateEnd || last?.data.dateStart} />
+					<Inputs isThisSave={isThisSave} min={min} />
 				</FormProvider>
 
 				<Divider sx={{ width: '50%', alignSelf: 'center' }} />

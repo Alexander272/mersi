@@ -1,7 +1,7 @@
 import { toast } from 'react-toastify'
 
 import type { IBaseFetchError } from '@/app/types/error'
-import type { IStatus } from './types/status'
+import type { IStatus, IStatusDTO } from './types/status'
 import { API } from '@/app/api'
 import { apiSlice } from '@/app/apiSlice'
 
@@ -24,7 +24,33 @@ export const statusApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
+
+		createStatuses: builder.mutation<{ message: string }, IStatusDTO[]>({
+			query: data => ({
+				url: `${API.status}/several`,
+				method: 'POST',
+				body: data,
+			}),
+			invalidatesTags: [{ type: 'Status', id: 'ALL' }],
+		}),
+		updateStatuses: builder.mutation<{ message: string }, IStatusDTO[]>({
+			query: data => ({
+				url: `${API.status}/several`,
+				method: 'PUT',
+				body: data,
+			}),
+			invalidatesTags: [{ type: 'Status', id: 'ALL' }],
+		}),
+		deleteStatuses: builder.mutation<{ message: string }, string[]>({
+			query: data => ({
+				url: `${API.status}/several`,
+				method: 'DELETE',
+				body: data,
+			}),
+			invalidatesTags: [{ type: 'Status', id: 'ALL' }],
+		}),
 	}),
 })
 
-export const { useGetStatusesQuery } = statusApiSlice
+export const { useGetStatusesQuery, useCreateStatusesMutation, useUpdateStatusesMutation, useDeleteStatusesMutation } =
+	statusApiSlice
