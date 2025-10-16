@@ -33,8 +33,11 @@ func Register(api *gin.RouterGroup, service services.ContextMenu, middleware *mi
 		write := context.Group("", middleware.CheckPermissions(constants.ContextMenu, constants.Write))
 		{
 			write.POST("", handler.create)
+			write.POST("/several", handler.createSeveral)
 			write.PUT("/:id", handler.update)
+			write.PUT("/several", handler.updateSeveral)
 			write.DELETE("/:id", handler.delete)
+			write.DELETE("/several", handler.deleteSeveral)
 		}
 	}
 }
@@ -45,6 +48,7 @@ func (h *Handler) get(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
+	isFull := c.Query("isFull")
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
@@ -57,6 +61,7 @@ func (h *Handler) get(c *gin.Context) {
 		SectionId: section,
 		UserId:    user.ID,
 		Role:      user.Role,
+		IsFull:    isFull == "true",
 	}
 	data, err := h.service.Get(c, req)
 	if err != nil {
@@ -82,6 +87,21 @@ func (h *Handler) create(c *gin.Context) {
 	c.JSON(http.StatusCreated, response.IdResponse{Id: dto.Id, Message: "Пункт меню создан"})
 }
 
+func (h *Handler) createSeveral(c *gin.Context) {
+	dto := []*models.ContextMenuDTO{}
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		return
+	}
+
+	if err := h.service.CreateSeveral(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusCreated, response.IdResponse{Message: "Пункты меню созданы"})
+}
+
 func (h *Handler) update(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
@@ -103,6 +123,21 @@ func (h *Handler) update(c *gin.Context) {
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Пункт меню обновлен"})
 }
 
+func (h *Handler) updateSeveral(c *gin.Context) {
+	var dto []*models.ContextMenuDTO
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Некорректные данные")
+		return
+	}
+
+	if err := h.service.UpdateSeveral(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные обновлены"})
+}
+
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
@@ -117,4 +152,19 @@ func (h *Handler) delete(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusNoContent, response.IdResponse{})
+}
+
+func (h *Handler) deleteSeveral(c *gin.Context) {
+	var dto []string
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Некорректные данные")
+		return
+	}
+
+	if err := h.service.DeleteSeveral(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные удалены"})
 }

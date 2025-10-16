@@ -8,6 +8,10 @@ type RuleItem struct {
 	IsShow      bool   `json:"isShow" db:"is_show"`
 }
 
+type GetRuleItemsDTO struct {
+	OnlyShow bool
+}
+
 type RuleItemDTO struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`

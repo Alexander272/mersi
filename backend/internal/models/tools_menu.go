@@ -15,6 +15,7 @@ type GetToolsMenuDTO struct {
 	SectionId string `json:"sectionId"`
 	UserId    string `json:"userId"`
 	Role      string `json:"role"`
+	IsFull    bool   `json:"isFull"`
 }
 
 type ChangeFavoriteDTO struct {

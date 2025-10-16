@@ -19,14 +19,14 @@ func NewRuleItemService(repo repository.RuleItem) *RuleItemService {
 }
 
 type RuleItem interface {
-	GetAll(context.Context) ([]*models.RuleItem, error)
+	GetAll(context.Context, *models.GetRuleItemsDTO) ([]*models.RuleItem, error)
 	Create(context.Context, *models.RuleItemDTO) error
 	Update(context.Context, *models.RuleItemDTO) error
 	Delete(context.Context, string) error
 }
 
-func (s *RuleItemService) GetAll(ctx context.Context) ([]*models.RuleItem, error) {
-	RuleItems, err := s.repo.GetAll(ctx)
+func (s *RuleItemService) GetAll(ctx context.Context, req *models.GetRuleItemsDTO) ([]*models.RuleItem, error) {
+	RuleItems, err := s.repo.GetAll(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all menu items. error: %w", err)
 	}

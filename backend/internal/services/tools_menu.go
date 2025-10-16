@@ -36,6 +36,10 @@ func (s *ToolsMenuService) Get(ctx context.Context, req *models.GetToolsMenuDTO)
 		return nil, fmt.Errorf("failed to get tools menu. error: %s", err)
 	}
 
+	if req.IsFull {
+		return data, nil
+	}
+
 	role, err := s.roles.Get(ctx, req.Role)
 	if err != nil {
 		return nil, err

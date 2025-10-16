@@ -46,6 +46,8 @@ func (h *Handler) get(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
 		return
 	}
+	isFull := c.Query("isFull")
+
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
 		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
@@ -57,6 +59,7 @@ func (h *Handler) get(c *gin.Context) {
 		SectionId: section,
 		UserId:    user.ID,
 		Role:      user.Role,
+		IsFull:    isFull == "true",
 	}
 	data, err := h.service.Get(c, req)
 	if err != nil {

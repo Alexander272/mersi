@@ -23,14 +23,21 @@ func NewContextService(repo repository.ContextMenu, role Role) *ContextService {
 type ContextMenu interface {
 	Get(ctx context.Context, req *models.GetContextMenuDTO) ([]*models.ContextMenu, error)
 	Create(ctx context.Context, dto *models.ContextMenuDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.ContextMenuDTO) error
 	Update(ctx context.Context, dto *models.ContextMenuDTO) error
+	UpdateSeveral(ctx context.Context, dto []*models.ContextMenuDTO) error
 	Delete(ctx context.Context, dto *models.DeleteContextMenuDTO) error
+	DeleteSeveral(ctx context.Context, dto []string) error
 }
 
 func (s *ContextService) Get(ctx context.Context, req *models.GetContextMenuDTO) ([]*models.ContextMenu, error) {
 	data, err := s.repo.Get(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get context menu. error: %w", err)
+	}
+
+	if req.IsFull {
+		return data, nil
 	}
 
 	role, err := s.role.Get(ctx, req.Role)
@@ -61,6 +68,13 @@ func (s *ContextService) Create(ctx context.Context, dto *models.ContextMenuDTO)
 	return nil
 }
 
+func (s *ContextService) CreateSeveral(ctx context.Context, dto []*models.ContextMenuDTO) error {
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create context menu. error: %w", err)
+	}
+	return nil
+}
+
 func (s *ContextService) Update(ctx context.Context, dto *models.ContextMenuDTO) error {
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update context menu. error: %w", err)
@@ -68,8 +82,22 @@ func (s *ContextService) Update(ctx context.Context, dto *models.ContextMenuDTO)
 	return nil
 }
 
+func (s *ContextService) UpdateSeveral(ctx context.Context, dto []*models.ContextMenuDTO) error {
+	if err := s.repo.UpdateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to update context menu. error: %w", err)
+	}
+	return nil
+}
+
 func (s *ContextService) Delete(ctx context.Context, dto *models.DeleteContextMenuDTO) error {
 	if err := s.repo.Delete(ctx, dto); err != nil {
+		return fmt.Errorf("failed to delete context menu. error: %w", err)
+	}
+	return nil
+}
+
+func (s *ContextService) DeleteSeveral(ctx context.Context, dto []string) error {
+	if err := s.repo.DeleteSeveral(ctx, dto); err != nil {
 		return fmt.Errorf("failed to delete context menu. error: %w", err)
 	}
 	return nil

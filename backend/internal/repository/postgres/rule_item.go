@@ -20,14 +20,19 @@ func NewRuleItemRepo(db *sqlx.DB) *RuleItemRepo {
 }
 
 type RuleItem interface {
-	GetAll(context.Context) ([]*models.RuleItem, error)
+	GetAll(context.Context, *models.GetRuleItemsDTO) ([]*models.RuleItem, error)
 	Create(context.Context, *models.RuleItemDTO) error
 	Update(context.Context, *models.RuleItemDTO) error
 	Delete(context.Context, string) error
 }
 
-func (r *RuleItemRepo) GetAll(ctx context.Context) ([]*models.RuleItem, error) {
-	query := fmt.Sprintf(`SELECT id, name, method, description, is_show FROM %s`, RuleItemTable)
+func (r *RuleItemRepo) GetAll(ctx context.Context, req *models.GetRuleItemsDTO) ([]*models.RuleItem, error) {
+	condition := ""
+	if req.OnlyShow {
+		condition = "WHERE is_show=true"
+	}
+
+	query := fmt.Sprintf(`SELECT id, name, method, description, is_show FROM %s %s ORDER BY name, method`, RuleItemTable, condition)
 	items := []*models.RuleItem{}
 
 	if err := r.db.SelectContext(ctx, &items, query); err != nil {
