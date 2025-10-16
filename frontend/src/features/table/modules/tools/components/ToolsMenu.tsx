@@ -19,8 +19,8 @@ import { ExportDialog } from '../../export/components/ExportDialog'
 import { CreateLocationDialog } from '../../locations/components/Dialogs/Create'
 import { SendToReserveDialog } from '../../locations/components/Dialogs/SendToReserve'
 import { ReceiptDialog } from '../../locations/components/Dialogs/Receipt'
-import { MenuItems } from './ToolsMenuItems'
 import { SendToVerificationDialog } from '../../status/components/SendToVerification/SendToVerification'
+import { MenuItems } from './ToolsMenuItems'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
@@ -31,7 +31,7 @@ export const ToolsMenu = () => {
 	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetToolsMenuQuery(section?.id || '', { skip: !section?.id })
+	const { data, isFetching } = useGetToolsMenuQuery({ section: section?.id || '' }, { skip: !section?.id })
 
 	const toggleHandler = () => setOpen(prev => !prev)
 

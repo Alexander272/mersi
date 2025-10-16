@@ -32,6 +32,8 @@ export type DialogVariants =
 	| 'Schedule'
 	| 'Export'
 	| 'EditStatus'
+	| 'EditContextMenu'
+	| 'EditToolsMenu'
 
 interface IDialogOptions {
 	isOpen: boolean

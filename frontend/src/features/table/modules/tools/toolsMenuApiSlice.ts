@@ -1,17 +1,17 @@
 import { toast } from 'react-toastify'
 
 import type { IBaseFetchError } from '@/app/types/error'
-import type { IToggleToolsMenu, IToolsMenu } from './types/toolsMenu'
+import type { IToggleToolsMenu, IToolsMenu, IToolsMenuDTO } from './types/toolsMenu'
 import { API } from '@/app/api'
 import { apiSlice } from '@/app/apiSlice'
 
 const toolsMenuApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: false,
 	endpoints: builder => ({
-		getToolsMenu: builder.query<{ data: IToolsMenu[] }, string>({
-			query: section => ({
+		getToolsMenu: builder.query<{ data: IToolsMenu[] }, { section: string; isFull?: boolean }>({
+			query: req => ({
 				url: API.si.tools,
-				params: new URLSearchParams({ section }),
+				params: new URLSearchParams([['section', req.section], req.isFull ? ['isFull', 'true'] : []]),
 			}),
 			providesTags: [{ type: 'Sections', id: 'Tools' }],
 			onQueryStarted: async (_arg, api) => {
@@ -35,7 +35,37 @@ const toolsMenuApiSlice = apiSlice.injectEndpoints({
 				{ type: 'Sections', id: 'Context' },
 			],
 		}),
+
+		createToolsMenu: builder.mutation<null, IToolsMenuDTO>({
+			query: data => ({
+				url: API.si.tools,
+				method: 'POST',
+				body: data,
+			}),
+			invalidatesTags: [{ type: 'Sections', id: 'Tools' }],
+		}),
+		updateToolsMenu: builder.mutation<null, IToolsMenuDTO>({
+			query: data => ({
+				url: `${API.si.tools}/${data.id}`,
+				method: 'PUT',
+				body: data,
+			}),
+			invalidatesTags: [{ type: 'Sections', id: 'Tools' }],
+		}),
+		deleteToolsMenu: builder.mutation<null, string>({
+			query: id => ({
+				url: `${API.si.tools}/${id}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [{ type: 'Sections', id: 'Tools' }],
+		}),
 	}),
 })
 
-export const { useGetToolsMenuQuery, useToggleFavoriteMutation } = toolsMenuApiSlice
+export const {
+	useGetToolsMenuQuery,
+	useToggleFavoriteMutation,
+	useCreateToolsMenuMutation,
+	useUpdateToolsMenuMutation,
+	useDeleteToolsMenuMutation,
+} = toolsMenuApiSlice

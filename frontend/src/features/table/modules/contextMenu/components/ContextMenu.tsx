@@ -54,7 +54,7 @@ export const ContextMenu = () => {
 	const contextMenu = useAppSelector(getContextMenu)
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetContextMenuQuery(section?.id || '', { skip: !section?.id })
+	const { data, isFetching } = useGetContextMenuQuery({ section: section?.id || '' }, { skip: !section?.id })
 
 	const closeHandler = () => {
 		dispatch(setContextMenu())

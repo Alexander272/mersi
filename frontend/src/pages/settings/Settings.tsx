@@ -4,16 +4,19 @@ import { Box, Breadcrumbs, Tab, Tabs } from '@mui/material'
 import { AppRoutes } from '../router/routes'
 import { PageBox } from '@/components/PageBox/PageBox'
 import { Breadcrumb } from '@/components/Breadcrumb/Breadcrumb'
+import { Fallback } from '@/components/Fallback/Fallback'
 import { Realms } from './realms/RealmsLazy'
 import { Sections } from './sections/SectionLazy'
 import { Statuses } from './statuses/StatusesLazy'
-import { Fallback } from '@/components/Fallback/Fallback'
+import { ContextMenu } from './contextMenu/ContextMenuLazy'
+import { Tools } from './tools/ToolsLazy'
 
 const tabsData = [
 	{ id: 'realm', name: 'Области' },
 	{ id: 'sections', name: 'Секции' },
 	{ id: 'status', name: 'Статусы' },
-	// { id: 'context', name: 'Контекстное меню'}
+	{ id: 'context', name: 'Контекстное меню' },
+	{ id: 'tools', name: 'Меню "Инструменты"' },
 ]
 
 export default function Settings() {
@@ -83,6 +86,8 @@ export default function Settings() {
 					{active == 'realm' && <Realms />}
 					{active == 'sections' && <Sections />}
 					{active == 'status' && <Statuses />}
+					{active == 'context' && <ContextMenu />}
+					{active == 'tools' && <Tools />}
 				</Suspense>
 			</Box>
 		</PageBox>

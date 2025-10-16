@@ -101,7 +101,12 @@ export const StatusesList: FC<Props> = ({ section }) => {
 				{isFetching || creating || updating || removing ? <BoxFallback /> : null}
 
 				<Stack direction={'row'} justifyContent={'space-between'} mb={2.5} mx={2}>
-					<Button onClick={openDialog} variant='outlined' sx={{ width: 160, textTransform: 'inherit' }}>
+					<Button
+						onClick={openDialog}
+						variant='outlined'
+						disabled={section == 'new'}
+						sx={{ width: 160, textTransform: 'inherit' }}
+					>
 						Добавить
 					</Button>
 

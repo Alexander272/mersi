@@ -71,4 +71,5 @@ export const API = {
 	columns: '/columns' as const,
 	createForm: '/forms/create',
 	import: '/import' as const,
+	rules: '/rules' as const,
 }
