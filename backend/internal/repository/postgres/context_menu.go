@@ -134,9 +134,9 @@ func (r *ContextRepo) Delete(ctx context.Context, dto *models.DeleteContextMenuD
 }
 
 func (r *ContextRepo) DeleteSeveral(ctx context.Context, dto []string) error {
-	query := fmt.Sprintf(`DELETE FROM %s WHERE id=ANY(:id)`, ContextTable)
+	query := fmt.Sprintf(`DELETE FROM %s WHERE id=ANY($1)`, ContextTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, pq.Array(dto)); err != nil {
+	if _, err := r.db.ExecContext(ctx, query, pq.Array(dto)); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

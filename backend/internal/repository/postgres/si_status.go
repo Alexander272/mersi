@@ -112,9 +112,9 @@ func (r *StatusRepo) Delete(ctx context.Context, dto *models.DeleteSiStatusDTO) 
 }
 
 func (r *StatusRepo) DeleteSeveral(ctx context.Context, dto []string) error {
-	query := fmt.Sprintf(`DELETE FROM %s WHERE id=ANY(:id)`, SiStatusTable)
+	query := fmt.Sprintf(`DELETE FROM %s WHERE id=ANY($1)`, SiStatusTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, pq.Array(dto)); err != nil {
+	if _, err := r.db.ExecContext(ctx, query, pq.Array(dto)); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

@@ -33,8 +33,11 @@ func Register(api *gin.RouterGroup, service services.VerificationFields, middlew
 		write := fields.Group("", middleware.CheckPermissions(constants.VerificationFields, constants.Write))
 		{
 			write.POST("", handler.create)
+			write.POST("/several", handler.createSeveral)
 			write.PUT("/:id", handler.update)
+			write.PUT("/several", handler.updateSeveral)
 			write.DELETE("/:id", handler.delete)
+			write.DELETE("/several", handler.deleteSeveral)
 		}
 	}
 }
@@ -72,6 +75,21 @@ func (h *Handler) create(c *gin.Context) {
 	c.JSON(http.StatusCreated, response.IdResponse{Message: "Поле создано"})
 }
 
+func (h *Handler) createSeveral(c *gin.Context) {
+	var dto []*models.VerificationFieldDTO
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Некорректные данные")
+		return
+	}
+
+	if err := h.service.CreateSeveral(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusCreated, response.IdResponse{Message: "Поля созданы"})
+}
+
 func (h *Handler) update(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
@@ -94,6 +112,21 @@ func (h *Handler) update(c *gin.Context) {
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Поле обновлено"})
 }
 
+func (h *Handler) updateSeveral(c *gin.Context) {
+	var dto []*models.VerificationFieldDTO
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Некорректные данные")
+		return
+	}
+
+	if err := h.service.UpdateSeveral(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Поля обновлены"})
+}
+
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
@@ -104,6 +137,21 @@ func (h *Handler) delete(c *gin.Context) {
 
 	if err := h.service.Delete(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusNoContent, response.IdResponse{})
+}
+
+func (h *Handler) deleteSeveral(c *gin.Context) {
+	var dto []string
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Некорректные данные")
+		return
+	}
+
+	if err := h.service.DeleteSeveral(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}

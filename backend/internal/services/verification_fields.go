@@ -21,8 +21,11 @@ func NewVerificationFieldService(repo repository.VerificationFields) *Verificati
 type VerificationFields interface {
 	Get(ctx context.Context, req *models.GetVerFieldsDTO) ([]*models.VerificationField, error)
 	Create(ctx context.Context, dto *models.VerificationFieldDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.VerificationFieldDTO) error
 	Update(ctx context.Context, dto *models.VerificationFieldDTO) error
+	UpdateSeveral(ctx context.Context, dto []*models.VerificationFieldDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerFieldDTO) error
+	DeleteSeveral(ctx context.Context, dto []string) error
 }
 
 func (s *VerificationFieldService) Get(ctx context.Context, req *models.GetVerFieldsDTO) ([]*models.VerificationField, error) {
@@ -40,6 +43,13 @@ func (s *VerificationFieldService) Create(ctx context.Context, dto *models.Verif
 	return nil
 }
 
+func (s *VerificationFieldService) CreateSeveral(ctx context.Context, dto []*models.VerificationFieldDTO) error {
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create verification fields. error: %w", err)
+	}
+	return nil
+}
+
 func (s *VerificationFieldService) Update(ctx context.Context, dto *models.VerificationFieldDTO) error {
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update verification field. error: %w", err)
@@ -47,9 +57,23 @@ func (s *VerificationFieldService) Update(ctx context.Context, dto *models.Verif
 	return nil
 }
 
+func (s *VerificationFieldService) UpdateSeveral(ctx context.Context, dto []*models.VerificationFieldDTO) error {
+	if err := s.repo.UpdateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to update verification fields. error: %w", err)
+	}
+	return nil
+}
+
 func (s *VerificationFieldService) Delete(ctx context.Context, dto *models.DeleteVerFieldDTO) error {
 	if err := s.repo.Delete(ctx, dto); err != nil {
 		return fmt.Errorf("failed to delete verification field. error: %w", err)
+	}
+	return nil
+}
+
+func (s *VerificationFieldService) DeleteSeveral(ctx context.Context, dto []string) error {
+	if err := s.repo.DeleteSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to delete verification fields. error: %w", err)
 	}
 	return nil
 }
