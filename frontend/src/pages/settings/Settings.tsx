@@ -10,6 +10,7 @@ import { Sections } from './sections/SectionLazy'
 import { Statuses } from './statuses/StatusesLazy'
 import { ContextMenu } from './contextMenu/ContextMenuLazy'
 import { Tools } from './tools/ToolsLazy'
+import { Verification } from './verification/VerificationLazy'
 
 const tabsData = [
 	{ id: 'realm', name: 'Области' },
@@ -17,6 +18,7 @@ const tabsData = [
 	{ id: 'status', name: 'Статусы' },
 	{ id: 'context', name: 'Контекстное меню' },
 	{ id: 'tools', name: 'Меню "Инструменты"' },
+	{ id: 'verification', name: 'Поверки' },
 ]
 
 export default function Settings() {
@@ -88,6 +90,7 @@ export default function Settings() {
 					{active == 'status' && <Statuses />}
 					{active == 'context' && <ContextMenu />}
 					{active == 'tools' && <Tools />}
+					{active == 'verification' && <Verification />}
 				</Suspense>
 			</Box>
 		</PageBox>
