@@ -11,6 +11,7 @@ import { Statuses } from './statuses/StatusesLazy'
 import { ContextMenu } from './contextMenu/ContextMenuLazy'
 import { Tools } from './tools/ToolsLazy'
 import { Verification } from './verification/VerificationLazy'
+import History from './history/History'
 
 const tabsData = [
 	{ id: 'realm', name: 'Области' },
@@ -19,6 +20,7 @@ const tabsData = [
 	{ id: 'context', name: 'Контекстное меню' },
 	{ id: 'tools', name: 'Меню "Инструменты"' },
 	{ id: 'verification', name: 'Поверки' },
+	{ id: 'history', name: 'История' },
 ]
 
 export default function Settings() {
@@ -91,6 +93,7 @@ export default function Settings() {
 					{active == 'context' && <ContextMenu />}
 					{active == 'tools' && <Tools />}
 					{active == 'verification' && <Verification />}
+					{active == 'history' && <History />}
 				</Suspense>
 			</Box>
 		</PageBox>

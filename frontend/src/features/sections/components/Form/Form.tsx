@@ -1,18 +1,6 @@
 import { FC, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import {
-	Box,
-	Button,
-	FormControl,
-	InputLabel,
-	MenuItem,
-	Select,
-	Slider,
-	Stack,
-	TextField,
-	Typography,
-	useTheme,
-} from '@mui/material'
+import { Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField, useTheme } from '@mui/material'
 import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
@@ -90,7 +78,8 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 		const newData = {
 			...form,
 			id: section || '',
-			maxPosition: form.position,
+			position: +form.position,
+			maxPosition: +form.position,
 			verificationDay: +form.verificationDay,
 		}
 		try {
@@ -110,6 +99,7 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 
 	const deleteHandler = async () => {
 		if (section == 'new') return
+
 		try {
 			await remove(section).unwrap()
 			setSection('new')
@@ -174,53 +164,37 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 			</Stack>
 
 			<Stack direction={'row'} flexGrow={1} spacing={2} mb={2} alignItems={'center'}>
-				<Stack flexGrow={1} maxWidth={500}>
-					<Typography>Позиция</Typography>
-					<Stack direction={'row'} flexGrow={1}>
-						<Box width={'90%'} paddingX={3}>
-							<Controller
-								control={control}
-								name={'position'}
-								render={({ field }) => (
-									<Slider
-										{...field}
-										aria-label='position'
-										defaultValue={length + 1}
-										valueLabelDisplay='auto'
-										shiftStep={1}
-										step={1}
-										marks
-										min={1}
-										max={length}
-									/>
-								)}
-							/>
-						</Box>
-
-						<Controller
-							control={control}
-							name={'position'}
-							render={({ field }) => (
-								<TextField
-									{...field}
-									variant='standard'
-									sx={{ width: 40 }}
-									slotProps={{
-										htmlInput: {
-											step: 1,
-											min: 1,
-											max: length,
-											type: 'number',
-											'aria-labelledby': 'input-slider',
-										},
-									}}
-								/>
-							)}
+				<Controller
+					control={control}
+					name={'position'}
+					render={({ field }) => (
+						<TextField
+							{...field}
+							sx={{ maxWidth: '50%' }}
+							label={'Позиция'}
+							fullWidth
+							slotProps={{
+								htmlInput: {
+									step: 1,
+									min: 1,
+									max: length,
+									type: 'number',
+								},
+							}}
 						/>
-					</Stack>
-				</Stack>
+					)}
+				/>
 
-				<Stack direction={'row'} flexGrow={1} spacing={2} mb={1} justifyContent={'flex-end'} height={38}>
+				<Stack
+					direction={'row'}
+					flexGrow={1}
+					spacing={2}
+					mb={1}
+					justifyContent={'flex-end'}
+					height={38}
+					width={'100%'}
+					sx={{ maxWidth: '50%' }}
+				>
 					<Button
 						variant='outlined'
 						type='submit'

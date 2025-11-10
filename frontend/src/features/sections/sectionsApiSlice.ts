@@ -44,7 +44,10 @@ export const sectionsApiSlice = apiSlice.injectEndpoints({
 				method: 'POST',
 				body: section,
 			}),
-			invalidatesTags: [{ type: 'Sections', id: 'ALL' }],
+			invalidatesTags: [
+				{ type: 'Sections', id: 'ALL' },
+				{ type: 'Sections', id: 'Grouped' },
+			],
 		}),
 
 		updateSection: builder.mutation<null, ISectionDTO>({
@@ -53,7 +56,10 @@ export const sectionsApiSlice = apiSlice.injectEndpoints({
 				method: 'PUT',
 				body: section,
 			}),
-			invalidatesTags: [{ type: 'Sections', id: 'ALL' }],
+			invalidatesTags: [
+				{ type: 'Sections', id: 'ALL' },
+				{ type: 'Sections', id: 'Grouped' },
+			],
 		}),
 
 		deleteSection: builder.mutation<null, string>({
@@ -61,7 +67,10 @@ export const sectionsApiSlice = apiSlice.injectEndpoints({
 				url: `${API.sections.base}/${id}`,
 				method: 'DELETE',
 			}),
-			invalidatesTags: [{ type: 'Sections', id: 'ALL' }],
+			invalidatesTags: [
+				{ type: 'Sections', id: 'ALL' },
+				{ type: 'Sections', id: 'Grouped' },
+			],
 		}),
 	}),
 })

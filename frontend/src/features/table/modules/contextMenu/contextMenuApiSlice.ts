@@ -12,7 +12,7 @@ const contextMenuApiSlice = apiSlice.injectEndpoints({
 			query: req => ({
 				url: API.si.context,
 				// params: new URLSearchParams({ section: req.section, isFull: req.isFull ? 'true' : 'false' }),
-				params: new URLSearchParams([['section', req.section], req.isFull ? ['isFull', 'true'] : []]),
+				params: new URLSearchParams([['section', req.section]].concat(req.isFull ? [['isFull', 'true']] : [])),
 			}),
 			providesTags: [{ type: 'Sections', id: 'Context' }],
 			onQueryStarted: async (_arg, api) => {

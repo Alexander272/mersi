@@ -11,7 +11,7 @@ const toolsMenuApiSlice = apiSlice.injectEndpoints({
 		getToolsMenu: builder.query<{ data: IToolsMenu[] }, { section: string; isFull?: boolean }>({
 			query: req => ({
 				url: API.si.tools,
-				params: new URLSearchParams([['section', req.section], req.isFull ? ['isFull', 'true'] : []]),
+				params: new URLSearchParams([['section', req.section]].concat(req.isFull ? [['isFull', 'true']] : [])),
 			}),
 			providesTags: [{ type: 'Sections', id: 'Tools' }],
 			onQueryStarted: async (_arg, api) => {

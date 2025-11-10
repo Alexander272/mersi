@@ -36,6 +36,7 @@ export type DialogVariants =
 	| 'EditToolsMenu'
 	| 'EditVerificationFields'
 	| 'EditVerificationHistory'
+	| 'EditHistory'
 
 interface IDialogOptions {
 	isOpen: boolean
