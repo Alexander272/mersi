@@ -31,8 +31,11 @@ func Register(api *gin.RouterGroup, service services.HistoryType, middleware *mi
 		write := types.Group("", middleware.CheckPermissions(constants.HistoryTypes, constants.Write))
 		{
 			write.POST("", handler.create)
+			write.POST("/several", handler.createSeveral)
 			write.PUT("/:id", handler.update)
+			write.PUT("/several", handler.updateSeveral)
 			write.DELETE("/:id", handler.delete)
+			write.DELETE("/several", handler.deleteSeveral)
 		}
 	}
 }
@@ -69,6 +72,21 @@ func (h *Handler) create(c *gin.Context) {
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные сохранены"})
 }
 
+func (h *Handler) createSeveral(c *gin.Context) {
+	dto := []*models.HistoryTypeDTO{}
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		return
+	}
+
+	if err := h.service.CreateSeveral(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные сохранены"})
+}
+
 func (h *Handler) update(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
@@ -90,6 +108,21 @@ func (h *Handler) update(c *gin.Context) {
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные сохранены"})
 }
 
+func (h *Handler) updateSeveral(c *gin.Context) {
+	dto := []*models.HistoryTypeDTO{}
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		return
+	}
+
+	if err := h.service.UpdateSeveral(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные сохранены"})
+}
+
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
@@ -99,6 +132,21 @@ func (h *Handler) delete(c *gin.Context) {
 	dto := &models.DeleteHistoryTypeDTO{Id: id}
 
 	if err := h.service.Delete(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные удалены"})
+}
+
+func (h *Handler) deleteSeveral(c *gin.Context) {
+	dto := []string{}
+	if err := c.BindJSON(&dto); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Некорректные данные")
+		return
+	}
+
+	if err := h.service.DeleteSeveral(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return

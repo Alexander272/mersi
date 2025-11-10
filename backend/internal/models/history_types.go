@@ -3,11 +3,12 @@ package models
 import "time"
 
 type HistoryType struct {
-	Id       string    `json:"id" db:"id"`
-	Group    string    `json:"group" db:"group"`
-	Label    string    `json:"label" db:"label"`
-	Position int       `json:"position" db:"position"`
-	Created  time.Time `json:"created" db:"created_at"`
+	Id        string    `json:"id" db:"id"`
+	SectionId string    `json:"sectionId" db:"section_id"`
+	Group     string    `json:"group" db:"group"`
+	Label     string    `json:"label" db:"label"`
+	Position  int       `json:"position" db:"position"`
+	Created   time.Time `json:"created" db:"created_at"`
 }
 
 type GetHistoryTypesDTO struct {

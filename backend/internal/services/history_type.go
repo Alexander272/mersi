@@ -19,8 +19,11 @@ func NewHistoryTypeService(repo repository.HistoryType) *HistoryTypeService {
 type HistoryType interface {
 	Get(ctx context.Context, dto *models.GetHistoryTypesDTO) ([]*models.HistoryType, error)
 	Create(ctx context.Context, dto *models.HistoryTypeDTO) error
+	CreateSeveral(ctx context.Context, dto []*models.HistoryTypeDTO) error
 	Update(ctx context.Context, dto *models.HistoryTypeDTO) error
+	UpdateSeveral(ctx context.Context, dto []*models.HistoryTypeDTO) error
 	Delete(ctx context.Context, dto *models.DeleteHistoryTypeDTO) error
+	DeleteSeveral(ctx context.Context, dto []string) error
 }
 
 func (s *HistoryTypeService) Get(ctx context.Context, dto *models.GetHistoryTypesDTO) ([]*models.HistoryType, error) {
@@ -38,6 +41,13 @@ func (s *HistoryTypeService) Create(ctx context.Context, dto *models.HistoryType
 	return nil
 }
 
+func (s *HistoryTypeService) CreateSeveral(ctx context.Context, dto []*models.HistoryTypeDTO) error {
+	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to create several history types. error: %w", err)
+	}
+	return nil
+}
+
 func (s *HistoryTypeService) Update(ctx context.Context, dto *models.HistoryTypeDTO) error {
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update history type. error: %w", err)
@@ -45,9 +55,23 @@ func (s *HistoryTypeService) Update(ctx context.Context, dto *models.HistoryType
 	return nil
 }
 
+func (s *HistoryTypeService) UpdateSeveral(ctx context.Context, dto []*models.HistoryTypeDTO) error {
+	if err := s.repo.UpdateSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to update several history types. error: %w", err)
+	}
+	return nil
+}
+
 func (s *HistoryTypeService) Delete(ctx context.Context, dto *models.DeleteHistoryTypeDTO) error {
 	if err := s.repo.Delete(ctx, dto); err != nil {
 		return fmt.Errorf("failed to delete history type. error: %w", err)
+	}
+	return nil
+}
+
+func (s *HistoryTypeService) DeleteSeveral(ctx context.Context, dto []string) error {
+	if err := s.repo.DeleteSeveral(ctx, dto); err != nil {
+		return fmt.Errorf("failed to delete several history types. error: %w", err)
 	}
 	return nil
 }
