@@ -38,7 +38,7 @@ export const HistoryList: FC<Props> = ({ section }) => {
 	const [removeAll, { isLoading: removing }] = useDeleteHistoryTypesMutation()
 
 	const methods = useForm<{ data: IHistoryForm[] }>({
-		values: { data: data?.data.map(d => ({ ...d, status: 'none', group: '' })) || [] },
+		values: { data: data?.data.map(d => ({ ...d, status: 'none' })) || [] },
 	})
 	const {
 		control,
@@ -83,7 +83,6 @@ export const HistoryList: FC<Props> = ({ section }) => {
 				item.position = idx + 1
 			}
 			item.sectionId = section
-			item.group = 'form'
 
 			if (item.status == 'updated' || item.status == 'moved') updated.push(item)
 			if (item.status == 'new') created.push(item)

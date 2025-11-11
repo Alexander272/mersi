@@ -17,16 +17,17 @@ import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
 import type { IRealm } from '../types/realm'
-import { Fallback } from '@/components/Fallback/Fallback'
-import { SaveIcon } from '@/components/Icons/SaveIcon'
-import { Confirm } from '@/components/Confirm/Confirm'
-import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
+import { useReloadPermsMutation } from '../permApiSlice'
 import {
 	useCreateRealmMutation,
 	useDeleteRealmMutation,
 	useGetRealmByIdQuery,
 	useUpdateRealmMutation,
 } from '../realmsApiSlice'
+import { Fallback } from '@/components/Fallback/Fallback'
+import { Confirm } from '@/components/Confirm/Confirm'
+import { SaveIcon } from '@/components/Icons/SaveIcon'
+import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
 
 type Props = {
 	realm: string
@@ -39,12 +40,15 @@ const defaultValues: Form = {
 	name: '',
 	realm: '',
 	isActive: true,
-	reserveChannel: '',
+	notificationChannel: '',
 	expirationNotice: false,
 	locationType: 'department',
-	hasResponsible: true,
-	needResponsible: true,
 	needConfirmed: true,
+	hasResponsible: true,
+	hasEmployees: true,
+	hasCommissioningCert: false,
+	hasPreservations: false,
+	hasTransfer: false,
 }
 
 export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
@@ -55,6 +59,8 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 	const [create, { isLoading: isCreating }] = useCreateRealmMutation()
 	const [update, { isLoading: isUpdating }] = useUpdateRealmMutation()
 	const [remove, { isLoading: isDeleting }] = useDeleteRealmMutation()
+
+	const [reload, { isLoading: isReloading }] = useReloadPermsMutation()
 
 	const {
 		control,
@@ -100,6 +106,16 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 		}
 	}
 
+	const reloadHandler = async () => {
+		try {
+			await reload(null).unwrap()
+			toast.success('Права обновлены')
+		} catch (error) {
+			const fetchError = error as IFetchError
+			toast.error(fetchError.data.message, { autoClose: false })
+		}
+	}
+
 	return (
 		<Stack component={'form'} onSubmit={saveHandler} position={'relative'}>
 			{isFetching || isDeleting || isUpdating || isCreating ? (
@@ -123,7 +139,7 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 			<Stack direction={'row'} flexGrow={1} spacing={2} mb={2}>
 				<Controller
 					control={control}
-					name={'reserveChannel'}
+					name={'notificationChannel'}
 					render={({ field }) => <TextField {...field} label={'Канал'} fullWidth />}
 				/>
 
@@ -162,7 +178,7 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 
 				<Controller
 					control={control}
-					name='hasResponsible'
+					name='hasEmployees'
 					render={({ field }) => (
 						<FormControlLabel
 							control={<Switch checked={field.value} {...field} />}
@@ -173,7 +189,7 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 
 				<Controller
 					control={control}
-					name='needResponsible'
+					name='hasResponsible'
 					render={({ field }) => (
 						<FormControlLabel
 							control={<Switch checked={field.value} {...field} />}
@@ -187,22 +203,22 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 				<Stack direction={'row'} flexGrow={1} spacing={2} mb={2}>
 					<Controller
 						control={control}
-						name={'isActive'}
+						name={'expirationNotice'}
 						render={({ field }) => (
 							<FormControlLabel
 								control={<Switch checked={field.value} {...field} />}
-								label={field.value ? 'Активна' : 'Не активна'}
+								label={`Уведомления о поверках ${field.value ? 'включены' : 'выключены'}`}
 							/>
 						)}
 					/>
 
 					<Controller
 						control={control}
-						name={'expirationNotice'}
+						name={'isActive'}
 						render={({ field }) => (
 							<FormControlLabel
 								control={<Switch checked={field.value} {...field} />}
-								label={`Уведомления о поверках ${field.value ? 'включены' : 'выключены'}`}
+								label={field.value ? 'Активна' : 'Не активна'}
 							/>
 						)}
 					/>
@@ -242,7 +258,21 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 			</Stack>
 
 			{realm != 'new' && data?.data ? (
-				<Typography>Дата создания области: {new Date(data.data.created).toLocaleString('ru-RU')}</Typography>
+				<Stack direction={'row'} justifyContent={'space-between'} alignItems={'center'}>
+					<Typography>
+						Дата создания области: {new Date(data.data.created).toLocaleString('ru-RU')}
+					</Typography>
+
+					<Button
+						onClick={reloadHandler}
+						variant='outlined'
+						sx={{ textTransform: 'inherit' }}
+						disabled={isReloading}
+						loading={isReloading}
+					>
+						Обновить правила доступа
+					</Button>
+				</Stack>
 			) : null}
 		</Stack>
 	)

@@ -5,12 +5,15 @@ export interface IRealm {
 	name: string
 	realm: string
 	isActive: boolean
-	reserveChannel: string
+	notificationChannel: string
 	expirationNotice: boolean
 	locationType: Locations
-	hasResponsible: boolean
-	needResponsible: boolean
 	needConfirmed: boolean
+	hasResponsible: boolean
+	hasEmployees: boolean
+	hasCommissioningCert: boolean
+	hasPreservations: boolean
+	hasTransfer: boolean
 	created: string
 }
 
@@ -19,10 +22,13 @@ export interface IRealmDTO {
 	name: string
 	realm: string
 	isActive: boolean
-	reserveChannel: string
+	notificationChannel: string
 	expirationNotice: boolean
 	locationType: Locations
-	hasResponsible: boolean
-	needResponsible: boolean
 	needConfirmed: boolean
+	hasResponsible: boolean
+	hasEmployees: boolean
+	hasCommissioningCert: boolean
+	hasPreservations: boolean
+	hasTransfer: boolean
 }

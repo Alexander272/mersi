@@ -50,12 +50,12 @@ export const HistoryForm: FC<Props> = ({ data, submit }) => {
 			/>
 
 			<FormControl>
-				<InputLabel id={'group'}>Категория</InputLabel>
+				<InputLabel id={'groups'}>Категория</InputLabel>
 				<Controller
 					control={control}
 					name='group'
 					render={({ field, fieldState: { error } }) => (
-						<Select labelId={'group'} label={'Категория'} error={Boolean(error)} {...field}>
+						<Select labelId={'groups'} label={'Категория'} error={Boolean(error)} {...field}>
 							<MenuItem value='' disabled>
 								Выберите категорию
 							</MenuItem>
