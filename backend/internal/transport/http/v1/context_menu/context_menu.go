@@ -49,6 +49,7 @@ func (h *Handler) get(c *gin.Context) {
 		return
 	}
 	isFull := c.Query("isFull")
+	realm := c.GetHeader("realm")
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
@@ -60,7 +61,7 @@ func (h *Handler) get(c *gin.Context) {
 	req := &models.GetContextMenuDTO{
 		SectionId: section,
 		UserId:    user.ID,
-		Role:      user.Role,
+		RealmId:   realm,
 		IsFull:    isFull == "true",
 	}
 	data, err := h.service.Get(c, req)

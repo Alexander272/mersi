@@ -5,10 +5,8 @@ import (
 	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
-	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func (m *Middleware) VerifyToken(c *gin.Context) {
@@ -39,29 +37,29 @@ func (m *Middleware) VerifyToken(c *gin.Context) {
 		return
 	}
 
-	realm := c.GetHeader("realm")
-	err = uuid.Validate(realm)
-	if err == nil {
-		identity, err := c.Cookie(constants.IdentityCookie)
-		if err != nil || identity == "" {
-			response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
-			return
-		}
-		id := &models.Identity{}
-		err = id.Parse(identity)
-		if err != nil {
-			response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
-			return
-		}
+	// realm := c.GetHeader("realm")
+	// err = uuid.Validate(realm)
+	// if err == nil {
+	// 	identity, err := c.Cookie(constants.IdentityCookie)
+	// 	if err != nil || identity == "" {
+	// 		response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
+	// 		return
+	// 	}
+	// 	id := &models.Identity{}
+	// 	err = id.Parse(identity)
+	// 	if err != nil {
+	// 		response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
+	// 		return
+	// 	}
 
-		role := ""
-		for _, item := range id.Roles {
-			if item.RealmId == realm {
-				role = item.Name
-			}
-		}
-		user.Role = role
-	}
+	// 	role := ""
+	// 	for _, item := range id.Roles {
+	// 		if item.RealmId == realm {
+	// 			role = item.Name
+	// 		}
+	// 	}
+	// 	user.Role = role
+	// }
 
 	c.Set(constants.CtxUser, *user)
 	c.Next()

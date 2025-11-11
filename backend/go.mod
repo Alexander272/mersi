@@ -26,9 +26,10 @@ require (
 )
 
 require (
+	github.com/Blank-Xu/sqlx-adapter v1.0.1 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
-	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.7.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/casbin/govaluate v1.3.0 // indirect

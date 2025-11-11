@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS public.accesses
     id uuid NOT NULL,
     realm_id uuid NOT NULL,
     user_id uuid NOT NULL,
+    sso_id text,
     role_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     CONSTRAINT accesses_pkey PRIMARY KEY (id),

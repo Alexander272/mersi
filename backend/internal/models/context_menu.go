@@ -12,7 +12,7 @@ type ContextMenu struct {
 type GetContextMenuDTO struct {
 	SectionId string `json:"sectionId"`
 	UserId    string `json:"userId"`
-	Role      string `json:"role"`
+	RealmId   string `json:"realmId"`
 	IsFull    bool   `json:"isFull"`
 }
 

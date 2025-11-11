@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -89,8 +90,7 @@ func (s *SessionService) DecodeAccessToken(ctx context.Context, token string) (*
 		return nil, fmt.Errorf("failed to decode access token. error: %w", err)
 	}
 
-	//TODO можно хранить текущие роли пользователя в redis используя sid в качестве ключа, а еще используя время жизни токена
-	// либо же хранить роли в cookie
+	serviceName := os.Getenv("SERVICE_ID")
 
 	user := &models.User{}
 	var role, username, userId string
@@ -101,8 +101,8 @@ func (s *SessionService) DecodeAccessToken(ctx context.Context, token string) (*
 		roles := a.([]interface{})
 		for _, r := range roles {
 			//TODO может получать прификс из конфига
-			if strings.Contains(r.(string), "sia") {
-				role = strings.Replace(r.(string), "sia_", "", 1)
+			if strings.Contains(r.(string), serviceName) {
+				role = strings.Replace(r.(string), serviceName+"_", "", 1)
 				break
 			}
 		}

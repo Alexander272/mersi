@@ -53,7 +53,7 @@ func (r *RealmRepo) GetByUser(ctx context.Context, req *models.GetRealmByUserDTO
 	query := fmt.Sprintf(`SELECT r.id, name, realm, notification_channel, expiration_notice, location_type, is_active, has_responsible,
 		has_employees, need_confirmed, has_commissioning_cert, has_preservations, has_transfer, created_at
 		FROM %s AS r
-		LEFT JOIN LATERAL (SELECT a.id FROM %s AS a INNER JOIN %s AS u ON a.user_id=u.id WHERE sso_id=$1 AND realm_id=r.id) AS a ON true
+		LEFT JOIN LATERAL (SELECT a.id FROM %s AS a INNER JOIN %s AS u ON a.user_id=u.id WHERE u.sso_id=$1 AND realm_id=r.id) AS a ON true
 		WHERE a.id IS NOT NULL ORDER BY created_at`,
 		RealmTable, AccessTable, UsersTable,
 	)

@@ -9,16 +9,18 @@ import (
 )
 
 type ToolsMenuService struct {
-	repo    repository.ToolsMenu
-	context CustomContextMenu
-	roles   Role
+	repo     repository.ToolsMenu
+	context  CustomContextMenu
+	roles    Role
+	accesses Accesses
 }
 
-func NewToolsMenuService(repo repository.ToolsMenu, context CustomContextMenu, roles Role) *ToolsMenuService {
+func NewToolsMenuService(repo repository.ToolsMenu, context CustomContextMenu, roles Role, accesses Accesses) *ToolsMenuService {
 	return &ToolsMenuService{
-		repo:    repo,
-		context: context,
-		roles:   roles,
+		repo:     repo,
+		context:  context,
+		roles:    roles,
+		accesses: accesses,
 	}
 }
 
@@ -40,7 +42,12 @@ func (s *ToolsMenuService) Get(ctx context.Context, req *models.GetToolsMenuDTO)
 		return data, nil
 	}
 
-	role, err := s.roles.Get(ctx, req.Role)
+	access, err := s.accesses.GetByUser(ctx, &models.GetAccessesByUserDTO{UserID: req.UserId, RealmID: req.RealmId})
+	if err != nil {
+		return nil, err
+	}
+
+	role, err := s.roles.Get(ctx, access.Role.Name)
 	if err != nil {
 		return nil, err
 	}

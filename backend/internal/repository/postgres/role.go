@@ -194,7 +194,7 @@ func (r *RoleRepo) GetWithRealm(ctx context.Context, req *models.GetRoleByRealmD
 	query := fmt.Sprintf(`SELECT r.id, name, description, level, realm_id
 		FROM %s AS r
 		INNER JOIN %s AS a ON a.role_id=r.id
-		LEFT JOIN LATERAL (SELECT sso_id from %s WHERE id=a.user_id) AS u ON true
+		-- LEFT JOIN LATERAL (SELECT u.sso_id from %s AS u WHERE id=a.user_id) AS u ON true
 		WHERE sso_id=$1 ORDER BY level DESC, realm_id`,
 		RoleTable, AccessTable, UsersTable,
 	)

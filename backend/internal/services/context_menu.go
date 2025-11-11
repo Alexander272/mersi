@@ -9,14 +9,16 @@ import (
 )
 
 type ContextService struct {
-	repo repository.ContextMenu
-	role Role
+	repo     repository.ContextMenu
+	role     Role
+	accesses Accesses
 }
 
-func NewContextService(repo repository.ContextMenu, role Role) *ContextService {
+func NewContextService(repo repository.ContextMenu, role Role, accesses Accesses) *ContextService {
 	return &ContextService{
-		repo: repo,
-		role: role,
+		repo:     repo,
+		role:     role,
+		accesses: accesses,
 	}
 }
 
@@ -40,7 +42,12 @@ func (s *ContextService) Get(ctx context.Context, req *models.GetContextMenuDTO)
 		return data, nil
 	}
 
-	role, err := s.role.Get(ctx, req.Role)
+	access, err := s.accesses.GetByUser(ctx, &models.GetAccessesByUserDTO{UserID: req.UserId, RealmID: req.RealmId})
+	if err != nil {
+		return nil, err
+	}
+
+	role, err := s.role.Get(ctx, access.Role.Name)
 	if err != nil {
 		return nil, err
 	}

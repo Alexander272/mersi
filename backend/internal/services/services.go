@@ -6,6 +6,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/services/most"
 	"github.com/Alexander272/mersi/backend/pkg/auth"
 	"github.com/Alexander272/mersi/backend/pkg/mattermost"
+	sqlxadapter "github.com/Blank-Xu/sqlx-adapter"
 )
 
 type Services struct {
@@ -57,6 +58,7 @@ type Deps struct {
 	MostClient    *mattermost.Client
 	BotName       string
 	CheckUsedConf config.UsedConfig
+	Adapter       *sqlxadapter.Adapter
 	// BotUrl   string
 }
 
@@ -67,10 +69,18 @@ func NewServices(deps *Deps) *Services {
 
 	user := NewUserService(&UsersDeps{Repo: deps.Repo.Users, Keycloak: deps.Keycloak, Role: role})
 	session := NewSessionService(deps.Keycloak, user)
-	permission := NewPermissionService("configs/privacy.conf", rule, role)
-
 	realm := NewRealmService(deps.Repo.Realm, user)
 	accesses := NewAccessesService(deps.Repo.Accesses)
+
+	permission := NewPermissionService(&PermissionDeps{
+		ConfPath: "configs/privacy.conf",
+		Adapter:  deps.Adapter,
+		Rule:     rule,
+		Role:     role,
+		Realm:    realm,
+		Accesses: accesses,
+	})
+
 	section := NewSectionService(deps.Repo.Section)
 	columns := NewColumnsService(deps.Repo.Columns)
 	createForm := NewCreateFormService(deps.Repo.CreateForm)
@@ -82,9 +92,9 @@ func NewServices(deps *Deps) *Services {
 	verification := NewVerificationService(deps.Repo.Verification, verificationDoc, instrument, document)
 
 	verificationFields := NewVerificationFieldService(deps.Repo.VerificationFields)
-	contextMenu := NewContextService(deps.Repo.ContextMenu, role)
+	contextMenu := NewContextService(deps.Repo.ContextMenu, role, accesses)
 	customContext := NewCustomContextService(deps.Repo.CustomContextMenu)
-	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role)
+	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role, accesses)
 	repair := NewRepairService(deps.Repo.Repair, instrument)
 	preservation := NewPreservationService(deps.Repo.Preservation, instrument)
 	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave, instrument)

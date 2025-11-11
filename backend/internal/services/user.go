@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository"
@@ -118,6 +119,10 @@ func (s *UserService) GetRoles(ctx context.Context, req *models.GetUserInfoDTO) 
 	// if err != nil {
 	// 	return nil, err
 	// }
+
+	sort.Slice(rule.Rules, func(i, j int) bool {
+		return rule.Rules[i] < rule.Rules[j]
+	})
 
 	user.Permissions = rule.Rules
 	return user, nil

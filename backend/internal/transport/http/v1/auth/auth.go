@@ -85,17 +85,6 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 		domain = c.Request.Host
 	}
 
-	roleCookie := &models.Identity{
-		UserId: user.ID,
-		Roles:  user.Roles,
-	}
-	role, err := roleCookie.String()
-	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), roleCookie)
-		return
-	}
-
 	logger.Info("Пользователь успешно авторизовался",
 		logger.StringAttr("section", "auth"),
 		logger.StringAttr("ip", c.ClientIP()),
@@ -105,7 +94,6 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(constants.AuthCookie, user.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
-	c.SetCookie(constants.IdentityCookie, role, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.Host, h.auth.Secure, true)
 	c.JSON(http.StatusOK, response.DataResponse{Data: user})
 }
 
@@ -180,19 +168,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	// 	logger.StringAttr("user_id", user.Id),
 	// )
 
-	cookie := &models.Identity{
-		UserId: user.ID,
-		Roles:  user.Roles,
-	}
-	identity, err := cookie.String()
-	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), cookie)
-		return
-	}
-
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(constants.AuthCookie, user.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
-	c.SetCookie(constants.IdentityCookie, identity, int(h.auth.RefreshTokenTTL.Seconds()), "/", c.Request.Host, h.auth.Secure, true)
 	c.JSON(http.StatusOK, response.DataResponse{Data: user})
 }

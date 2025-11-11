@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -22,13 +23,15 @@ func NewAccessesRepo(db *sqlx.DB) *AccessesRepo {
 
 type Accesses interface {
 	Get(ctx context.Context, req *models.GetAccessesDTO) ([]*models.Accesses, error)
+	GetOriginal(ctx context.Context) ([]*models.AccessesDTO, error)
+	GetByUser(ctx context.Context, req *models.GetAccessesByUserDTO) (*models.Accesses, error)
 	Create(ctx context.Context, dto *models.AccessesDTO) error
 	Update(ctx context.Context, dto *models.AccessesDTO) error
 	Delete(ctx context.Context, dto *models.DeleteAccessesDTO) error
 }
 
 func (r *AccessesRepo) Get(ctx context.Context, req *models.GetAccessesDTO) ([]*models.Accesses, error) {
-	query := fmt.Sprintf(`SELECT a.id, realm_id, user_id, sso_id, username, first_name, last_name, email, role_id, name, a.created_at 
+	query := fmt.Sprintf(`SELECT a.id, realm_id, user_id, u.sso_id, username, first_name, last_name, email, role_id, name, a.created_at 
 		FROM %s AS a 
 		INNER JOIN %s AS u ON a.user_id=u.id 
 		INNER JOIN %s AS r ON r.id=a.role_id 
@@ -62,6 +65,53 @@ func (r *AccessesRepo) Get(ctx context.Context, req *models.GetAccessesDTO) ([]*
 		})
 	}
 
+	return data, nil
+}
+
+func (r *AccessesRepo) GetOriginal(ctx context.Context) ([]*models.AccessesDTO, error) {
+	query := fmt.Sprintf(`SELECT id, realm_id, user_id, sso_id, role_id FROM %s ORDER BY user_id`, AccessTable)
+
+	data := []*models.AccessesDTO{}
+	if err := r.db.SelectContext(ctx, &data, query); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
+func (r *AccessesRepo) GetByUser(ctx context.Context, req *models.GetAccessesByUserDTO) (*models.Accesses, error) {
+	query := fmt.Sprintf(`SELECT a.id, realm_id, user_id, u.sso_id, username, first_name, last_name, email, role_id, name, a.created_at 
+		FROM %s AS a 
+		INNER JOIN %s AS u ON a.user_id=u.id 
+		INNER JOIN %s AS r ON r.id=a.role_id 
+		WHERE realm_id=$1 AND u.sso_id=$2 ORDER BY name, last_name, first_name`,
+		AccessTable, UsersTable, RoleTable,
+	)
+	tmp := &pq_models.Accesses{}
+
+	if err := r.db.GetContext(ctx, tmp, query, req.RealmID, req.UserID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+
+	data := &models.Accesses{
+		ID:      tmp.Id,
+		RealmID: tmp.RealmId,
+		Created: tmp.Created,
+		User: &models.UserData{
+			ID:        tmp.UserId,
+			SSO_ID:    tmp.SSOId,
+			Username:  tmp.Username,
+			FirstName: tmp.FirstName,
+			LastName:  tmp.LastName,
+			Email:     tmp.Email,
+		},
+		Role: &models.Role{
+			ID:   tmp.RoleId,
+			Name: tmp.RoleName,
+		},
+	}
 	return data, nil
 }
 

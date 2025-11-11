@@ -20,6 +20,8 @@ func NewAccessesService(repo repository.Accesses) *AccessesService {
 
 type Accesses interface {
 	Get(ctx context.Context, req *models.GetAccessesDTO) ([]*models.Accesses, error)
+	GetOriginal(ctx context.Context) ([]*models.AccessesDTO, error)
+	GetByUser(ctx context.Context, req *models.GetAccessesByUserDTO) (*models.Accesses, error)
 	Create(ctx context.Context, dto *models.AccessesDTO) error
 	Update(ctx context.Context, dto *models.AccessesDTO) error
 	Delete(ctx context.Context, dto *models.DeleteAccessesDTO) error
@@ -29,6 +31,25 @@ func (s *AccessesService) Get(ctx context.Context, req *models.GetAccessesDTO) (
 	data, err := s.repo.Get(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get accesses. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *AccessesService) GetOriginal(ctx context.Context) ([]*models.AccessesDTO, error) {
+	data, err := s.repo.GetOriginal(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get accesses. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *AccessesService) GetByUser(ctx context.Context, req *models.GetAccessesByUserDTO) (*models.Accesses, error) {
+	data, err := s.repo.GetByUser(ctx, req)
+	if err != nil {
+		if err == models.ErrNoRows {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to get accesses by user. error: %w", err)
 	}
 	return data, nil
 }

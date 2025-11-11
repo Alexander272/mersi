@@ -16,6 +16,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/forms"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/history_types"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/import_file"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/permissions"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/preservation"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/realm"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/repair"
@@ -87,4 +88,5 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	import_file.Register(secure, h.services.ImportFile, h.middleware)
 	status.Register(secure, h.services.SiStatus, h.middleware)
 	rules.Register(secure, h.services.RuleItem, h.middleware)
+	permissions.Register(secure, h.services.Permission, h.middleware)
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/Alexander272/mersi/backend/pkg/database/postgres"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/Alexander272/mersi/backend/pkg/mattermost"
+	adapter "github.com/Blank-Xu/sqlx-adapter"
 	_ "github.com/lib/pq"
 	"github.com/subosito/gotenv"
 )
@@ -73,6 +74,11 @@ func main() {
 		log.Fatalf("failed to ping most. error: %s", err.Error())
 	}
 
+	adapter, err := adapter.NewAdapter(db, "casbin_policies")
+	if err != nil {
+		log.Fatalf("failed to create adapter. error: %s", err.Error())
+	}
+
 	//* Services, Repos & API Handlers
 	repo := repository.NewRepository(db)
 	services := services.NewServices(&services.Deps{
@@ -80,6 +86,7 @@ func main() {
 		Keycloak:      keycloak,
 		MostClient:    mostClient,
 		CheckUsedConf: conf.Notification.CheckUsed,
+		Adapter:       adapter,
 		// BotUrl:   conf.Bot.Url,
 	})
 

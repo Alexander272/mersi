@@ -15,11 +15,16 @@ type Accesses struct {
 type GetAccessesDTO struct {
 	RealmID string `json:"id"`
 }
+type GetAccessesByUserDTO struct {
+	RealmID string `json:"id"`
+	UserID  string `json:"userId" db:"user_id"`
+}
 
 type AccessesDTO struct {
 	ID      string `json:"id" db:"id"`
 	RealmID string `json:"realmId" db:"realm_id" binding:"required"`
 	UserID  string `json:"userId" db:"user_id" binding:"required"`
+	SSO_ID  string `json:"ssoId" db:"sso_id"`
 	RoleID  string `json:"roleId" db:"role_id" binding:"required"`
 }
 
