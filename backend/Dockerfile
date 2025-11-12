@@ -1,11 +1,11 @@
-FROM golang:1.23.8-alpine AS builder
+FROM golang:1.24-alpine3.22 AS builder
 WORKDIR /build
 COPY ./go.mod . 
 RUN go mod download
 COPY . .
 RUN go build -o main cmd/app/main.go
 
-FROM alpine:3.21.3
+FROM alpine:3.22.2
 RUN apk add --no-cache tzdata
 COPY ./configs/ /configs/
 COPY --from=builder /build/main /bin/main

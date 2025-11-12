@@ -1,6 +1,6 @@
 module github.com/Alexander272/mersi/backend
 
-go 1.23.7
+go 1.24.10
 
 require (
 	github.com/Nerzal/gocloak/v13 v13.9.0

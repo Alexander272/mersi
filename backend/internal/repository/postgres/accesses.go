@@ -116,8 +116,8 @@ func (r *AccessesRepo) GetByUser(ctx context.Context, req *models.GetAccessesByU
 }
 
 func (r *AccessesRepo) Create(ctx context.Context, dto *models.AccessesDTO) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, realm_id, user_id, role_id) 
-		VALUES (:id, :realm_id, :user_id, :role_id)`,
+	query := fmt.Sprintf(`INSERT INTO %s (id, realm_id, user_id, sso_id, role_id) 
+		VALUES (:id, :realm_id, :user_id, :sso_id, :role_id)`,
 		AccessTable,
 	)
 	dto.ID = uuid.NewString()
@@ -129,7 +129,7 @@ func (r *AccessesRepo) Create(ctx context.Context, dto *models.AccessesDTO) erro
 }
 
 func (r *AccessesRepo) Update(ctx context.Context, dto *models.AccessesDTO) error {
-	query := fmt.Sprintf(`UPDATE %s SET realm_id=:realm_id, user_id=:user_id, role_id=:role_id WHERE id=:id`,
+	query := fmt.Sprintf(`UPDATE %s SET realm_id=:realm_id, user_id=:user_id, sso_id=:sso_id, role_id=:role_id WHERE id=:id`,
 		AccessTable,
 	)
 

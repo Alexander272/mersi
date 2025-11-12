@@ -114,24 +114,6 @@ func (h *Handlers) choose(c *gin.Context) {
 	}
 	dto.UserID = u.(models.User).ID
 
-	identity, err := c.Cookie(constants.IdentityCookie)
-	if err != nil || identity == "" {
-		response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
-		return
-	}
-	id := &models.Identity{}
-	err = id.Parse(identity)
-	if err != nil {
-		response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
-		return
-	}
-
-	for _, item := range id.Roles {
-		if item.RealmId == dto.RealmID {
-			dto.Role = item.Name
-		}
-	}
-
 	user, err := h.service.Choose(c, dto)
 	if err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())

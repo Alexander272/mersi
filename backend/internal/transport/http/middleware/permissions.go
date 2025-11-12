@@ -43,27 +43,6 @@ func (m *Middleware) CheckPermissions(menuItem, method string) gin.HandlerFunc {
 			return
 		}
 
-		//* old version
-
-		// u, exists := c.Get(constants.CtxUser)
-		// if !exists {
-		// 	response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "сессия не найдена")
-		// 	return
-		// }
-		// role := u.(models.User).Role
-
-		// access, err := m.services.Permission.Enforce(role, menuItem, method)
-		// if err != nil {
-		// 	response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		// 	return
-		// }
-		// logger.Debug("permissions", logger.StringAttr("menu", menuItem), logger.StringAttr("method", method), logger.BoolAttr("access", access))
-
-		// if !access {
-		// 	response.NewErrorResponse(c, http.StatusForbidden, "access denied", "нет доступа к данному разделу")
-		// 	return
-		// }
-
 		c.Next()
 	}
 }
@@ -85,12 +64,13 @@ func (m *Middleware) CheckPermissionsArray(perm []*Permission) gin.HandlerFunc {
 				response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 				return
 			}
-			// a, err := m.services.Permission.Enforce(user.Role, item.Section, item.Method)
-			// if err != nil {
-			// 	response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-			// 	return
-			// }
-			logger.Debug("permissions", logger.StringAttr("section", item.Section), logger.StringAttr("method", item.Method), logger.BoolAttr("access", a))
+			logger.Debug("permissions",
+				logger.StringAttr("user", user.ID),
+				logger.StringAttr("realm", realm),
+				logger.StringAttr("section", item.Section),
+				logger.StringAttr("method", item.Method),
+				logger.BoolAttr("access", a),
+			)
 
 			if a {
 				access = true
