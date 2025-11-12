@@ -47,7 +47,7 @@ export const Inputs: FC<Props> = ({ minDate = '2000-01-01' }) => {
 
 			<DepartmentList label={'Подразделение'} name='department' rules={{ required: true }} />
 			{realm?.hasResponsible && (
-				<EmployeeList label={'Лицо держащее СИ'} name='person' rules={{ required: realm.needResponsible }} />
+				<EmployeeList label={'Лицо держащее СИ'} name='person' rules={{ required: realm.hasResponsible }} />
 			)}
 
 			<Controller

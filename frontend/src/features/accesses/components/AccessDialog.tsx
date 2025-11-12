@@ -89,6 +89,7 @@ export const Form: FC<Context> = ({ item, realm }) => {
 			id: item?.id || '',
 			realmId: realm || '',
 			userId: form.user?.id || '',
+			ssoId: form.user?.ssoId || '',
 			roleId: form.roleId,
 		}
 

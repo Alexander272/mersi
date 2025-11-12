@@ -13,5 +13,6 @@ export interface IAccessesDTO {
 	id?: string
 	realmId: string
 	userId: string
+	ssoId: string
 	roleId: string
 }
