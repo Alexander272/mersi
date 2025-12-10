@@ -13,6 +13,8 @@ export const Formatter: Formatter = (type, value) => {
 	switch (type) {
 		case 'date':
 			return dayjs(value as string).format(DateFormat)
+		case 'short_date':
+			return dayjs(value as string).format('MMMM YYYY')
 		// case 'number':
 		// 	return new Intl.NumberFormat('ru').format((value as number) || 0)
 

@@ -30,6 +30,7 @@ export const CustomFields: FC<Props> = ({ index }) => {
 			{type == 'text' && <StringFilter index={index} />}
 			{type == 'number' && <NumberFilter index={index} />}
 			{type == 'date' && <DateFilter index={index} />}
+			{type == 'short_date' && <ShortDateFilter index={index} />}
 			{type == 'list' && <ListFilter index={index} />}
 			{type == 'autocomplete' && <AutocompleteFilter index={index} />}
 		</>
@@ -166,6 +167,65 @@ const DateFilter: FC<Props> = ({ index }) => {
 						label={'Значение'}
 						showDaysOutsideCurrentMonth
 						fixedWeekNumber={6}
+						slots={{
+							textField: DateTextField,
+						}}
+						slotProps={{
+							textField: {
+								error: Boolean(error),
+							},
+						}}
+						sx={{ width: '100%' }}
+					/>
+				)}
+			/>
+		</>
+	)
+}
+
+const ShortDateFilter: FC<Props> = ({ index }) => {
+	const methods = useFormContext<{ filters: IFilter[] }>()
+
+	return (
+		<>
+			<FormControl fullWidth sx={{ maxWidth: 170 }}>
+				<InputLabel id={`filters.${index}.compareType`}>Условие</InputLabel>
+				<Controller
+					name={`filters.${index}.compareType`}
+					control={methods.control}
+					rules={{ required: true }}
+					render={({ field, fieldState: { error } }) => (
+						<Select
+							{...field}
+							error={Boolean(error)}
+							labelId={`filters.${index}.compareType`}
+							label='Условие'
+						>
+							<MenuItem key='d_eq' value='eq'>
+								Равна
+							</MenuItem>
+							<MenuItem key='d_gte' value='gte'>
+								Больше или равна
+							</MenuItem>
+							<MenuItem key='d_lte' value='lte'>
+								Меньше или равна
+							</MenuItem>
+						</Select>
+					)}
+				/>
+			</FormControl>
+
+			<Controller
+				control={methods.control}
+				name={`filters.${index}.value`}
+				rules={{ required: true }}
+				render={({ field, fieldState: { error } }) => (
+					<DatePicker
+						{...field}
+						value={field.value ? dayjs(field.value) : null}
+						onChange={value => field.onChange(value?.startOf('m').startOf('d').toISOString())}
+						label={'Значение'}
+						views={['month', 'year']}
 						slots={{
 							textField: DateTextField,
 						}}

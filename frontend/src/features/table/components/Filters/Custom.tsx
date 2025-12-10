@@ -46,6 +46,7 @@ export const Custom: FC<Props> = ({ methods }) => {
 const compareTypes = new Map([
 	['text', 'con'],
 	['date', 'eq'],
+	['short_date', 'eq'],
 	['number', 'eq'],
 	// ['switch', 'eq'],
 	['list', 'in'],
@@ -53,7 +54,8 @@ const compareTypes = new Map([
 ])
 const defaultValues = new Map([
 	['text', ''],
-	['date', dayjs().toISOString()],
+	['date', dayjs().startOf('d').toISOString()],
+	['short_date', dayjs().startOf('month').startOf('d').toISOString()],
 	['number', ''],
 	// ['switch', 'false'],
 ])

@@ -127,7 +127,7 @@ func (s *FileService) Export(ctx context.Context, dto *models.ExportDTO) (buffer
 			value := data.FieldByName(field)
 
 			if value.IsValid() {
-				if value.Kind() == reflect.Struct && c.Type == "date" {
+				if value.Kind() == reflect.Struct && (c.Type == "date" || c.Type == "short_date") {
 					newValue, ok := value.Interface().(time.Time)
 					if !ok {
 						return nil, fmt.Errorf("failed to convert value to time.Time")
@@ -236,7 +236,7 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.
 		}
 	default:
 		columnNames = []string{
-			"№ п/п", "Наименование", "Заводской номер", "Диапазон измерений", "Периодичность поверки", "Дата последней поверки",
+			"№ п/п", "Наименование", "Тип СИ", "Заводской номер", "Диапазон измерений", "Периодичность поверки", "Дата последней поверки",
 			"Дата следующей поверки", "Примечание",
 		}
 	}
@@ -283,7 +283,7 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.
 			date := d.VerificationDate.Format(constants.DateFormat)
 			nextDate := d.NextVerificationDate.Format(constants.DateFormat)
 			values = []interface{}{
-				i + 1, d.Name, d.FactoryNumber, d.MeasurementLimits, d.InterVerificationInterval,
+				i + 1, d.Name, d.Type, d.FactoryNumber, d.MeasurementLimits, d.InterVerificationInterval,
 				date, nextDate, d.Notes,
 			}
 		}

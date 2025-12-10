@@ -22,14 +22,13 @@ import (
 	"github.com/Alexander272/mersi/backend/pkg/mattermost"
 	adapter "github.com/Blank-Xu/sqlx-adapter"
 	_ "github.com/lib/pq"
-	"github.com/subosito/gotenv"
 )
 
 func main() {
 	//* Init config
-	if err := gotenv.Load("../.env"); err != nil {
-		log.Fatalf("error loading env variables: %s", err.Error())
-	}
+	// if err := gotenv.Load("../.env"); err != nil {
+	// 	log.Fatalf("error loading env variables: %s", err.Error())
+	// }
 
 	conf, err := config.Init("configs/config.yaml")
 	if err != nil {

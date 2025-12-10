@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react'
+import { FC } from 'react'
 import { DatePicker } from '@mui/x-date-pickers'
 import { Controller, useFormContext } from 'react-hook-form'
 import dayjs from 'dayjs'
@@ -10,25 +10,9 @@ type Props = {
 	data: ICreateFormField
 }
 
-export const DateField: FC<Props> = ({ data }) => {
-	const { control, setValue, watch } = useFormContext()
+export const ShortDateField: FC<Props> = ({ data }) => {
+	const { control, watch } = useFormContext()
 	const watchField = watch(data.hide)
-
-	let interval = 0
-	let date = ''
-	if (data.field == 'nextVerificationDate') {
-		interval = watch('instrument.interVerificationInterval')
-		date = watch('verification.verificationDate')
-	}
-
-	useEffect(() => {
-		if (data.field == 'nextVerificationDate') {
-			if (interval && date) {
-				const newDate = dayjs(date).add(interval, 'M').subtract(1, 'd').toISOString()
-				setValue('verification.nextVerificationDate', newDate)
-			}
-		}
-	}, [data.field, date, interval, setValue])
 
 	if (data.hide && watchField) return null
 	return (
@@ -44,9 +28,8 @@ export const DateField: FC<Props> = ({ data }) => {
 						field.onChange(value?.startOf('d').toISOString())
 					}}
 					label={data.fieldName}
-					showDaysOutsideCurrentMonth
-					fixedWeekNumber={6}
-					// disableFuture
+					views={['month', 'year']}
+					disableFuture
 					slots={{
 						textField: DateTextField,
 					}}

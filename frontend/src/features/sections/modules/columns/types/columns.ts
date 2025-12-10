@@ -33,4 +33,4 @@ export interface IColumnPositionDTO {
 	parentId: string
 }
 
-export type ColumnTypes = 'text' | 'number' | 'date' | 'file' | 'list' | 'autocomplete' | 'parent'
+export type ColumnTypes = 'text' | 'number' | 'date' | 'short_date' | 'file' | 'list' | 'autocomplete' | 'parent'

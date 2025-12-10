@@ -126,8 +126,17 @@ func (s *SIService) Update(ctx context.Context, dto *models.SiDTO) error {
 		return err
 	}
 	if dto.Verification != nil {
-		if err := s.verification.Update(ctx, dto.Verification); err != nil {
-			return err
+		if dto.Verification.Id == "" {
+			dto.Verification.InstrumentId = dto.Instrument.Id
+			dto.Verification.UserId = dto.Instrument.UserId
+			dto.Verification.Status = string(models.InstrumentStatusWork)
+			if err := s.verification.Create(ctx, dto.Verification); err != nil {
+				return err
+			}
+		} else {
+			if err := s.verification.Update(ctx, dto.Verification); err != nil {
+				return err
+			}
 		}
 	}
 	// if dto.Location != nil {

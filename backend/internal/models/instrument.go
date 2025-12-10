@@ -67,7 +67,7 @@ type InstrumentDTO struct {
 	Manufacturer              string           `json:"manufacturer" db:"manufacturer"`
 	Responsible               string           `json:"responsible" db:"responsible"`
 	Inventory                 string           `json:"inventory" db:"inventory"`
-	YearOfIssue               int              `json:"yearOfIssue" db:"year_of_issue" binding:"required"`
+	YearOfIssue               int              `json:"yearOfIssue" db:"year_of_issue"`
 	InterVerificationInterval int              `json:"interVerificationInterval" db:"inter_verification_interval"`
 	ActOfEntering             string           `json:"actOfEntering" db:"act_of_entering"`
 	ActOfEnteringId           string           `json:"actOfEnteringId" db:"act_of_entering_id"`

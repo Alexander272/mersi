@@ -3,6 +3,7 @@ module github.com/Alexander272/mersi/backend
 go 1.24.10
 
 require (
+	github.com/Blank-Xu/sqlx-adapter v1.0.1
 	github.com/Nerzal/gocloak/v13 v13.9.0
 	github.com/casbin/casbin/v2 v2.107.0
 	github.com/gin-gonic/gin v1.10.0
@@ -26,7 +27,6 @@ require (
 )
 
 require (
-	github.com/Blank-Xu/sqlx-adapter v1.0.1 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/bmatcuk/doublestar/v4 v4.7.1 // indirect

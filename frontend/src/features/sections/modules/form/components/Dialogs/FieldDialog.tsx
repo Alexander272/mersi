@@ -173,6 +173,7 @@ const Form: FC<Context> = ({ item }) => {
 							<MenuItem value='text'>Текст</MenuItem>
 							<MenuItem value='number'>Число</MenuItem>
 							<MenuItem value='date'>Дата</MenuItem>
+							<MenuItem value='short_date'>Короткая дата (месяц, год)</MenuItem>
 							<MenuItem value='checkbox'>Флажок</MenuItem>
 							<MenuItem value='file'>Файл</MenuItem>
 							{/* //TODO наверное стоит что-нибудь более понятное написать */}

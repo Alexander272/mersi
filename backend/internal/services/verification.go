@@ -135,8 +135,26 @@ func (s *VerificationService) Update(ctx context.Context, dto *models.Verificati
 		return fmt.Errorf("failed to update verification. error: %w", err)
 	}
 
-	if err := s.verDocs.UpdateSeveral(ctx, dto.Docs); err != nil {
-		return err
+	newDocs := []*models.VerificationDocDTO{}
+	updatedDocs := []*models.VerificationDocDTO{}
+	for i := range dto.Docs {
+		if dto.Docs[i].Id == "" {
+			dto.Docs[i].VerificationId = dto.Id
+			newDocs = append(newDocs, dto.Docs[i])
+		} else {
+			updatedDocs = append(updatedDocs, dto.Docs[i])
+		}
+	}
+
+	if len(newDocs) > 0 {
+		if err := s.verDocs.CreateSeveral(ctx, newDocs); err != nil {
+			return err
+		}
+	}
+	if len(updatedDocs) > 0 {
+		if err := s.verDocs.UpdateSeveral(ctx, updatedDocs); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -9,6 +9,7 @@ import { FileField } from './FileField'
 import { AutocompleteField } from './AutocompleteField'
 import { SelectField } from './SelectField'
 import { CheckboxField } from './CheckboxField'
+import { ShortDateField } from './ShortDateField'
 
 type Props = {
 	data: ICreateFormField[]
@@ -25,6 +26,8 @@ export const Form: FC<Props> = ({ data, instrumentId }) => {
 					return <NumberField key={item.id} data={item} />
 				case 'date':
 					return <DateField key={item.id} data={item} />
+				case 'short_date':
+					return <ShortDateField key={item.id} data={item} />
 				case 'checkbox':
 					return <CheckboxField key={item.id} data={item} />
 				case 'file':

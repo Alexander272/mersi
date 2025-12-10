@@ -188,6 +188,7 @@ func (h *Handler) update(c *gin.Context) {
 		return
 	}
 	user := u.(models.User)
+	dto.Instrument.UserId = user.ID
 
 	if err := h.service.Update(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
