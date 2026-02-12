@@ -63,6 +63,8 @@ type Deps struct {
 }
 
 func NewServices(deps *Deps) *Services {
+	txManager := NewTransactionManager(deps.Repo.Transaction)
+
 	role := NewRoleService(deps.Repo.Role)
 	ruleItem := NewRuleItemService(deps.Repo.RuleItem)
 	rule := NewRuleService(deps.Repo.Rule, ruleItem)
@@ -89,17 +91,23 @@ func NewServices(deps *Deps) *Services {
 	document := NewDocumentService(deps.Repo.Document)
 	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
 	instrument := NewInstrumentService(deps.Repo.Instrument, document)
-	verification := NewVerificationService(deps.Repo.Verification, verificationDoc, instrument, document)
+	verification := NewVerificationService(&VerificationDeps{
+		Repo:       deps.Repo.Verification,
+		TxManager:  txManager,
+		VerDocs:    verificationDoc,
+		Instrument: instrument,
+		Docs:       document,
+	})
 
 	verificationFields := NewVerificationFieldService(deps.Repo.VerificationFields)
 	contextMenu := NewContextService(deps.Repo.ContextMenu, role, accesses)
 	customContext := NewCustomContextService(deps.Repo.CustomContextMenu)
 	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role, accesses)
-	repair := NewRepairService(deps.Repo.Repair, instrument)
-	preservation := NewPreservationService(deps.Repo.Preservation, instrument)
-	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave, instrument)
-	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment, instrument, document)
-	writeOff := NewWriteOffService(deps.Repo.WriteOff, instrument, document)
+	repair := NewRepairService(deps.Repo.Repair, txManager, instrument)
+	preservation := NewPreservationService(deps.Repo.Preservation, txManager, instrument)
+	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave, txManager, instrument)
+	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment, txManager, instrument, document)
+	writeOff := NewWriteOffService(deps.Repo.WriteOff, txManager, instrument, document)
 	historyType := NewHistoryTypeService(deps.Repo.HistoryType)
 
 	filters := NewFilterService(deps.Repo.Filters)
@@ -110,6 +118,7 @@ func NewServices(deps *Deps) *Services {
 	//TODO надо бы подумать как избавиться от этой кольцевой зависимости
 	si := NewSiService(&SiDeps{
 		Repo:         deps.Repo.SI,
+		TxManager:    txManager,
 		Instrument:   instrument,
 		Verification: verification,
 		Location:     NewLocationService(&LocationDeps{Repo: deps.Repo.Location, Responsible: responsible}),

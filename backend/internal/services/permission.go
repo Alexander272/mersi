@@ -74,7 +74,7 @@ func (s *PermissionService) Register(path string, adapter *sqlxadapter.Adapter) 
 		g, reader,
 		g, user, reader
 		g, metrologist, reader
-		g, editer, reader
+		g, editor, reader
 	*/
 
 	var err error

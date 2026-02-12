@@ -13,20 +13,23 @@ import (
 
 type VerificationRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewVerificationRepo(db *sqlx.DB) *VerificationRepo {
+func NewVerificationRepo(db *sqlx.DB, transaction Transaction) *VerificationRepo {
 	return &VerificationRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type Verification interface {
 	Get(ctx context.Context, req *models.GetVerificationDTO) ([]*models.Verification, error)
 	GetLast(ctx context.Context, req *models.GetVerificationDTO) (*models.Verification, error)
+	CreateInTx(ctx context.Context, tx Tx, dto *models.VerificationDTO) error
 	Create(ctx context.Context, dto *models.VerificationDTO) error
-	CreateSeveral(ctx context.Context, dto []*models.VerificationDTO) error
-	Update(ctx context.Context, dto *models.VerificationDTO) error
+	CreateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDTO) error
+	Update(ctx context.Context, tx Tx, dto *models.VerificationDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerificationDTO) error
 }
 
@@ -59,6 +62,19 @@ func (r *VerificationRepo) GetLast(ctx context.Context, req *models.GetVerificat
 	return verification, nil
 }
 
+func (r *VerificationRepo) CreateInTx(ctx context.Context, tx Tx, dto *models.VerificationDTO) error {
+	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date, next_date, register_link, not_verified, notes, status)
+		VALUES (:id, :instrument_id, :date, :next_date, :register_link, :not_verified, :notes, :status)`,
+		VerificationTable,
+	)
+	dto.Id = uuid.NewString()
+
+	if _, err := tx.TX().NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
 func (r *VerificationRepo) Create(ctx context.Context, dto *models.VerificationDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date, next_date, register_link, not_verified, notes, status)
 		VALUES (:id, :instrument_id, :date, :next_date, :register_link, :not_verified, :notes, :status)`,
@@ -72,7 +88,7 @@ func (r *VerificationRepo) Create(ctx context.Context, dto *models.VerificationD
 	return nil
 }
 
-func (r *VerificationRepo) CreateSeveral(ctx context.Context, dto []*models.VerificationDTO) error {
+func (r *VerificationRepo) CreateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date, next_date, register_link, not_verified, notes, status)
 		VALUES (:id, :instrument_id, :date, :next_date, :register_link, :not_verified, :notes, :status)`,
 		VerificationTable,
@@ -81,19 +97,19 @@ func (r *VerificationRepo) CreateSeveral(ctx context.Context, dto []*models.Veri
 		dto[i].Id = uuid.NewString()
 	}
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil
 }
 
-func (r *VerificationRepo) Update(ctx context.Context, dto *models.VerificationDTO) error {
+func (r *VerificationRepo) Update(ctx context.Context, tx Tx, dto *models.VerificationDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET date=:date, next_date=:next_date, register_link=:register_link, not_verified=:not_verified,
 		notes=:notes, status=:status, updated_at=now() WHERE id=:id`,
 		VerificationTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

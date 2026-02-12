@@ -67,7 +67,7 @@ func (h *Handler) getLast(c *gin.Context) {
 	}
 	req := &models.GetTransferToSaveDTO{InstrumentId: instrument}
 
-	data, err := h.service.GetLast(c, req)
+	data, err := h.service.GetLast(c, nil, req)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRows) {
 			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), "Не найдено")

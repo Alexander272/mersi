@@ -15,155 +15,274 @@ import (
 
 type SIRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewSIRepo(db *sqlx.DB) *SIRepo {
+func NewSIRepo(db *sqlx.DB, transaction Transaction) *SIRepo {
 	return &SIRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type SI interface {
+	Transaction
 	Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, error)
 	GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error)
 	GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.SiReceiving, error)
 	GetUsed(ctx context.Context, req *models.Period) ([]*models.SiReceiving, error)
 }
 
+var siFieldsMap = map[string]string{
+	"id":                        "i.id",
+	"position":                  "position",
+	"name":                      "name",
+	"dateOfReceipt":             "date_of_receipt",
+	"type":                      "type",
+	"factoryNumber":             "factory_number",
+	"measurementLimits":         "measurement_limits",
+	"accuracy":                  "accuracy",
+	"stateRegister":             "state_register",
+	"countryOfProduce":          "country_of_produce",
+	"manufacturer":              "manufacturer",
+	"responsible":               "responsible",
+	"inventory":                 "inventory",
+	"yearOfIssue":               "year_of_issue",
+	"interVerificationInterval": "inter_verification_interval",
+	"actOfEntering":             "act_of_entering",
+	"actOfEnteringId":           "act_of_entering_id",
+	"repairInfo":                "r.period_start",
+	"notes":                     "notes",
+	"verificationDate":          "date",
+	"nextVerificationDate":      "next_date",
+	"department":                "department_id",
+	"place":                     "place",
+	"person":                    "person",
+	"status":                    "l.status",
+}
+
 func (r *SIRepo) formatField(field string) string {
-	format := make(map[string]string)
-
-	format["id"] = "i.id"
-	format["position"] = "position"
-	format["name"] = "name"
-	format["dateOfReceipt"] = "date_of_receipt"
-	format["type"] = "type"
-	format["factoryNumber"] = "factory_number"
-	format["measurementLimits"] = "measurement_limits"
-	format["accuracy"] = "accuracy"
-	format["stateRegister"] = "state_register"
-	format["countryOfProduce"] = "country_of_produce"
-	format["manufacturer"] = "manufacturer"
-	format["responsible"] = "responsible"
-	format["inventory"] = "inventory"
-	format["yearOfIssue"] = "year_of_issue"
-	format["interVerificationInterval"] = "inter_verification_interval"
-	format["actOfEntering"] = "act_of_entering"
-	format["actOfEnteringId"] = "act_of_entering_id"
-	format["repairInfo"] = "r.period_start"
-	format["notes"] = "notes"
-	format["verificationDate"] = "date"
-	format["nextVerificationDate"] = "next_date"
-	format["department"] = "department_id"
-	format["place"] = "place"
-	format["person"] = "person"
-	format["status"] = "l.status"
-
-	return format[field]
+	if f, ok := siFieldsMap[field]; ok {
+		return f
+	}
+	// Если поле не найдено, возвращаем безопасный дефолт,чтобы не упал SQL запрос из-за пустой строки
+	return "i.id"
 }
 
 func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, error) {
 	tmp := []*pq_models.SI{}
 	params := []interface{}{req.SectionId, req.Status}
-	count := len(params) + 1
 
-	order := " ORDER BY "
-	for _, s := range req.Sort {
-		order += fmt.Sprintf("%s %s, ", r.formatField(s.Field), s.Type)
-	}
-	if len(req.Sort) == 0 {
-		order += "position, "
-	}
-	order += "created_at, id"
+	// 1. Сортировка (Безопасная)
+	orderClause := r.buildOrderClause(req.Sort)
+	// 2. Фильтры
+	filterClause, params := r.buildFilterClause(req.Filters, params)
+	// 3. Поиск
+	searchClause, params := r.buildSearchClause(req.Search, params)
 
-	filter := ""
-	if len(req.Filters) > 0 {
-		filter += " AND "
-		filters := []string{}
-
-		for _, ns := range req.Filters {
-			if ns.Field == "department" {
-				filters = append(filters, "("+
-					getFilterLine(ns.Values[0].CompareType, r.formatField(ns.Field), count)+" OR ("+
-					getFilterLine(ns.Values[0].CompareType, "last_place_id", count)+
-					" AND "+r.formatField("status")+"='moved'))",
-				)
-				// filter += " AND (" + getFilterLine(ns.Values[0].CompareType, r.formatField(ns.Field), count) + " OR (" +
-				// 	getFilterLine(ns.Values[0].CompareType, "last_place_id", count) + "AND m.status='moved'))"
-
-				ns.Values[0].Value = strings.ReplaceAll(ns.Values[0].Value, ",", "|")
-				params = append(params, ns.Values[0].Value)
-				count++
-				continue
-			}
-			for _, sv := range ns.Values {
-				filters = append(filters, getFilterLine(sv.CompareType, r.formatField(ns.Field), count))
-				if sv.CompareType == "in" {
-					sv.Value = strings.ReplaceAll(sv.Value, ",", "|")
-				}
-				params = append(params, sv.Value)
-				count++
-			}
-		}
-		filter += strings.Join(filters, " AND ")
-	}
-
-	search := ""
-	if req.Search != nil {
-		search = " AND ("
-
-		list := []string{}
-		for _, f := range req.Search.Fields {
-			list = append(list, fmt.Sprintf("%s ILIKE '%%'||$%d||'%%'", r.formatField(f), count))
-		}
-		params = append(params, req.Search.Value)
-		count++
-		search += strings.Join(list, " OR ") + ")"
-	}
-
+	// 4. Пагинация
+	limitIdx := len(params) + 1
+	offsetIdx := len(params) + 2
 	params = append(params, req.Page.Limit, req.Page.Offset)
 
-	//TODO проверить
-	query := fmt.Sprintf(`SELECT i.id, position, name, date_of_receipt, type, factory_number, measurement_limits, accuracy, state_register, 
-		COALESCE(l.status, 'used') AS status, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
-		act_of_entering, act_of_entering_id, notes,
-		COALESCE(v.date, '0001-01-01'::DATE) AS date, COALESCE(v.next_date, '0001-01-01'::DATE) AS next_date,
-		COALESCE(cert, '') AS certificate, COALESCE(cert_id, '') AS certificate_id, COALESCE(r.work, '') AS repair_work,
-		COALESCE(r.period_start, '0001-01-01'::DATE) AS repair_start, COALESCE(r.period_end, '0001-01-01'::DATE) AS repair_end, 
-		COALESCE(p.date_start, '0001-01-01'::DATE) AS preservation, COALESCE(p.date_end, '0001-01-01'::DATE) AS de_preservation,
-		COALESCE(ts.date_start, '0001-01-01'::DATE) AS transfer_date, COALESCE(ts.date_end, '0001-01-01'::DATE) AS return_date, 
-		COALESCE(td.doc_name, '') AS transfer_to_dep, COALESCE(wo.doc_name, '') AS write_off,
-		COALESCE(person,'') AS person, COALESCE(place, '') AS place, COALESCE(l.last_place, '') AS last_place,
-		COUNT(*) OVER() AS total
+	query := fmt.Sprintf(`
+		WITH last_verification AS (
+			SELECT DISTINCT ON (instrument_id) id, instrument_id, date, next_date 
+			FROM %s ORDER BY instrument_id, date DESC, created_at DESC
+		),
+		last_repair AS (
+			SELECT DISTINCT ON (instrument_id) instrument_id, period_start, period_end, work 
+			FROM %s ORDER BY instrument_id, period_start DESC
+		),
+		last_preservation AS (
+			SELECT DISTINCT ON (instrument_id) instrument_id, date_start, date_end 
+			FROM %s ORDER BY instrument_id, date_start DESC
+		),
+		last_transfer_save AS (
+			SELECT DISTINCT ON (instrument_id) instrument_id, date_start, date_end 
+			FROM %s ORDER BY instrument_id, date_start DESC
+		),
+		last_transfer_dep AS (
+			SELECT DISTINCT ON (instrument_id) instrument_id, doc_name 
+			FROM %s ORDER BY instrument_id, date DESC
+		),
+		last_write_off AS (
+			SELECT DISTINCT ON (instrument_id) instrument_id, doc_name 
+			FROM %s ORDER BY instrument_id, date DESC
+		),
+		last_location AS (
+			SELECT DISTINCT ON (instrument_id) 
+				instrument_id, l.status,
+				COALESCE(lp.name,last_place) AS last_place, 
+				COALESCE(e.name, NULLIF(person, ''), '') AS person,
+				CASE 
+					WHEN l.status = '%s' THEN COALESCE(dep.name, NULLIF(place, ''), '')
+					WHEN l.status = '%s' THEN 'Резерв'
+					ELSE 
+						CASE 
+							WHEN l.last_place != '' OR l.last_place_id IS NOT NULL 
+							THEN 'Перемещение из «' || COALESCE(lp.name, l.last_place) || '»'
+							ELSE 'Перемещение' 
+						END
+				END AS place
+			FROM %s l
+			LEFT JOIN %s lp ON l.last_place_id = lp.id::text
+			LEFT JOIN %s e ON l.person_id = e.id
+			LEFT JOIN %s dep ON l.department_id = dep.id
+			ORDER BY instrument_id, date_of_issue DESC, l.created_at DESC
+		)
+
+		SELECT 
+			i.id, i.position, i.name, i.date_of_receipt, i.type, i.factory_number, 
+			i.measurement_limits, i.accuracy, i.state_register, i.country_of_produce, 
+			i.manufacturer, i.responsible, i.inventory, i.year_of_issue, 
+			i.inter_verification_interval, i.act_of_entering, i.act_of_entering_id, i.notes,
+			
+			COALESCE(v.date, '0001-01-01'::DATE) AS date, 
+			COALESCE(v.next_date, '0001-01-01'::DATE) AS next_date,
+			COALESCE(vd.name, '') AS certificate, 
+			COALESCE(vd.doc_id::text, '') AS certificate_id,
+			
+			COALESCE(r.work, '') AS repair_work,
+			COALESCE(r.period_start, '0001-01-01'::DATE) AS repair_start, 
+			COALESCE(r.period_end, '0001-01-01'::DATE) AS repair_end,
+			
+			COALESCE(p.date_start, '0001-01-01'::DATE) AS preservation, 
+			COALESCE(p.date_end, '0001-01-01'::DATE) AS de_preservation,
+			
+			COALESCE(ts.date_start, '0001-01-01'::DATE) AS transfer_date, 
+			COALESCE(ts.date_end, '0001-01-01'::DATE) AS return_date,
+			
+			COALESCE(td.doc_name, '') AS transfer_to_dep, 
+			COALESCE(wo.doc_name, '') AS write_off,
+			
+			COALESCE(l.status, 'used') AS status,
+			COALESCE(l.person, '') AS person,
+			COALESCE(l.place, '') AS place,
+			COALESCE(l.last_place, '') AS last_place,    
+			
+			COUNT(*) OVER() AS total
+
 		FROM %s AS i
-		LEFT JOIN LATERAL (SELECT id, date, next_date FROM %s WHERE instrument_id=i.id ORDER BY date DESC, created_at DESC LIMIT 1) AS v ON TRUE
-		LEFT JOIN LATERAL (SELECT name AS cert, doc_id::text AS cert_id FROM %s WHERE verification_id=v.id) AS d ON TRUE
-		LEFT JOIN LATERAL (SELECT period_start, period_end, work FROM %s 
-			WHERE instrument_id=i.id ORDER BY period_start DESC LIMIT 1) AS r ON TRUE
-		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS p ON TRUE
-		LEFT JOIN LATERAL (SELECT date_start, date_end FROM %s WHERE instrument_id=i.id ORDER BY date_start DESC LIMIT 1) AS ts ON TRUE
-		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS td ON TRUE
-		LEFT JOIN LATERAL (SELECT doc_name FROM %s WHERE instrument_id=i.id ORDER BY date DESC LIMIT 1) AS wo ON TRUE
-		LEFT JOIN LATERAL (SELECT (CASE WHEN status='%s' THEN COALESCE(NULLIF(place,''), dep.dep, '') WHEN status='%s' THEN 'Резерв' ELSE
-			(CASE WHEN last_place!='' OR (last_place_id!='' AND last_place_id IS NOT NULL)
-				THEN 'Перемещение из «'||COALESCE(lp.name,last_place)||'»' ELSE 'Перемещение' END) END) AS place, last_place, status,
-			COALESCE(NULLIF(person, ''), e.emp, '') AS person, person_id, department_id, last_place_id FROM %s AS l
-			LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.last_place_id=id::text) AS lp ON true
-			LEFT JOIN LATERAL (SELECT name as emp FROM %s WHERE l.person_id=id) AS e ON true
-			LEFT JOIN LATERAL (SELECT name as dep FROM %s WHERE l.department_id=id) AS dep ON true
-			WHERE instrument_id=i.id ORDER BY date_of_issue DESC, created_at DESC LIMIT 1) AS l ON TRUE
-		WHERE section_id=$1 AND i.status=$2 %s%s%s LIMIT $%d OFFSET $%d`,
-		InstrumentsTable, VerificationTable, VerificationDocsTable, RepairTable, PreservationTable,
-		TransferToSaveTable, TransferToDepTable, WriteOffTable,
-		constants.LocationStatusUsed, constants.LocationStatusReserve, LocationTable, DepartmentTable, EmployeeTable, DepartmentTable,
-		filter, search, order, count, count+1,
+		LEFT JOIN last_verification v ON v.instrument_id = i.id
+		LEFT JOIN %s vd ON vd.verification_id = v.id
+		LEFT JOIN last_repair r ON r.instrument_id = i.id
+		LEFT JOIN last_preservation p ON p.instrument_id = i.id
+		LEFT JOIN last_transfer_save ts ON ts.instrument_id = i.id
+		LEFT JOIN last_transfer_dep td ON td.instrument_id = i.id
+		LEFT JOIN last_write_off wo ON wo.instrument_id = i.id
+		LEFT JOIN last_location l ON l.instrument_id = i.id
+
+        WHERE i.section_id = $1 AND i.status = $2 %s %s %s
+        LIMIT $%d OFFSET $%d`,
+		VerificationTable,               // last_verification
+		RepairTable,                     // last_repair
+		PreservationTable,               // last_preservation
+		TransferToSaveTable,             // last_transfer_save
+		TransferToDepTable,              // last_transfer_dep
+		WriteOffTable,                   // last_write_off
+		constants.LocationStatusUsed,    // status check 1
+		constants.LocationStatusReserve, // status check 2
+		LocationTable,                   // last_location
+		DepartmentTable,                 // lp
+		EmployeeTable,                   // e
+		DepartmentTable,                 // dep
+		InstrumentsTable,                // main FROM
+		VerificationDocsTable,           // vd join
+		filterClause,
+		searchClause,
+		orderClause,
+		limitIdx, offsetIdx,
 	)
+
 	// logger.Debug("get si", logger.StringAttr("query", query))
 
 	if err := r.db.SelectContext(ctx, &tmp, query, params...); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
+	data := r.mapToDomain(tmp)
 
+	return data, nil
+}
+
+func (r *SIRepo) buildOrderClause(sorts []*models.Sort) string {
+	if len(sorts) == 0 {
+		return "ORDER BY position, i.created_at, i.id"
+	}
+
+	var parts []string
+	for _, s := range sorts {
+		field := r.formatField(s.Field)
+		direction := "ASC"
+		if strings.ToUpper(s.Type) == "DESC" {
+			direction = "DESC"
+		}
+		parts = append(parts, fmt.Sprintf("%s %s", field, direction))
+	}
+	parts = append(parts, "i.created_at", "i.id")
+
+	return "ORDER BY " + strings.Join(parts, ", ")
+}
+func (r *SIRepo) buildFilterClause(filters []*models.Filter, params []interface{}) (string, []interface{}) {
+	if len(filters) == 0 {
+		return "", params
+	}
+
+	var clauses []string
+
+	for _, f := range filters {
+		field := r.formatField(f.Field)
+
+		// Специальная логика для департамента
+		if f.Field == "department" {
+			idx := len(params)
+			val := strings.ReplaceAll(f.Values[0].Value, ",", "|")
+			params = append(params, val)
+
+			clauses = append(clauses, fmt.Sprintf("(%s OR (%s AND %s='moved'))",
+				getFilterLine(f.Values[0].CompareType, field, idx),
+				getFilterLine(f.Values[0].CompareType, "last_place_id", idx),
+				r.formatField("status"),
+			))
+			continue
+		}
+
+		// Общая логика для остальных фильтров
+		for _, sv := range f.Values {
+			val := sv.Value
+			if sv.CompareType == "in" {
+				val = strings.ReplaceAll(val, ",", "|")
+			}
+			params = append(params, sv.Value)
+			idx := len(params)
+
+			clauses = append(clauses, getFilterLine(sv.CompareType, field, idx))
+		}
+	}
+
+	if len(clauses) == 0 {
+		return "", params
+	}
+
+	return "AND " + strings.Join(clauses, " AND "), params
+}
+func (r *SIRepo) buildSearchClause(search *models.Search, params []interface{}) (string, []interface{}) {
+	if search == nil || len(search.Fields) == 0 || search.Value == "" {
+		return "", params
+	}
+
+	params = append(params, search.Value)
+	idx := len(params)
+
+	list := []string{}
+	for _, f := range search.Fields {
+		list = append(list, fmt.Sprintf("%s ILIKE '%%'||$%d||'%%'", r.formatField(f), idx))
+	}
+
+	return "AND (" + strings.Join(list, " OR ") + ")", params
+}
+
+func (r *SIRepo) mapToDomain(tmp []*pq_models.SI) []*models.SI {
 	data := []*models.SI{}
 	for _, d := range tmp {
 		repair := ""
@@ -179,45 +298,12 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 			repair += " (" + d.RepairWork + ")"
 		}
 
-		data = append(data, &models.SI{
-			Id:                        d.Id,
-			Position:                  d.Position,
-			Name:                      d.Name,
-			DateOfReceipt:             d.DateOfReceipt,
-			Type:                      d.Type,
-			FactoryNumber:             d.FactoryNumber,
-			MeasurementLimits:         d.MeasurementLimits,
-			Accuracy:                  d.Accuracy,
-			StateRegister:             d.StateRegister,
-			CountryOfProduce:          d.CountryOfProduce,
-			Manufacturer:              d.Manufacturer,
-			Responsible:               d.Responsible,
-			Inventory:                 d.Inventory,
-			YearOfIssue:               d.YearOfIssue,
-			InterVerificationInterval: d.InterVerificationInterval,
-			ActOfEntering:             d.ActOfEntering,
-			ActOfEnteringId:           d.ActOfEnteringId,
-			Notes:                     d.Notes,
-			VerificationDate:          d.VerificationDate,
-			NextVerificationDate:      d.NextVerificationDate,
-			Certificate:               d.Certificate,
-			CertificateId:             d.CertificateId,
-			RepairInfo:                repair,
-			PreservationDate:          d.PreservationDate,
-			DePreservationDate:        d.DePreservationDate,
-			TransferDate:              d.TransferDate,
-			ReturnDate:                d.ReturnDate,
-			TransferToDepartment:      d.TransferToDepartment,
-			WriteOff:                  d.WriteOff,
-			Person:                    d.Person,
-			Place:                     d.Place,
-			LastPlace:                 d.LastPlace,
-			Status:                    d.Status,
-			Total:                     d.Total,
-		})
+		t := d.ToModel()
+		t.RepairInfo = repair
+		data = append(data, t)
 	}
 
-	return data, nil
+	return data
 }
 
 func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error) {

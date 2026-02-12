@@ -143,7 +143,7 @@ func (h *Handler) create(c *gin.Context) {
 	}
 	dto.UserId = user.ID
 
-	if err := h.service.Create(c, dto); err != nil {
+	if err := h.service.Create(c, nil, dto); err != nil {
 		if errors.Is(err, models.ErrNoChannel) {
 			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Канал для получения уведомлений не указан")
 			return

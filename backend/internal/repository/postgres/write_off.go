@@ -11,17 +11,19 @@ import (
 
 type WriteOffRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewWriteOffRepo(db *sqlx.DB) *WriteOffRepo {
+func NewWriteOffRepo(db *sqlx.DB, transaction Transaction) *WriteOffRepo {
 	return &WriteOffRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type WriteOff interface {
 	Get(ctx context.Context, req *models.GetWriteOffDTO) ([]*models.WriteOff, error)
-	Create(ctx context.Context, dto *models.WriteOffDTO) error
+	Create(ctx context.Context, tx Tx, dto *models.WriteOffDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.WriteOffDTO) error
 	Update(ctx context.Context, dto *models.WriteOffDTO) error
 	Delete(ctx context.Context, dto *models.DeleteWriteOffDTO) error
@@ -40,7 +42,7 @@ func (r *WriteOffRepo) Get(ctx context.Context, req *models.GetWriteOffDTO) ([]*
 	return data, nil
 }
 
-func (r *WriteOffRepo) Create(ctx context.Context, dto *models.WriteOffDTO) error {
+func (r *WriteOffRepo) Create(ctx context.Context, tx Tx, dto *models.WriteOffDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date, notes, doc_id, doc_name) 
 		VALUES (:id, :instrument_id, :date, :notes, :doc_id, :doc_name)`,
 		WriteOffTable,
@@ -50,7 +52,7 @@ func (r *WriteOffRepo) Create(ctx context.Context, dto *models.WriteOffDTO) erro
 		dto.DocId = uuid.Nil.String()
 	}
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

@@ -13,20 +13,22 @@ import (
 
 type RepairRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewRepairRepo(db *sqlx.DB) *RepairRepo {
+func NewRepairRepo(db *sqlx.DB, transaction Transaction) *RepairRepo {
 	return &RepairRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type Repair interface {
 	Get(ctx context.Context, req *models.GetRepairDTO) ([]*models.Repair, error)
 	GetLast(ctx context.Context, req *models.GetRepairDTO) (*models.Repair, error)
-	Create(ctx context.Context, dto *models.RepairDTO) error
+	Create(ctx context.Context, tx Tx, dto *models.RepairDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.RepairDTO) error
-	Update(ctx context.Context, dto *models.RepairDTO) error
+	Update(ctx context.Context, tx Tx, dto *models.RepairDTO) error
 	Delete(ctx context.Context, dto *models.DeleteRepairDTO) error
 }
 
@@ -59,14 +61,14 @@ func (r *RepairRepo) GetLast(ctx context.Context, req *models.GetRepairDTO) (*mo
 	return data, nil
 }
 
-func (r *RepairRepo) Create(ctx context.Context, dto *models.RepairDTO) error {
+func (r *RepairRepo) Create(ctx context.Context, tx Tx, dto *models.RepairDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, defect, work, period_start, period_end, description)
 		VALUES (:id, :instrument_id, :defect, :work, :period_start, :period_end, :description)`,
 		RepairTable,
 	)
 	dto.Id = uuid.NewString()
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil
@@ -87,13 +89,13 @@ func (r *RepairRepo) CreateSeveral(ctx context.Context, dto []*models.RepairDTO)
 	return nil
 }
 
-func (r *RepairRepo) Update(ctx context.Context, dto *models.RepairDTO) error {
+func (r *RepairRepo) Update(ctx context.Context, tx Tx, dto *models.RepairDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET defect=:defect, work=:work, period_start=:period_start, period_end=:period_end,
 		description=:description WHERE id=:id`,
 		RepairTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

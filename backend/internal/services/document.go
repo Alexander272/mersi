@@ -6,7 +6,6 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -28,6 +27,30 @@ func NewDocumentService(repo repository.Document) *DocumentService {
 		path: "files/si/",
 	}
 }
+
+var (
+	allowedExtensions = map[string]bool{
+		".doc": true, ".docx": true, ".pdf": true,
+		".jpg": true, ".jpeg": true, ".png": true,
+		".xls": true, ".xlsx": true, ".csv": true,
+	}
+
+	documentTypes = map[string]string{
+		"application/msword":          "doc",
+		"application/x-extension-doc": "doc",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "doc",
+		"application/x-extension-docx":                                            "doc",
+		"application/vnd.oasis.opendocument.text":                                 "doc",
+		"application/vnd.ms-excel":                                                "sheet",
+		"application/x-extension-xls":                                             "sheet",
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":       "sheet",
+		"application/x-extension-xlsx":                                            "sheet",
+		"text/csv":                                                                "sheet",
+		"application/pdf":                                                         "pdf",
+		"image/png":                                                               "image",
+		"image/jpeg":                                                              "image",
+	}
+)
 
 type Document interface {
 	GetTemp(ctx context.Context, req *models.GetDocumentDTO) ([]*models.Document, error)
@@ -78,25 +101,33 @@ func (s *DocumentService) SaveUploadedFile(file *multipart.FileHeader, dst strin
 }
 
 func (s *DocumentService) Upload(ctx context.Context, dto *models.DocumentsDTO) ([]*models.Document, error) {
-	docs := []*models.Document{}
+	docs := make([]*models.Document, 0, len(dto.Files))
+	// Слайс для отслеживания созданных файлов на случай отката
+	createdFiles := make([]string, 0, len(dto.Files))
 
-	documentTypes := map[string]string{
-		"application/msword":          "doc",
-		"application/x-extension-doc": "doc",
-		"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "doc",
-		"application/x-extension-docx":                                            "doc",
-		"application/vnd.oasis.opendocument.text":                                 "doc",
-		"application/vnd.ms-excel":                                                "sheet",
-		"application/x-extension-xls":                                             "sheet",
-		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":       "sheet",
-		"application/x-extension-xlsx":                                            "sheet",
-		"application/pdf":                                                         "pdf",
-		"image/png":                                                               "image",
-		"image/jpeg":                                                              "image",
-		"text/csv":                                                                "sheet",
-	}
+	// Определяем общую часть пути заранее
+	baseTempPath := filepath.Join(s.path, "temp", dto.UserId, dto.Group, dto.InstrumentId)
 
 	for _, fh := range dto.Files {
+		// 1. Проверка по расширению
+		ext := strings.ToLower(filepath.Ext(fh.Filename))
+		if !allowedExtensions[ext] {
+			return nil, fmt.Errorf("file extension %s is not allowed", ext)
+		}
+
+		// 2. Проверка по MIME-типу
+		contentType := fh.Header.Get("Content-Type")
+		docType, ok := documentTypes[contentType]
+		if !ok {
+			return nil, fmt.Errorf("mime type %s is not allowed", contentType)
+		}
+
+		// 3. (Опционально) Ограничение размера, например 10MB
+		const maxFileSize = 10 * 1024 * 1024
+		if fh.Size > maxFileSize {
+			return nil, fmt.Errorf("file %s is too large", fh.Filename)
+		}
+
 		doc := &models.Document{
 			Id:           uuid.NewString(),
 			Label:        fh.Filename,
@@ -104,58 +135,117 @@ func (s *DocumentService) Upload(ctx context.Context, dto *models.DocumentsDTO) 
 			InstrumentId: dto.InstrumentId,
 			UserId:       dto.UserId,
 			Group:        dto.Group,
-			DocumentType: documentTypes[fh.Header.Get("Content-Type")],
+			DocumentType: docType,
+		}
+		doc.Path = filepath.Join(baseTempPath, doc.Id, fh.Filename)
+
+		if err := s.SaveUploadedFile(fh, doc.Path); err != nil {
+			s.cleanupFiles(createdFiles) // Удаляем то, что уже успели сохранить
+			return nil, fmt.Errorf("failed to save file %s. error: %w", fh.Filename, err)
 		}
 
-		// paths := []string{s.path}
-		// if dto.InstrumentId != "" {
-		// 	paths = append(paths, dto.Group, dto.InstrumentId)
-		// } else {
-		// 	paths = append(paths, "temp", dto.UserId, dto.Group, dto.InstrumentId)
-		// }
-		// paths = append(paths, doc.Id, fh.Filename)
-		paths := []string{s.path, "temp", dto.UserId, dto.Group, dto.InstrumentId, doc.Id, fh.Filename}
-
-		dst := path.Join(paths...)
-		doc.Path = dst
+		createdFiles = append(createdFiles, doc.Path)
 		docs = append(docs, doc)
 
-		if err := s.SaveUploadedFile(fh, dst); err != nil {
-			return nil, fmt.Errorf("failed to save file. error: %w", err)
-		}
 	}
 
 	if err := s.repo.CreateSeveral(ctx, docs); err != nil {
+		s.cleanupFiles(createdFiles) // Удаляем все файлы, если БД "легла"
 		return nil, fmt.Errorf("failed to create documents. error: %w", err)
 	}
 	return docs, nil
 }
+func (s *DocumentService) cleanupFiles(paths []string) {
+	for _, p := range paths {
+		_ = os.RemoveAll(filepath.Dir(p)) // Удаляем папку с ID документа
+	}
+}
 
-func (s *DocumentService) ChangePath(ctx context.Context, req *models.PathParts) error {
+func (s *DocumentService) ChangePath(ctx context.Context, req *models.PathParts) (err error) {
+	// 1. Валидация входных данных
+	if !isValidPathSegment(req.UserId) ||
+		!isValidPathSegment(req.Group) ||
+		(req.InstrumentId != "" && !isValidPathSegment(req.InstrumentId)) {
+		return fmt.Errorf("invalid path segment in request")
+	}
+
+	// 2. Построение путей через filepath.Join
+	newPath := filepath.Join(s.path, req.Group, req.InstrumentId)
+	srcPath := filepath.Join(s.path, "temp", req.UserId, req.Group, req.InstrumentId)
+	if req.IdWasEmpty {
+		srcPath = filepath.Join(s.path, "temp", req.UserId, req.Group)
+	}
+
+	// 3. Проверка существования источника
+	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+		return nil
+		// return fmt.Errorf("source path does not exist: %s", srcPath)
+	}
+	// 4. Создание целевой директории
+	if err := os.MkdirAll(filepath.Dir(newPath), 0750); err != nil {
+		return fmt.Errorf("failed to create target dir: %w", err)
+	}
+	// 5. Атомарное перемещение
+	if err := os.Rename(srcPath, newPath); err != nil {
+		return fmt.Errorf("failed to move files from %s to %s: %w", srcPath, newPath, err)
+	}
+
+	// 6. Обновление БД (теперь после файловой операции!)
 	count, err := s.repo.UpdatePath(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to update path documents. error: %w", err)
+		rollback(newPath, srcPath)
+		logger.Error("DB update failed after file move", logger.StringAttr("newPath", newPath), logger.ErrAttr(err))
+		return fmt.Errorf("db update failed after file move: %w", err)
 	}
 
-	if count > 0 {
-		newPath := path.Join(s.path, req.Group, req.InstrumentId)
-		// думаю тут еще надо id пользователя использовать (чтобы во время одновременного создания ничего лишнего не попало)
-		// по хорошему это еще надо синхронизировать между устройствами
-		// еще можно добавить какую-нибудь группировку чтобы файлы из разных мест не пересекались или она мне не нужна
-		srcPath := path.Join(s.path, "temp", req.UserId, req.Group, req.InstrumentId)
-		if req.IdWasEmpty {
-			srcPath = path.Join(s.path, "temp", req.UserId, req.Group)
-		}
-
-		if err = os.MkdirAll(filepath.Dir(newPath), 0750); err != nil {
-			return err
-		}
-
-		if err := os.Rename(srcPath, newPath); err != nil {
-			return fmt.Errorf("failed to move files. error: %w", err)
-		}
+	if count == 0 {
+		logger.Info("No documents updated in DB despite successful file move", logger.StringAttr("userId", req.UserId), logger.StringAttr("group", req.Group))
 	}
 	return nil
+
+	// count, err := s.repo.UpdatePath(ctx, req)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to update path documents. error: %w", err)
+	// }
+
+	// if count > 0 {
+	// 	newPath := filepath.Join(s.path, req.Group, req.InstrumentId)
+	// 	// думаю тут еще надо id пользователя использовать (чтобы во время одновременного создания ничего лишнего не попало)
+	// 	// по хорошему это еще надо синхронизировать между устройствами
+	// 	// еще можно добавить какую-нибудь группировку чтобы файлы из разных мест не пересекались или она мне не нужна
+	// 	srcPath := filepath.Join(s.path, "temp", req.UserId, req.Group, req.InstrumentId)
+	// 	if req.IdWasEmpty {
+	// 		srcPath = filepath.Join(s.path, "temp", req.UserId, req.Group)
+	// 	}
+
+	// 	if err = os.MkdirAll(filepath.Dir(newPath), 0750); err != nil {
+	// 		return err
+	// 	}
+	// 	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+	// 		return fmt.Errorf("source path does not exist: %s", srcPath)
+	// 	}
+
+	// 	if err := os.Rename(srcPath, newPath); err != nil {
+	// 		logger.Error("Failed to move files after dir creation", logger.StringAttr("newPath", newPath), logger.ErrAttr(err))
+	// 		return fmt.Errorf("failed to move files. error: %w", err)
+	// 	}
+	// }
+	// return nil
+}
+func isValidPathSegment(s string) bool {
+	if s == "" || strings.ContainsAny(s, `/\\.:*?"<>|`) || strings.Contains(s, "..") {
+		return false
+	}
+	return true
+}
+func rollback(newPath, srcPath string) {
+	rollbackErr := os.Rename(newPath, srcPath)
+	if rollbackErr != nil {
+		logger.Error("CRITICAL: rollback failed",
+			logger.StringAttr("from", newPath),
+			logger.StringAttr("to", srcPath),
+			logger.ErrAttr(rollbackErr))
+	}
 }
 
 func (s *DocumentService) Delete(ctx context.Context, dto *models.DeleteDocumentDTO) error {
@@ -167,7 +257,7 @@ func (s *DocumentService) Delete(ctx context.Context, dto *models.DeleteDocument
 	}
 	paths = append(paths, dto.Id, dto.Filename)
 
-	dst := path.Join(paths...)
+	dst := filepath.Join(paths...)
 
 	if err := os.Remove(dst); err != nil && !strings.Contains(err.Error(), "no such file") {
 		return fmt.Errorf("failed to delete file. error: %w", err)
@@ -180,7 +270,7 @@ func (s *DocumentService) Delete(ctx context.Context, dto *models.DeleteDocument
 }
 
 func (s *DocumentService) DeleteByInstrumentId(ctx context.Context, instrumentId string) error {
-	dst := path.Join(s.path, instrumentId)
+	dst := filepath.Join(s.path, instrumentId)
 
 	if err := os.RemoveAll(dst); err != nil && !strings.Contains(err.Error(), "no such file") {
 		return fmt.Errorf("failed to delete folder with files. error: %w", err)

@@ -16,12 +16,14 @@ import (
 )
 
 type LocationRepo struct {
-	db *sqlx.DB
+	db          *sqlx.DB
+	transaction Transaction
 }
 
-func NewLocationRepo(db *sqlx.DB) *LocationRepo {
+func NewLocationRepo(db *sqlx.DB, transaction Transaction) *LocationRepo {
 	return &LocationRepo{
-		db: db,
+		db:          db,
+		transaction: transaction,
 	}
 }
 
@@ -32,6 +34,7 @@ type Location interface {
 	GetUsedByHolder(ctx context.Context, req *models.GetLocationByHolderDTO) ([]*models.Location, error)
 	GetUsedByDepartment(ctx context.Context, req *models.GetLocationByDepartmentDTO) ([]*models.Location, error)
 	SelectByDepartment(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error)
+	CreateInTx(ctx context.Context, tx Tx, dto *models.LocationDTO) error
 	Create(ctx context.Context, dto *models.LocationDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.LocationDTO) error
 	Update(ctx context.Context, dto *models.LocationDTO) error
@@ -45,7 +48,7 @@ type Location interface {
 
 func (r *LocationRepo) Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, status, date_of_receiving, date_of_issue, need_confirmed, has_confirmed,
-		COALESCE(NULLIF(person, ''), e.name, '') AS person, COALESCE(NULLIF(place, ''), d.name, '') AS place,
+		COALESCE(e.name, NULLIF(person, ''), '') AS person, COALESCE(d.name, NULLIF(place, ''), '') AS place,
 		COALESCE(person_id::text, '') AS person_id, COALESCE(department_id::text, '') AS department_id
 		FROM %s AS l
 		LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.person_id::uuid=id) AS e ON true
@@ -162,6 +165,40 @@ func (r *LocationRepo) SelectByDepartment(ctx context.Context, dto *models.Selec
 		instruments = append(instruments, l.InstrumentId)
 	}
 	return instruments, nil
+}
+
+func (r *LocationRepo) CreateInTx(ctx context.Context, tx Tx, dto *models.LocationDTO) error {
+	query := fmt.Sprintf(`INSERT INTO %s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, 
+		person_id, department_id, last_place_id, user_id)
+		SELECT id::uuid, instrument_id::uuid, date_of_issue::DATE, date_of_receiving::DATE, 
+			status, need_confirmed::boolean, person_id::uuid, s.department_id::uuid, COALESCE(m.department_id::text, ''), s.user_id::uuid
+		FROM (VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9))
+		AS s(id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed, person_id, department_id, user_id) 
+		LEFT JOIN LATERAL (SELECT department_id FROM %s WHERE instrument_id=s.instrument_id::uuid ORDER BY created_at DESC LIMIT 1) AS m ON true`,
+		LocationTable, LocationTable,
+	)
+	dto.Id = uuid.NewString()
+
+	status := dto.Status
+	if status == "" {
+		status = constants.LocationStatusUsed
+	}
+
+	var personId *string = &dto.PersonId
+	if dto.PersonId == "" {
+		personId = nil
+	}
+	var departmentId *string = &dto.DepartmentId
+	if dto.DepartmentId == "" {
+		departmentId = nil
+	}
+
+	args := []interface{}{dto.Id, dto.InstrumentId, dto.DateOfIssue, dto.DateOfReceiving, status, dto.NeedConfirm, personId, departmentId, dto.UserId}
+	_, err := tx.TX().ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
 }
 
 func (r *LocationRepo) Create(ctx context.Context, dto *models.LocationDTO) error {

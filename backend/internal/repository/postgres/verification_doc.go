@@ -13,20 +13,22 @@ import (
 
 type VerificationDocRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewVerificationDocRepo(db *sqlx.DB) *VerificationDocRepo {
+func NewVerificationDocRepo(db *sqlx.DB, transaction Transaction) *VerificationDocRepo {
 	return &VerificationDocRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type VerificationDoc interface {
 	Get(ctx context.Context, req *models.GetVerificationDocsDTO) ([]*models.VerificationDoc, error)
 	GetGrouped(ctx context.Context, req *models.GetGroupedVerificationDocsDTO) (*models.GroupedVerificationDocs, error)
-	CreateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error
+	CreateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDocDTO) error
 	Update(ctx context.Context, dto *models.VerificationDocDTO) error
-	UpdateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error
+	UpdateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDocDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerificationDocDTO) error
 }
 
@@ -78,7 +80,7 @@ func (r *VerificationDocRepo) GetGrouped(ctx context.Context, req *models.GetGro
 	return &models.GroupedVerificationDocs{Groups: data}, nil
 }
 
-func (r *VerificationDocRepo) CreateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error {
+func (r *VerificationDocRepo) CreateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDocDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, verification_id, name, doc_id) 
 		VALUES (:id, :verification_id, :name, CAST(NULLIF(:doc_id, '') AS uuid))`,
 		VerificationDocsTable,
@@ -87,7 +89,7 @@ func (r *VerificationDocRepo) CreateSeveral(ctx context.Context, dto []*models.V
 		dto[i].Id = uuid.NewString()
 	}
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil
@@ -102,7 +104,7 @@ func (r *VerificationDocRepo) Update(ctx context.Context, dto *models.Verificati
 	return nil
 }
 
-func (r *VerificationDocRepo) UpdateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error {
+func (r *VerificationDocRepo) UpdateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDocDTO) error {
 	values := []string{}
 	args := []interface{}{}
 	for i, v := range dto {
@@ -120,7 +122,7 @@ func (r *VerificationDocRepo) UpdateSeveral(ctx context.Context, dto []*models.V
 		VerificationDocsTable, strings.Join(values, ","),
 	)
 
-	if _, err := r.db.ExecContext(ctx, query, args...); err != nil {
+	if _, err := r.getExec(tx).ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

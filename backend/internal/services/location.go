@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository"
+	"github.com/Alexander272/mersi/backend/internal/repository/postgres"
 	"github.com/Alexander272/mersi/backend/internal/services/most"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 )
@@ -43,7 +44,8 @@ type Location interface {
 	GetUsedByHolder(ctx context.Context, dto *models.GetLocationByHolderDTO) ([]*models.Location, error)
 	GetUsedByDepartment(ctx context.Context, dto *models.GetLocationByDepartmentDTO) ([]*models.Location, error)
 	SelectByDepartments(ctx context.Context, dto *models.SelectByDepsDTO) ([]string, error)
-	Create(ctx context.Context, dto *models.LocationDTO) error
+	Create(ctx context.Context, tx postgres.Tx, dto *models.LocationDTO) error
+	// Create(ctx context.Context, dto *models.LocationDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.LocationDTO) (bool, error)
 	Update(ctx context.Context, dto *models.LocationDTO) error
 	SetPerson(ctx context.Context, personId string) error
@@ -106,13 +108,8 @@ func (s *LocationService) SelectByDepartments(ctx context.Context, dto *models.S
 	return data, nil
 }
 
-func (s *LocationService) Create(ctx context.Context, dto *models.LocationDTO) error {
+func (s *LocationService) Create(ctx context.Context, tx postgres.Tx, dto *models.LocationDTO) error {
 	if dto.Status == constants.LocationStatusMoved && dto.DepartmentId != "" {
-		// department, err := s.department.GetById(ctx, &models.GetDepartmentByIdDTO{Id: dto.DepartmentId})
-		// if err != nil {
-		// 	return err
-		// }
-
 		responsible, err := s.responsible.GetWithChannel(ctx, &models.GetResponsibleDTO{DepartmentId: dto.DepartmentId})
 		if err != nil {
 			return err
@@ -125,11 +122,36 @@ func (s *LocationService) Create(ctx context.Context, dto *models.LocationDTO) e
 		}
 	}
 
-	if err := s.repo.Create(ctx, dto); err != nil {
+	if err := s.repo.CreateInTx(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to create location. error: %w", err)
 	}
 	return nil
 }
+
+// func (s *LocationService) Create(ctx context.Context, dto *models.LocationDTO) error {
+// 	if dto.Status == constants.LocationStatusMoved && dto.DepartmentId != "" {
+// 		// department, err := s.department.GetById(ctx, &models.GetDepartmentByIdDTO{Id: dto.DepartmentId})
+// 		// if err != nil {
+// 		// 	return err
+// 		// }
+
+// 		responsible, err := s.responsible.GetWithChannel(ctx, &models.GetResponsibleDTO{DepartmentId: dto.DepartmentId})
+// 		if err != nil {
+// 			return err
+// 		}
+// 		if len(responsible) == 0 { //? ответственное лицо не задано
+// 			return models.ErrNoResponsible
+// 		}
+// 		if responsible[0].ChannelId == "" { //? канал для уведомлений не задан
+// 			return models.ErrNoChannel
+// 		}
+// 	}
+
+// 	if err := s.repo.Create(ctx, dto); err != nil {
+// 		return fmt.Errorf("failed to create location. error: %w", err)
+// 	}
+// 	return nil
+// }
 
 func (s *LocationService) CreateSeveral(ctx context.Context, dto []*models.LocationDTO) (bool, error) {
 	if len(dto) == 0 {

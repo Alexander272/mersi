@@ -16,22 +16,28 @@ import (
 
 type InstrumentRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewInstrumentRepo(db *sqlx.DB) *InstrumentRepo {
+func NewInstrumentRepo(db *sqlx.DB, transaction Transaction) *InstrumentRepo {
 	return &InstrumentRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type Instrument interface {
+	Transaction
 	GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error)
 	GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error)
+	CreateInTx(ctx context.Context, tx Tx, dto *models.InstrumentDTO) error
 	Create(ctx context.Context, dto *models.InstrumentDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.InstrumentDTO) error
-	Update(ctx context.Context, dto *models.InstrumentDTO) error
+	Update(ctx context.Context, tx Tx, dto *models.InstrumentDTO) error
+	// Update(ctx context.Context, dto *models.InstrumentDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
-	ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
+	ChangeStatus(ctx context.Context, tx Tx, dto *models.UpdateStatus) error
+	// ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error
 	ChangeSeveralStatuses(ctx context.Context, dto []*models.UpdateStatus) error
 	Delete(ctx context.Context, id string) error
 }
@@ -81,6 +87,42 @@ func (r *InstrumentRepo) GetUniqueData(ctx context.Context, req *models.GetUniqu
 		data = append(data, v.Item)
 	}
 	return data, nil
+}
+
+func (r *InstrumentRepo) GetMaxPositionWithLock(ctx context.Context, tx Tx, sectionId string) (int, error) {
+	query := fmt.Sprintf(`SELECT COALESCE(MAX(position), 0) FROM %s WHERE section_id=$1`, InstrumentsTable)
+	var maxPosition int
+
+	if err := tx.TX().GetContext(ctx, &maxPosition, query, sectionId); err != nil {
+		return 0, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return maxPosition, nil
+}
+func (r *InstrumentRepo) CreateInTx(ctx context.Context, tx Tx, dto *models.InstrumentDTO) error {
+	max, err := r.GetMaxPositionWithLock(ctx, tx, dto.SectionId)
+	if err != nil {
+		return err
+	}
+
+	query := fmt.Sprintf(`INSERT INTO %s (id, section_id, user_id, position, name, date_of_receipt, type, factory_number, measurement_limits, 
+		accuracy, state_register, country_of_produce, manufacturer, responsible, inventory, year_of_issue, inter_verification_interval, 
+		act_of_entering, act_of_entering_id, notes, status) 
+		VALUES (:id, :section_id, :user_id, :position, :name, :date_of_receipt, :type, :factory_number, :measurement_limits, 
+		:accuracy, :state_register, :country_of_produce, :manufacturer, :responsible, :inventory, :year_of_issue, :inter_verification_interval, 
+		:act_of_entering, :act_of_entering_id, :notes, :status)`,
+		InstrumentsTable,
+	)
+	dto.Id = uuid.NewString()
+	dto.Position = max + 1
+	dto.Status = models.InstrumentStatusWork
+	if dto.ActOfEnteringId == "" {
+		dto.ActOfEnteringId = uuid.Nil.String()
+	}
+
+	if _, err := tx.TX().NamedExecContext(ctx, query, dto); err != nil {
+		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
 }
 
 func (r *InstrumentRepo) Create(ctx context.Context, dto *models.InstrumentDTO) error {
@@ -139,7 +181,7 @@ func (r *InstrumentRepo) CreateSeveral(ctx context.Context, dto []*models.Instru
 	return nil
 }
 
-func (r *InstrumentRepo) Update(ctx context.Context, dto *models.InstrumentDTO) error {
+func (r *InstrumentRepo) Update(ctx context.Context, tx Tx, dto *models.InstrumentDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET name=:name, date_of_receipt=:date_of_receipt, type=:type, factory_number=:factory_number, 
 		measurement_limits=:measurement_limits, accuracy=:accuracy, state_register=:state_register, country_of_produce=:country_of_produce,
 		manufacturer=:manufacturer, responsible=:responsible, inventory=:inventory, year_of_issue=:year_of_issue, 
@@ -148,11 +190,26 @@ func (r *InstrumentRepo) Update(ctx context.Context, dto *models.InstrumentDTO) 
 		InstrumentsTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil
 }
+
+// func (r *InstrumentRepo) Update(ctx context.Context, dto *models.InstrumentDTO) error {
+// 	query := fmt.Sprintf(`UPDATE %s SET name=:name, date_of_receipt=:date_of_receipt, type=:type, factory_number=:factory_number,
+// 		measurement_limits=:measurement_limits, accuracy=:accuracy, state_register=:state_register, country_of_produce=:country_of_produce,
+// 		manufacturer=:manufacturer, responsible=:responsible, inventory=:inventory, year_of_issue=:year_of_issue,
+// 		inter_verification_interval=:inter_verification_interval, act_of_entering=:act_of_entering, act_of_entering_id=:act_of_entering_id,
+// 		notes=:notes, updated_at=now() WHERE id=:id`,
+// 		InstrumentsTable,
+// 	)
+
+// 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+// 		return fmt.Errorf("failed to execute query. error: %w", err)
+// 	}
+// 	return nil
+// }
 
 func (r *InstrumentRepo) ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error {
 	//TODO фиг знает как это будет отрабатывать с большими объемами данных
@@ -182,14 +239,23 @@ func (r *InstrumentRepo) ChangePosition(ctx context.Context, dto *models.ChangeP
 	return nil
 }
 
-func (r *InstrumentRepo) ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error {
+func (r *InstrumentRepo) ChangeStatus(ctx context.Context, tx Tx, dto *models.UpdateStatus) error {
 	query := fmt.Sprintf(`UPDATE %s SET status=:status WHERE id=:id`, InstrumentsTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil
 }
+
+// func (r *InstrumentRepo) ChangeStatus(ctx context.Context, dto *models.UpdateStatus) error {
+// 	query := fmt.Sprintf(`UPDATE %s SET status=:status WHERE id=:id`, InstrumentsTable)
+
+//		if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+//			return fmt.Errorf("failed to execute query. error: %w", err)
+//		}
+//		return nil
+//	}
 func (r *InstrumentRepo) ChangeSeveralStatuses(ctx context.Context, dto []*models.UpdateStatus) error {
 	values := []string{}
 	args := []interface{}{}

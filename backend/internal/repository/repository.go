@@ -5,6 +5,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type Transaction interface {
+	postgres.Transaction
+}
+
 type RuleItem interface {
 	postgres.RuleItem
 }
@@ -104,6 +108,8 @@ type Users interface {
 }
 
 type Repository struct {
+	Transaction
+
 	RuleItem
 	Rule
 	Role
@@ -140,7 +146,11 @@ type Repository struct {
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
+	transactions := postgres.NewTransactionRepo(db)
+
 	return &Repository{
+		Transaction: transactions,
+
 		RuleItem: postgres.NewRuleItemRepo(db),
 		Rule:     postgres.NewRuleRepo(db),
 		Role:     postgres.NewRoleRepo(db),
@@ -151,21 +161,21 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Columns:              postgres.NewColumnRepo(db),
 		CreateForm:           postgres.NewCreateFormRepo(db),
 		SiStatus:             postgres.NewStatusRepo(db),
-		Instrument:           postgres.NewInstrumentRepo(db),
+		Instrument:           postgres.NewInstrumentRepo(db, transactions),
 		Document:             postgres.NewDocumentRepo(db),
-		Verification:         postgres.NewVerificationRepo(db),
-		VerificationDoc:      postgres.NewVerificationDocRepo(db),
-		Location:             postgres.NewLocationRepo(db),
-		SI:                   postgres.NewSIRepo(db),
+		Verification:         postgres.NewVerificationRepo(db, transactions),
+		VerificationDoc:      postgres.NewVerificationDocRepo(db, transactions),
+		Location:             postgres.NewLocationRepo(db, transactions),
+		SI:                   postgres.NewSIRepo(db, transactions),
 		ContextMenu:          postgres.NewContextRepo(db),
 		CustomContextMenu:    postgres.NewCustomContextRepo(db),
 		ToolsMenu:            postgres.NewToolsMenuRepo(db),
-		Repair:               postgres.NewRepairRepo(db),
+		Repair:               postgres.NewRepairRepo(db, transactions),
 		VerificationFields:   postgres.NewVerificationFieldRepo(db),
-		Preservation:         postgres.NewPreservationRepo(db),
-		TransferToSave:       postgres.NewTransferToSaveRepo(db),
-		TransferToDepartment: postgres.NewTransferToDepRepo(db),
-		WriteOff:             postgres.NewWriteOffRepo(db),
+		Preservation:         postgres.NewPreservationRepo(db, transactions),
+		TransferToSave:       postgres.NewTransferToSaveRepo(db, transactions),
+		TransferToDepartment: postgres.NewTransferToDepRepo(db, transactions),
+		WriteOff:             postgres.NewWriteOffRepo(db, transactions),
 		HistoryType:          postgres.NewHistoryTypeRepo(db),
 		Filters:              postgres.NewFilterRepo(db),
 		Sorting:              postgres.NewSortingRepo(db),

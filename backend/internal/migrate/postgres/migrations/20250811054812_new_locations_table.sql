@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS public.locations
     CONSTRAINT locations_pkey PRIMARY KEY (id),
     CONSTRAINT locations_instrument_id_fkey FOREIGN KEY (instrument_id)
         REFERENCES public.instruments (id) MATCH SIMPLE
-        ON UPDATE RESTRICT
-        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 )
 
 TABLESPACE pg_default;

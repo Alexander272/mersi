@@ -6,6 +6,7 @@ import (
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository"
+	"github.com/Alexander272/mersi/backend/internal/repository/postgres"
 )
 
 type VerificationDocService struct {
@@ -21,9 +22,9 @@ func NewVerificationDocService(repo repository.VerificationDoc) *VerificationDoc
 type VerificationDoc interface {
 	Get(ctx context.Context, req *models.GetVerificationDocsDTO) ([]*models.VerificationDoc, error)
 	GetGrouped(ctx context.Context, req *models.GetGroupedVerificationDocsDTO) (*models.GroupedVerificationDocs, error)
-	CreateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error
+	CreateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.VerificationDocDTO) error
 	Update(ctx context.Context, dto *models.VerificationDocDTO) error
-	UpdateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error
+	UpdateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.VerificationDocDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerificationDocDTO) error
 }
 
@@ -43,11 +44,11 @@ func (s *VerificationDocService) GetGrouped(ctx context.Context, req *models.Get
 	return data, nil
 }
 
-func (s *VerificationDocService) CreateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error {
+func (s *VerificationDocService) CreateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.VerificationDocDTO) error {
 	if len(dto) == 0 {
 		return nil
 	}
-	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+	if err := s.repo.CreateSeveral(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to create several verification documents. error: %w", err)
 	}
 	return nil
@@ -60,11 +61,11 @@ func (s *VerificationDocService) Update(ctx context.Context, dto *models.Verific
 	return nil
 }
 
-func (s *VerificationDocService) UpdateSeveral(ctx context.Context, dto []*models.VerificationDocDTO) error {
+func (s *VerificationDocService) UpdateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.VerificationDocDTO) error {
 	if len(dto) == 0 {
 		return nil
 	}
-	if err := s.repo.UpdateSeveral(ctx, dto); err != nil {
+	if err := s.repo.UpdateSeveral(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to update several verification documents. error: %w", err)
 	}
 	return nil

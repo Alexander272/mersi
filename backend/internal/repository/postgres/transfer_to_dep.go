@@ -11,17 +11,19 @@ import (
 
 type TransferToDepRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewTransferToDepRepo(db *sqlx.DB) *TransferToDepRepo {
+func NewTransferToDepRepo(db *sqlx.DB, transaction Transaction) *TransferToDepRepo {
 	return &TransferToDepRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type TransferToDepartment interface {
 	Get(ctx context.Context, req *models.GetTransferToDepDTO) ([]*models.TransferToDepartment, error)
-	Create(ctx context.Context, dto *models.TransferToDepartmentDTO) error
+	Create(ctx context.Context, tx Tx, dto *models.TransferToDepartmentDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.TransferToDepartmentDTO) error
 	Update(ctx context.Context, dto *models.TransferToDepartmentDTO) error
 	Delete(ctx context.Context, dto *models.DeleteTransferToDepDTO) error
@@ -40,7 +42,7 @@ func (r *TransferToDepRepo) Get(ctx context.Context, req *models.GetTransferToDe
 	return data, nil
 }
 
-func (r *TransferToDepRepo) Create(ctx context.Context, dto *models.TransferToDepartmentDTO) error {
+func (r *TransferToDepRepo) Create(ctx context.Context, tx Tx, dto *models.TransferToDepartmentDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date, notes, doc_id, doc_name) 
 		VALUES (:id, :instrument_id, :date, :notes, :doc_id, :doc_name)`,
 		TransferToDepTable,
@@ -50,7 +52,7 @@ func (r *TransferToDepRepo) Create(ctx context.Context, dto *models.TransferToDe
 		dto.DocId = uuid.Nil.String()
 	}
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

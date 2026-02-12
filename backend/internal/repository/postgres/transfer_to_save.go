@@ -13,20 +13,22 @@ import (
 
 type TransferToSaveRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewTransferToSaveRepo(db *sqlx.DB) *TransferToSaveRepo {
+func NewTransferToSaveRepo(db *sqlx.DB, transaction Transaction) *TransferToSaveRepo {
 	return &TransferToSaveRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type TransferToSave interface {
 	Get(ctx context.Context, req *models.GetTransferToSaveDTO) ([]*models.TransferToSave, error)
-	GetLast(ctx context.Context, req *models.GetTransferToSaveDTO) (*models.TransferToSave, error)
-	Create(ctx context.Context, dto *models.TransferToSaveDTO) error
+	GetLast(ctx context.Context, tx Tx, req *models.GetTransferToSaveDTO) (*models.TransferToSave, error)
+	Create(ctx context.Context, tx Tx, dto *models.TransferToSaveDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.TransferToSaveDTO) error
-	Update(ctx context.Context, dto *models.TransferToSaveDTO) error
+	Update(ctx context.Context, tx Tx, dto *models.TransferToSaveDTO) error
 	Delete(ctx context.Context, dto *models.DeleteTransferToSaveDTO) error
 }
 
@@ -43,14 +45,14 @@ func (r *TransferToSaveRepo) Get(ctx context.Context, req *models.GetTransferToS
 	return data, nil
 }
 
-func (r *TransferToSaveRepo) GetLast(ctx context.Context, req *models.GetTransferToSaveDTO) (*models.TransferToSave, error) {
+func (r *TransferToSaveRepo) GetLast(ctx context.Context, tx Tx, req *models.GetTransferToSaveDTO) (*models.TransferToSave, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, date_start, notes_start, date_end, notes_end, created_at
 		FROM %s WHERE instrument_id=$1 ORDER BY date_start DESC LIMIT 1`,
 		TransferToSaveTable,
 	)
 	data := &models.TransferToSave{}
 
-	if err := r.db.GetContext(ctx, data, query, req.InstrumentId); err != nil {
+	if err := r.getExec(tx).GetContext(ctx, data, query, req.InstrumentId); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRows
 		}
@@ -59,14 +61,14 @@ func (r *TransferToSaveRepo) GetLast(ctx context.Context, req *models.GetTransfe
 	return data, nil
 }
 
-func (r *TransferToSaveRepo) Create(ctx context.Context, dto *models.TransferToSaveDTO) error {
+func (r *TransferToSaveRepo) Create(ctx context.Context, tx Tx, dto *models.TransferToSaveDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date_start, notes_start, date_end, notes_end)
 		VALUES (:id, :instrument_id, :date_start, :notes_start, :date_end, :notes_end)`,
 		TransferToSaveTable,
 	)
 	dto.Id = uuid.NewString()
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil
@@ -87,13 +89,13 @@ func (r *TransferToSaveRepo) CreateSeveral(ctx context.Context, dto []*models.Tr
 	return nil
 }
 
-func (r *TransferToSaveRepo) Update(ctx context.Context, dto *models.TransferToSaveDTO) error {
+func (r *TransferToSaveRepo) Update(ctx context.Context, tx Tx, dto *models.TransferToSaveDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET date_start=:date_start, notes_start=:notes_start, date_end=:date_end, 
 		notes_end=:notes_end WHERE id=:id`,
 		TransferToSaveTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

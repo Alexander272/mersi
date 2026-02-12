@@ -6,17 +6,20 @@ import (
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository"
+	"github.com/Alexander272/mersi/backend/internal/repository/postgres"
 )
 
 type WriteOffService struct {
 	repo       repository.WriteOff
+	txManager  TransactionManager
 	instrument Instrument
 	docs       Document
 }
 
-func NewWriteOffService(repo repository.WriteOff, instrument Instrument, docs Document) *WriteOffService {
+func NewWriteOffService(repo repository.WriteOff, txManager TransactionManager, instrument Instrument, docs Document) *WriteOffService {
 	return &WriteOffService{
 		repo:       repo,
+		txManager:  txManager,
 		instrument: instrument,
 		docs:       docs,
 	}
@@ -39,29 +42,31 @@ func (s *WriteOffService) Get(ctx context.Context, req *models.GetWriteOffDTO) (
 }
 
 func (s *WriteOffService) Create(ctx context.Context, dto *models.WriteOffDTO) error {
-	if err := s.repo.Create(ctx, dto); err != nil {
-		return fmt.Errorf("failed to create write off. error: %w", err)
-	}
-
-	if dto.DocId != "" {
-		pathDTO := &models.PathParts{
-			InstrumentId: dto.InstrumentId,
-			Group:        "writeOff",
-			UserId:       dto.UserId,
+	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		if err := s.repo.Create(ctx, tx, dto); err != nil {
+			return fmt.Errorf("failed to create write off. error: %w", err)
 		}
-		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
+
+		if dto.DocId != "" {
+			pathDTO := &models.PathParts{
+				InstrumentId: dto.InstrumentId,
+				Group:        "writeOff",
+				UserId:       dto.UserId,
+			}
+			if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
+				return err
+			}
+		}
+
+		instrumentDTO := &models.UpdateStatus{
+			Id:     dto.InstrumentId,
+			Status: models.InstrumentStatusDec,
+		}
+		if err := s.instrument.ChangeStatus(ctx, tx, instrumentDTO); err != nil {
 			return err
 		}
-	}
-
-	instrumentDTO := &models.UpdateStatus{
-		Id:     dto.InstrumentId,
-		Status: models.InstrumentStatusDec,
-	}
-	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
-		return err
-	}
-	return nil
+		return nil
+	})
 }
 
 func (s *WriteOffService) CreateSeveral(ctx context.Context, dto []*models.WriteOffDTO) error {

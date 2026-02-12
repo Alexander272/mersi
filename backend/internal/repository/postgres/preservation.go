@@ -13,20 +13,22 @@ import (
 
 type PreservationRepo struct {
 	db *sqlx.DB
+	Transaction
 }
 
-func NewPreservationRepo(db *sqlx.DB) *PreservationRepo {
+func NewPreservationRepo(db *sqlx.DB, transaction Transaction) *PreservationRepo {
 	return &PreservationRepo{
-		db: db,
+		db:          db,
+		Transaction: transaction,
 	}
 }
 
 type Preservation interface {
 	Get(ctx context.Context, req *models.GetPreservationsDTO) ([]*models.Preservation, error)
-	GetLast(ctx context.Context, req *models.GetPreservationsDTO) (*models.Preservation, error)
-	Create(ctx context.Context, dto *models.PreservationDTO) error
+	GetLast(ctx context.Context, tx Tx, req *models.GetPreservationsDTO) (*models.Preservation, error)
+	Create(ctx context.Context, tx Tx, dto *models.PreservationDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.PreservationDTO) error
-	Update(ctx context.Context, dto *models.PreservationDTO) error
+	Update(ctx context.Context, tx Tx, dto *models.PreservationDTO) error
 	Delete(ctx context.Context, dto *models.DeletePreservationDTO) error
 }
 
@@ -43,14 +45,14 @@ func (r *PreservationRepo) Get(ctx context.Context, req *models.GetPreservations
 	return data, nil
 }
 
-func (r *PreservationRepo) GetLast(ctx context.Context, req *models.GetPreservationsDTO) (*models.Preservation, error) {
+func (r *PreservationRepo) GetLast(ctx context.Context, tx Tx, req *models.GetPreservationsDTO) (*models.Preservation, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, date_start, date_end, notes_start, notes_end, created_at FROM %s
 		WHERE instrument_id=$1 ORDER BY date_start DESC LIMIT 1`,
 		PreservationTable,
 	)
 	data := &models.Preservation{}
 
-	if err := r.db.GetContext(ctx, data, query, req.InstrumentId); err != nil {
+	if err := r.getExec(tx).GetContext(ctx, data, query, req.InstrumentId); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRows
 		}
@@ -59,14 +61,14 @@ func (r *PreservationRepo) GetLast(ctx context.Context, req *models.GetPreservat
 	return data, nil
 }
 
-func (r *PreservationRepo) Create(ctx context.Context, dto *models.PreservationDTO) error {
+func (r *PreservationRepo) Create(ctx context.Context, tx Tx, dto *models.PreservationDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s (id, instrument_id, date_start, date_end, notes_start, notes_end)
 		VALUES (:id, :instrument_id, :date_start, :date_end, :notes_start, :notes_end)`,
 		PreservationTable,
 	)
 	dto.Id = uuid.NewString()
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil
@@ -87,12 +89,12 @@ func (r *PreservationRepo) CreateSeveral(ctx context.Context, dto []*models.Pres
 	return nil
 }
 
-func (r *PreservationRepo) Update(ctx context.Context, dto *models.PreservationDTO) error {
+func (r *PreservationRepo) Update(ctx context.Context, tx Tx, dto *models.PreservationDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET date_start=:date_start, date_end=:date_end, notes_start=:notes_start, notes_end=:notes_end 
 		WHERE id=:id`, PreservationTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

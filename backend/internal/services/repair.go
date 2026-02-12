@@ -7,16 +7,19 @@ import (
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository"
+	"github.com/Alexander272/mersi/backend/internal/repository/postgres"
 )
 
 type RepairService struct {
 	repo       repository.Repair
+	txManager  TransactionManager
 	instrument Instrument
 }
 
-func NewRepairService(repo repository.Repair, instrument Instrument) *RepairService {
+func NewRepairService(repo repository.Repair, txManager TransactionManager, instrument Instrument) *RepairService {
 	return &RepairService{
 		repo:       repo,
+		txManager:  txManager,
 		instrument: instrument,
 	}
 }
@@ -50,23 +53,25 @@ func (s *RepairService) GetLast(ctx context.Context, req *models.GetRepairDTO) (
 }
 
 func (s *RepairService) Create(ctx context.Context, dto *models.RepairDTO) error {
-	if err := s.repo.Create(ctx, dto); err != nil {
-		return fmt.Errorf("failed to create repair info. error: %w", err)
-	}
+	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		if err := s.repo.Create(ctx, tx, dto); err != nil {
+			return fmt.Errorf("failed to create repair info. error: %w", err)
+		}
 
-	status := models.InstrumentStatusWork
-	if dto.PeriodEnd.IsZero() {
-		status = models.InstrumentStatusRepair
-	}
-	instrumentDTO := &models.UpdateStatus{
-		Id:     dto.InstrumentId,
-		Status: status,
-	}
-	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
-		return err
-	}
+		status := models.InstrumentStatusWork
+		if dto.PeriodEnd.IsZero() {
+			status = models.InstrumentStatusRepair
+		}
+		instrumentDTO := &models.UpdateStatus{
+			Id:     dto.InstrumentId,
+			Status: status,
+		}
+		if err := s.instrument.ChangeStatus(ctx, tx, instrumentDTO); err != nil {
+			return err
+		}
 
-	return nil
+		return nil
+	})
 }
 
 func (s *RepairService) CreateSeveral(ctx context.Context, dto []*models.RepairDTO) error {
@@ -81,18 +86,20 @@ func (s *RepairService) CreateSeveral(ctx context.Context, dto []*models.RepairD
 }
 
 func (s *RepairService) Update(ctx context.Context, dto *models.RepairDTO) error {
-	if err := s.repo.Update(ctx, dto); err != nil {
-		return fmt.Errorf("failed to update repair info. error: %w", err)
-	}
+	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		if err := s.repo.Update(ctx, tx, dto); err != nil {
+			return fmt.Errorf("failed to update repair info. error: %w", err)
+		}
 
-	instrumentDTO := &models.UpdateStatus{
-		Id:     dto.InstrumentId,
-		Status: models.InstrumentStatusWork,
-	}
-	if err := s.instrument.ChangeStatus(ctx, instrumentDTO); err != nil {
-		return err
-	}
-	return nil
+		instrumentDTO := &models.UpdateStatus{
+			Id:     dto.InstrumentId,
+			Status: models.InstrumentStatusWork,
+		}
+		if err := s.instrument.ChangeStatus(ctx, tx, instrumentDTO); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (s *RepairService) Delete(ctx context.Context, dto *models.DeleteRepairDTO) error {
