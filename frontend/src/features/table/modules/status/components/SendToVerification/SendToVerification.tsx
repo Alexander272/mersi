@@ -58,7 +58,7 @@ const Content: FC<{ ids: string[] }> = ({ ids }) => {
 	const filter = { field: 'id', value: ids?.join(','), fieldType: 'list' as const, compareType: 'in' as const }
 	const { data, isFetching } = useGetSIQuery(
 		{ section: section?.id || '', status: 'work', filters: [filter], size: 9999999, all: true },
-		{ skip: !ids }
+		{ skip: !ids },
 	)
 	const [send, { isLoading }] = useChangeStatusMutation()
 
@@ -73,7 +73,10 @@ const Content: FC<{ ids: string[] }> = ({ ids }) => {
 		})
 
 		try {
-			if (!dto.length) return
+			if (!dto.length) {
+				toast.warn('Инструменты не выбраны')
+				return
+			}
 			await send(dto).unwrap()
 			toast.success('Инструменты отправлены на проверку')
 			closeHandler()
