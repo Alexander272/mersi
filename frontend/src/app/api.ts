@@ -45,6 +45,7 @@ export const API = {
 		historyTypes: 'history-types' as const,
 	},
 	departments: '/departments' as const,
+	departmentAccesses: '/department-accesses' as const,
 	employees: '/employees' as const,
 	responsible: '/responsible' as const,
 	channels: '/channels' as const,

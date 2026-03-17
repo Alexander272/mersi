@@ -20,7 +20,7 @@ export default function Employees() {
 		<PageBox>
 			<Box
 				borderRadius={3}
-				padding={2}
+				paddingY={2}
 				margin={'0 auto'}
 				width={{ xl: '66%', lg: '86%', md: '100%' }}
 				border={'1px solid rgba(0, 0, 0, 0.12)'}
@@ -29,16 +29,16 @@ export default function Employees() {
 				flexDirection={'column'}
 				sx={{ backgroundColor: '#fff', userSelect: 'none' }}
 			>
-				<Breadcrumbs aria-label='breadcrumb' sx={{ mb: 2 }}>
+				<Breadcrumbs aria-label='breadcrumb' sx={{ mb: 2, px: 2 }}>
 					<Breadcrumb to={AppRoutes.Home}>Главная</Breadcrumb>
 					<Breadcrumb to={AppRoutes.Employees} active>
 						Подразделения
 					</Breadcrumb>
 				</Breadcrumbs>
 
-				<Stack direction={'row'} spacing={2} height={'100%'}>
+				<Stack direction={'row'} spacing={2} height={'100%'} pl={2}>
 					<DepartmentList department={department} setDepartment={departmentHandler} />
-					<Stack width={'100%'} spacing={3} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1 }}>
+					<Stack width={'100%'} spacing={3} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1, pr: 2 }}>
 						<DepartmentForm department={department} setDepartment={departmentHandler} />
 						{department != 'new' && <EmployeeTable department={department} hasResponsible />}
 					</Stack>

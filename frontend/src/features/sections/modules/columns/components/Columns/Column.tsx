@@ -49,7 +49,7 @@ const Row: FC<Omit<Props, 'insert'>> = ({ id, data, isChild }) => {
 					left: 40,
 					bottom: 0,
 					height: '1px',
-					width: 'calc(100% - 60px)',
+					width: 'calc(100% - 40px)',
 					background: '#a0a6b7a3',
 				},
 			}}
@@ -64,7 +64,7 @@ const Row: FC<Omit<Props, 'insert'>> = ({ id, data, isChild }) => {
 			</IconButton>
 
 			{!isChild && (
-				<IconButton onClick={openDialog} size='large' sx={{ ml: 'auto', mr: 3 }}>
+				<IconButton onClick={openDialog} size='large' sx={{ ml: 'auto' }}>
 					<PlusIcon fontSize={10} fill={'#575757'} />
 				</IconButton>
 			)}

@@ -13,9 +13,9 @@ export default function Realms() {
 	}
 
 	return (
-		<Stack direction={'row'} spacing={2} height={'100%'}>
+		<Stack direction={'row'} spacing={2} height={'100%'} pl={2}>
 			<RealmsList realm={realm} setRealm={realmHandler} />
-			<Stack width={'100%'} spacing={3} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1 }}>
+			<Stack width={'100%'} spacing={3} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1, pr: 2 }}>
 				<RealmForm realm={realm} setRealm={realmHandler} />
 				{realm != 'new' && <AccessesTable realm={realm} />}
 			</Stack>

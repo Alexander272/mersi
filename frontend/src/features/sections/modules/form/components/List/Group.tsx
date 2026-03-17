@@ -81,7 +81,7 @@ export const Group: FC<Props> = ({ data, section, index, update }) => {
 					<EditIcon fontSize={12} fill={'#6e6e6e'} />
 				</IconButton>
 
-				<IconButton onClick={openDialog} size='large' sx={{ mr: 2 }}>
+				<IconButton onClick={openDialog} size='large' sx={{ mr: 1 }}>
 					<PlusIcon fontSize={10} fill={'#575757'} />
 				</IconButton>
 			</Stack>

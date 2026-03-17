@@ -34,7 +34,7 @@ export default function Settings() {
 		<PageBox>
 			<Box
 				borderRadius={3}
-				padding={2}
+				paddingY={2}
 				margin={'0 auto'}
 				width={{ xl: '66%', lg: '86%', md: '100%' }}
 				border={'1px solid rgba(0, 0, 0, 0.12)'}
@@ -43,7 +43,7 @@ export default function Settings() {
 				flexDirection={'column'}
 				sx={{ backgroundColor: '#fff', userSelect: 'none' }}
 			>
-				<Breadcrumbs aria-label='breadcrumb' sx={{ mb: 2 }}>
+				<Breadcrumbs aria-label='breadcrumb' sx={{ mb: 2, px: 2 }}>
 					<Breadcrumb to={AppRoutes.Home}>Главная</Breadcrumb>
 					<Breadcrumb to={AppRoutes.Settings} active>
 						Настройки
@@ -60,6 +60,7 @@ export default function Settings() {
 						borderColor: 'divider',
 						width: '100%',
 						mb: 3,
+						px: 2,
 						'.MuiTabs-scrollButtons': { transition: 'all .2s ease-in-out' },
 						'.MuiTabs-scrollButtons.Mui-disabled': {
 							height: 0,

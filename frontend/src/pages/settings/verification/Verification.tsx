@@ -23,9 +23,9 @@ export default function Verification() {
 	}
 
 	return (
-		<Stack direction={'row'} spacing={2} height={'100%'}>
+		<Stack direction={'row'} spacing={2} height={'100%'} pl={2}>
 			<List item={item} setItem={itemHandler} readonly />
-			<Stack width={'100%'} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1 }}>
+			<Stack width={'100%'} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1, pr: 2 }}>
 				<Tabs
 					value={active}
 					onChange={tabHandler}

@@ -114,7 +114,7 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 	if (section == 'new') length++
 
 	return (
-		<Stack component={'form'} onSubmit={saveHandler} position={'relative'} mr={1}>
+		<Stack component={'form'} onSubmit={saveHandler} position={'relative'}>
 			{isFetching || isDeleting || isUpdating || isCreating ? (
 				<Fallback position={'absolute'} zIndex={5} background={'#f5f5f557'} />
 			) : null}

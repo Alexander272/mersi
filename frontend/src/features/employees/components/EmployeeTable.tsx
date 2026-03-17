@@ -23,6 +23,7 @@ import { Confirm } from '@/components/Confirm/Confirm'
 import { EditIcon } from '@/components/Icons/EditIcon'
 import { CloseIcon } from '@/components/Icons/CloseIcon'
 import { EmployeeDialog } from './EmployeeDialog'
+import { DepartmentAccess } from '@/features/departments/components/DepartmentAccess'
 
 type Props = {
 	department: string
@@ -66,6 +67,7 @@ export const EmployeeTable: FC<Props> = ({ department, hasResponsible }) => {
 	return (
 		<Stack width={'100%'} alignItems={'center'}>
 			{hasResponsible ? <Responsible department={dep?.data} /> : null}
+			{hasResponsible ? <DepartmentAccess department={dep?.data} /> : null}
 
 			<TableContainer sx={{ position: 'relative', minHeight: 140, mt: 3, mb: 4 }}>
 				{(isFetching || depIsFetching) && (

@@ -91,8 +91,9 @@ export const Responsible: FC<Props> = ({ department }) => {
 		console.log('deleted', deleted.current)
 	})
 
+	//TODO: лучше сделать автокмоплит с множественным выбором и автосохранением
 	return (
-		<Stack direction={'row'} alignItems={'flex-start'} position={'relative'} width={'98%'}>
+		<Stack direction={'row'} alignItems={'flex-start'} position={'relative'} width={'100%'} mb={1}>
 			{isFetching || usersIsFetching ? (
 				<Fallback position={'absolute'} zIndex={5} background={'#f5f5f557'} />
 			) : null}

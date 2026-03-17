@@ -16,9 +16,9 @@ export default function Sections() {
 	}
 
 	return (
-		<Stack direction={'row'} spacing={2} height={'100%'}>
+		<Stack direction={'row'} spacing={2} height={'100%'} pl={2}>
 			<List item={item} setItem={itemHandler} />
-			<Stack width={'100%'} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1 }}>
+			<Stack width={'100%'} sx={{ maxHeight: 760, overflowY: 'auto', pt: 1, pr: 2 }}>
 				<Form section={item} setSection={itemHandler} />
 				{item != 'new' && (
 					<>
