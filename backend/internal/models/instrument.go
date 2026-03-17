@@ -12,6 +12,7 @@ const (
 	InstrumentStatusSaved       InstrumentStatus = "saved"
 	InstrumentStatusTransferred InstrumentStatus = "transferred"
 	InstrumentStatusChecking    InstrumentStatus = "checking"
+	InstrumentStatusWriteOff    InstrumentStatus = "write_off"
 	InstrumentDeleted           InstrumentStatus = "deleted"
 	InstrumentDraft             InstrumentStatus = "draft"
 )

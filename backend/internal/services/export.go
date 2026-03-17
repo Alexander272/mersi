@@ -51,6 +51,10 @@ func (s *ExportService) Export(ctx context.Context, req *models.GetSiDTO) (*byte
 	return buffer, nil
 }
 
+func (s *ExportService) MakeAccLog(ctx context.Context, req *models.Period) (*bytes.Buffer, error) {
+	return nil, nil
+}
+
 func (s *ExportService) MakeScheduler(ctx context.Context, req *models.Period) (*bytes.Buffer, error) {
 	data, err := s.si.GetVerification(ctx, req)
 	if err != nil {

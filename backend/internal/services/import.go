@@ -236,7 +236,7 @@ func (s *ImportService) LoadOintoSi(ctx context.Context, dto *models.ImportDTO) 
 		}
 
 		if row[template.WriteOff] != "" && row[template.WriteOff] != "-" && row[template.WriteOff] != "−" {
-			status = models.InstrumentStatusDec
+			status = models.InstrumentStatusWriteOff
 			dateString := dateRe.FindString(row[template.WriteOff])
 			date := time.Time{}
 			if dateString != "" {

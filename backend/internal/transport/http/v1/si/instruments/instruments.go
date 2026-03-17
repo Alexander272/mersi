@@ -111,7 +111,7 @@ func (h *Handler) create(c *gin.Context) {
 	user := u.(models.User)
 	dto.UserId = user.ID
 
-	if err := h.service.Create(c, dto); err != nil {
+	if err := h.service.Create(c, nil, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return

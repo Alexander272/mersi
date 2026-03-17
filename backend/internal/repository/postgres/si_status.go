@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
@@ -47,6 +48,7 @@ func (r *StatusRepo) Create(ctx context.Context, dto *models.SiStatusDTO) error 
 		VALUES (:id, :section_id, :position, :value, :label)`,
 		SiStatusTable,
 	)
+	dto.Id = uuid.NewString()
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
@@ -59,6 +61,9 @@ func (r *StatusRepo) CreateSeveral(ctx context.Context, dto []*models.SiStatusDT
 		VALUES (:id, :section_id, :position, :value, :label)`,
 		SiStatusTable,
 	)
+	for i := range dto {
+		dto[i].Id = uuid.NewString()
+	}
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)

@@ -37,6 +37,13 @@ func (m *Middleware) VerifyToken(c *gin.Context) {
 		return
 	}
 
+	permission, err := c.Cookie(constants.IdentityCookie)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusUnauthorized, err.Error(), "сессия не найдена")
+		return
+	}
+
 	c.Set(constants.CtxUser, *user)
+	c.Set(constants.IdentityCookie, permission)
 	c.Next()
 }

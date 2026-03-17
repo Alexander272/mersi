@@ -234,6 +234,16 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.
 			"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал аттестации, мес.",
 			"Дата последней аттестации", "Дата следующей аттестации", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
 		}
+	case "ots_si":
+		columnNames = []string{
+			"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал поверки, мес.",
+			"Дата последней поверки", "Дата следующей поверки", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
+		}
+	case "ots_eq":
+		columnNames = []string{
+			"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал аттестации, мес.",
+			"Дата последней аттестации", "Дата следующей аттестации", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
+		}
 	default:
 		columnNames = []string{
 			"№ п/п", "Наименование", "Тип СИ", "Заводской номер", "Диапазон измерений", "Периодичность поверки", "Дата последней поверки",
@@ -273,6 +283,20 @@ func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.
 			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
 			values[num+int(d.NextVerificationDate.Month())-1] = "*"
 		case "ointo_eq":
+			values = []interface{}{
+				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
+			}
+			num := len(values)
+			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
+			values[num+int(d.NextVerificationDate.Month())-1] = "*"
+		case "ots_si":
+			values = []interface{}{
+				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
+			}
+			num := len(values)
+			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
+			values[num+int(d.NextVerificationDate.Month())-1] = "*"
+		case "ots_eq":
 			values = []interface{}{
 				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
 			}

@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/channel"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/columns"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/context_menu"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/department_accesses"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/departments"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/employees"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/export"
@@ -79,6 +80,7 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	filters.Register(secure, h.services.Filters, h.middleware)
 	sorting.Register(secure, h.services.Sorting, h.middleware)
 	departments.Register(secure, h.services.Department, h.middleware)
+	department_accesses.Register(secure, h.services.DepartmentAccess, h.middleware)
 	employees.Register(secure, h.services.Employee, h.middleware)
 	channel.Register(secure, h.services.Channel, h.middleware)
 	responsible.Register(secure, h.services.Responsible, h.middleware)

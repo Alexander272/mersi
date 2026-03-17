@@ -60,7 +60,7 @@ func (s *WriteOffService) Create(ctx context.Context, dto *models.WriteOffDTO) e
 
 		instrumentDTO := &models.UpdateStatus{
 			Id:     dto.InstrumentId,
-			Status: models.InstrumentStatusDec,
+			Status: models.InstrumentStatusWriteOff,
 		}
 		if err := s.instrument.ChangeStatus(ctx, tx, instrumentDTO); err != nil {
 			return err

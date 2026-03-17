@@ -94,6 +94,7 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(constants.AuthCookie, user.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
+	c.SetCookie(constants.IdentityCookie, strings.Join(user.Permissions, ","), int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
 	c.JSON(http.StatusOK, response.DataResponse{Data: user})
 }
 
@@ -170,5 +171,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(constants.AuthCookie, user.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
+	c.SetCookie(constants.IdentityCookie, strings.Join(user.Permissions, ","), int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
 	c.JSON(http.StatusOK, response.DataResponse{Data: user})
 }

@@ -103,7 +103,7 @@ func (s *SIService) GetUsed(ctx context.Context, req *models.Period) ([]*models.
 
 func (s *SIService) Create(ctx context.Context, dto *models.SiDTO) error {
 	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
-		if err := s.instrument.CreateInTx(ctx, tx, dto.Instrument); err != nil {
+		if err := s.instrument.Create(ctx, tx, dto.Instrument); err != nil {
 			return err
 		}
 

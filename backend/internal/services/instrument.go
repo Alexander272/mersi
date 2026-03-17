@@ -25,8 +25,8 @@ func NewInstrumentService(repo repository.Instrument, docs Document) *Instrument
 type Instrument interface {
 	GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error)
 	GetUniqueData(ctx context.Context, req *models.GetUniqueDTO) ([]string, error)
-	CreateInTx(ctx context.Context, tx postgres.Tx, dto *models.InstrumentDTO) error
-	Create(ctx context.Context, dto *models.InstrumentDTO) error
+	Create(ctx context.Context, tx postgres.Tx, dto *models.InstrumentDTO) error
+	// Create(ctx context.Context, dto *models.InstrumentDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.InstrumentDTO) error
 	Update(ctx context.Context, tx postgres.Tx, dto *models.InstrumentDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
@@ -54,7 +54,7 @@ func (s *InstrumentService) GetUniqueData(ctx context.Context, req *models.GetUn
 	return data, nil
 }
 
-func (s *InstrumentService) CreateInTx(ctx context.Context, tx postgres.Tx, dto *models.InstrumentDTO) error {
+func (s *InstrumentService) Create(ctx context.Context, tx postgres.Tx, dto *models.InstrumentDTO) error {
 	if err := s.repo.CreateInTx(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to create instrument. error: %w", err)
 	}
@@ -73,25 +73,25 @@ func (s *InstrumentService) CreateInTx(ctx context.Context, tx postgres.Tx, dto 
 	return nil
 }
 
-func (s *InstrumentService) Create(ctx context.Context, dto *models.InstrumentDTO) error {
-	if err := s.repo.Create(ctx, dto); err != nil {
-		return fmt.Errorf("failed to create instrument. error: %w", err)
-	}
+// func (s *InstrumentService) Create(ctx context.Context, dto *models.InstrumentDTO) error {
+// 	if err := s.repo.Create(ctx, dto); err != nil {
+// 		return fmt.Errorf("failed to create instrument. error: %w", err)
+// 	}
 
-	if dto.ActOfEnteringId != "" {
-		pathDTO := &models.PathParts{
-			InstrumentId: dto.Id,
-			Group:        "act",
-			UserId:       dto.UserId,
-			IdWasEmpty:   true,
-		}
-		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
-			return err
-		}
-	}
+// 	if dto.ActOfEnteringId != "" {
+// 		pathDTO := &models.PathParts{
+// 			InstrumentId: dto.Id,
+// 			Group:        "act",
+// 			UserId:       dto.UserId,
+// 			IdWasEmpty:   true,
+// 		}
+// 		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (s *InstrumentService) CreateSeveral(ctx context.Context, dto []*models.InstrumentDTO) error {
 	if len(dto) == 0 {

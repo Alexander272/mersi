@@ -112,7 +112,7 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		),
 		last_location AS (
 			SELECT DISTINCT ON (instrument_id) 
-				instrument_id, l.status,
+				instrument_id, l.status, l.department_id, last_place_id, person_id,
 				COALESCE(lp.name,last_place) AS last_place, 
 				COALESCE(e.name, NULLIF(person, ''), '') AS person,
 				CASE 
@@ -196,6 +196,7 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 	)
 
 	// logger.Debug("get si", logger.StringAttr("query", query))
+	// logger.Debug("get si", logger.AnyAttr("params", params))
 
 	if err := r.db.SelectContext(ctx, &tmp, query, params...); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
@@ -235,9 +236,9 @@ func (r *SIRepo) buildFilterClause(filters []*models.Filter, params []interface{
 
 		// Специальная логика для департамента
 		if f.Field == "department" {
-			idx := len(params)
 			val := strings.ReplaceAll(f.Values[0].Value, ",", "|")
 			params = append(params, val)
+			idx := len(params)
 
 			clauses = append(clauses, fmt.Sprintf("(%s OR (%s AND %s='moved'))",
 				getFilterLine(f.Values[0].CompareType, field, idx),

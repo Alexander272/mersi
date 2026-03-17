@@ -49,7 +49,7 @@ func (h *Handler) Init(conf *config.Config) *gin.Engine {
 func (h *Handler) ErrorHandler(c *gin.Context, origErr any) {
 	err := fmt.Errorf("unexpected error: %v", origErr)
 	error_bot.Send(c, err.Error(), gin.H{"PANIC": true, "Stack trace": string(debug.Stack())})
-
+	debug.PrintStack()
 	response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла непредвиденная ошибка: "+err.Error())
 }
 

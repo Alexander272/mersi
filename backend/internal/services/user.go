@@ -7,28 +7,32 @@ import (
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository"
+	"github.com/Alexander272/mersi/backend/internal/repository/postgres"
 	"github.com/Alexander272/mersi/backend/pkg/auth"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/Nerzal/gocloak/v13"
 )
 
 type UserService struct {
-	repo     repository.Users
-	keycloak *auth.KeycloakClient
-	role     Role
+	repo      repository.Users
+	txManager TransactionManager
+	keycloak  *auth.KeycloakClient
+	role      Role
 }
 
 type UsersDeps struct {
-	Repo     repository.Users
-	Keycloak *auth.KeycloakClient
-	Role     Role
+	Repo      repository.Users
+	TxManager TransactionManager
+	Keycloak  *auth.KeycloakClient
+	Role      Role
 }
 
 func NewUserService(deps *UsersDeps) *UserService {
 	return &UserService{
-		repo:     deps.Repo,
-		keycloak: deps.Keycloak,
-		role:     deps.Role,
+		repo:      deps.Repo,
+		txManager: deps.TxManager,
+		keycloak:  deps.Keycloak,
+		role:      deps.Role,
 	}
 }
 
@@ -41,11 +45,11 @@ type User interface {
 	GetRoles(ctx context.Context, req *models.GetUserInfoDTO) (*models.User, error)
 	Sync(ctx context.Context) error
 	Create(ctx context.Context, dto *models.UserData) error
-	CreateSeveral(ctx context.Context, dto []*models.UserData) error
+	CreateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.UserData) error
 	Update(ctx context.Context, dto *models.UserData) error
-	UpdateSeveral(ctx context.Context, dto []*models.UserData) error
+	UpdateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.UserData) error
 	Delete(ctx context.Context, id string) error
-	DeleteSeveral(ctx context.Context, ids []string) error
+	DeleteSeveral(ctx context.Context, tx postgres.Tx, ids []string) error
 }
 
 func (s *UserService) GetAll(ctx context.Context) ([]*models.UserData, error) {
@@ -129,104 +133,137 @@ func (s *UserService) GetRoles(ctx context.Context, req *models.GetUserInfoDTO) 
 }
 
 func (s *UserService) Sync(ctx context.Context) error {
-	logger.Info("Sync users")
+	logger.Info("Sync users started")
 
 	token, err := s.keycloak.Login(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to login to keycloak. error: %w", err)
+		return fmt.Errorf("failed to login: %w", err)
 	}
 
-	// получение Id группы
-	groupID := ""
-	groups, err := s.keycloak.Client.GetGroups(ctx, token.AccessToken, s.keycloak.Realm, gocloak.GetGroupsParams{})
+	// 1. Быстрый поиск ID группы
+	groups, err := s.keycloak.Client.GetGroups(ctx, token.AccessToken, s.keycloak.Realm, gocloak.GetGroupsParams{
+		Search: gocloak.StringP("mersi"), // Фильтруем на стороне Keycloak
+	})
 	if err != nil {
-		return fmt.Errorf("failed to get groups. error: %w", err)
+		return fmt.Errorf("failed to get groups: %w", err)
 	}
+
+	var groupID string
 	for _, g := range groups {
-		if g.Name != nil && *g.Name == "sia" {
+		if g.Name != nil && *g.Name == "mersi" {
 			groupID = *g.ID
 			break
 		}
-		// logger.Debug("get all groups", logger.StringAttr("group", *g.Name), logger.StringAttr("id", *g.ID))
-		// if g.SubGroups != nil {
-		// 	for _, sg := range *g.SubGroups {
-		// 		logger.Debug("get all groups", logger.StringAttr("group", *sg.Name), logger.StringAttr("id", *sg.ID))
-		// 	}
-		// }
+	}
+	if groupID == "" {
+		return fmt.Errorf("group 'mersi' not found")
 	}
 
-	data := []*models.UserData{}
-	keycloakUsers, err := s.keycloak.Client.GetGroupMembers(ctx, token.AccessToken, s.keycloak.Realm, groupID, gocloak.GetGroupsParams{})
+	// 2. Получаем активных пользователей из Keycloak
+	keycloakUsers, err := s.keycloak.Client.GetGroupMembers(ctx, token.AccessToken, s.keycloak.Realm, groupID, gocloak.GetGroupsParams{Max: gocloak.IntP(1000)})
 	if err != nil {
-		return fmt.Errorf("failed to get group users. error: %w", err)
+		return fmt.Errorf("failed to get group members: %w", err)
 	}
+
+	if len(keycloakUsers) == 0 {
+		return fmt.Errorf("group 'mersi' is empty")
+	}
+
+	// Пред-аллокация для пачки данных из Keycloak
+	kcDataMap := make(map[string]*models.UserData, len(keycloakUsers))
 	for _, u := range keycloakUsers {
 		if u.Enabled != nil && !*u.Enabled {
 			continue
 		}
 
-		item := &models.UserData{}
-		if u.ID != nil {
-			item.SSO_ID = *u.ID
-		}
-		if u.Username != nil {
-			item.Username = *u.Username
-		}
-		if u.Email != nil {
-			item.Email = *u.Email
-		}
-		if u.FirstName != nil {
-			item.FirstName = *u.FirstName
-		}
-		if u.LastName != nil {
-			item.LastName = *u.LastName
-		}
-		data = append(data, item)
-
-		// logger.Debug("get all users", logger.StringAttr("user", *u.Username), logger.StringAttr("id", *u.ID), logger.StringAttr("email", *u.Email))
+		userData := s.mapToUserData(u)
+		kcDataMap[userData.SSO_ID] = userData
 	}
-	// logger.Debug("get all users", logger.IntAttr("users len", len(users)))
 
-	users, err := s.GetAll(ctx)
+	// 3. Получаем текущих пользователей из нашей БД
+	dbUsers, err := s.GetAll(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch DB users: %w", err)
 	}
 
-	new := []*models.UserData{}
-	updated := []*models.UserData{}
-	deleted := []string{}
+	toCreate := make([]*models.UserData, 0)
+	toUpdate := make([]*models.UserData, 0)
+	toDelete := make([]string, 0)
 
-	founded := map[string]bool{}
+	// 4. Основной цикл синхронизации
+	dbUserMap := make(map[string]*models.UserData, len(dbUsers))
 
-	for _, d := range users {
-		founded[d.SSO_ID] = false
-	}
-	for _, u := range data {
-		_, ok := founded[u.SSO_ID]
-		if ok {
-			updated = append(updated, u)
-			founded[u.SSO_ID] = true
+	for _, dbU := range dbUsers {
+		dbUserMap[dbU.SSO_ID] = dbU
+
+		if kcData, exists := kcDataMap[dbU.SSO_ID]; exists {
+			// Проверяем, нужно ли реально обновлять (DeepEqual или по полям)
+			if s.isChanged(dbU, kcData) {
+				toUpdate = append(toUpdate, kcData)
+			}
+			// Удаляем из мапы Keycloak, чтобы там остались только "новые"
+			delete(kcDataMap, dbU.SSO_ID)
 		} else {
-			new = append(new, u)
-		}
-	}
-	for k, v := range founded {
-		if !v {
-			deleted = append(deleted, k)
+			// Если в Keycloak нет, а в БД есть — на удаление
+			toDelete = append(toDelete, dbU.SSO_ID)
 		}
 	}
 
-	if err := s.CreateSeveral(ctx, new); err != nil {
-		return err
-	}
-	if err := s.UpdateSeveral(ctx, updated); err != nil {
-		return err
-	}
-	if err := s.DeleteSeveral(ctx, deleted); err != nil {
-		return err
+	// Все, кто остались в kcDataMap — новые
+	for _, newU := range kcDataMap {
+		toCreate = append(toCreate, newU)
 	}
 
-	return nil
+	// 5. Выполнение операций (Batch processing)
+	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		if len(toCreate) > 0 {
+			if err := s.CreateSeveral(ctx, tx, toCreate); err != nil {
+				return err
+			}
+		}
+		if len(toUpdate) > 0 {
+			if err := s.UpdateSeveral(ctx, tx, toUpdate); err != nil {
+				return err
+			}
+		}
+		if len(toDelete) > 0 {
+			if err := s.DeleteSeveral(ctx, tx, toDelete); err != nil {
+				return err
+			}
+		}
+
+		logger.Info("Sync finished",
+			"created", len(toCreate),
+			"updated", len(toUpdate),
+			"deleted", len(toDelete))
+		return nil
+	})
+}
+
+// Вспомогательная функция для маппинга (убирает дублирование nil-проверок)
+func (s *UserService) mapToUserData(u *gocloak.User) *models.UserData {
+	return &models.UserData{
+		SSO_ID:    s.nonNil(u.ID),
+		Username:  s.nonNil(u.Username),
+		Email:     s.nonNil(u.Email),
+		FirstName: s.nonNil(u.FirstName),
+		LastName:  s.nonNil(u.LastName),
+	}
+}
+
+func (s *UserService) nonNil(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
+// Функция проверки изменений, чтобы не дергать БД зря
+func (s *UserService) isChanged(old, new *models.UserData) bool {
+	return old.Username != new.Username ||
+		old.Email != new.Email ||
+		old.FirstName != new.FirstName ||
+		old.LastName != new.LastName
 }
 
 func (s *UserService) Create(ctx context.Context, dto *models.UserData) error {
@@ -236,11 +273,11 @@ func (s *UserService) Create(ctx context.Context, dto *models.UserData) error {
 	return nil
 }
 
-func (s *UserService) CreateSeveral(ctx context.Context, dto []*models.UserData) error {
+func (s *UserService) CreateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.UserData) error {
 	if len(dto) == 0 {
 		return nil
 	}
-	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
+	if err := s.repo.CreateSeveral(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to create few users. error: %w", err)
 	}
 	return nil
@@ -253,11 +290,11 @@ func (s *UserService) Update(ctx context.Context, dto *models.UserData) error {
 	return nil
 }
 
-func (s *UserService) UpdateSeveral(ctx context.Context, dto []*models.UserData) error {
+func (s *UserService) UpdateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.UserData) error {
 	if len(dto) == 0 {
 		return nil
 	}
-	if err := s.repo.UpdateSeveral(ctx, dto); err != nil {
+	if err := s.repo.UpdateSeveral(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to update few users. error: %w", err)
 	}
 	return nil
@@ -270,11 +307,11 @@ func (s *UserService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *UserService) DeleteSeveral(ctx context.Context, ids []string) error {
+func (s *UserService) DeleteSeveral(ctx context.Context, tx postgres.Tx, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	if err := s.repo.DeleteSeveral(ctx, ids); err != nil {
+	if err := s.repo.DeleteSeveral(ctx, tx, ids); err != nil {
 		return fmt.Errorf("failed to delete few users. error: %w", err)
 	}
 	return nil

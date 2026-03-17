@@ -44,6 +44,7 @@ type Services struct {
 	Notification
 	Scheduler
 	Department
+	DepartmentAccess
 	Employee
 	Channel
 	Responsible
@@ -69,7 +70,7 @@ func NewServices(deps *Deps) *Services {
 	ruleItem := NewRuleItemService(deps.Repo.RuleItem)
 	rule := NewRuleService(deps.Repo.Rule, ruleItem)
 
-	user := NewUserService(&UsersDeps{Repo: deps.Repo.Users, Keycloak: deps.Keycloak, Role: role})
+	user := NewUserService(&UsersDeps{Repo: deps.Repo.Users, TxManager: txManager, Keycloak: deps.Keycloak, Role: role})
 	session := NewSessionService(deps.Keycloak, user)
 	realm := NewRealmService(deps.Repo.Realm, user)
 	accesses := NewAccessesService(deps.Repo.Accesses)
@@ -141,6 +142,7 @@ func NewServices(deps *Deps) *Services {
 	})
 	department := NewDepartmentService(deps.Repo.Department, location)
 	employee := NewEmployeeService(deps.Repo.Employee, location)
+	departmentAccess := NewDepartmentAccessService(deps.Repo.DepartmentAccess)
 	channel := NewChannelService(deps.Repo.Channel)
 
 	export := NewExportService(&ExportDeps{
@@ -197,6 +199,7 @@ func NewServices(deps *Deps) *Services {
 		Filters:              filters,
 		Sorting:              sorting,
 		Department:           department,
+		DepartmentAccess:     departmentAccess,
 		Employee:             employee,
 		Channel:              channel,
 		Responsible:          responsible,

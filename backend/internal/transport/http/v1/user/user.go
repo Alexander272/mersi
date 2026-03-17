@@ -176,7 +176,7 @@ func (h *Handler) createSeveral(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.CreateSeveral(c, dto); err != nil {
+	if err := h.service.CreateSeveral(c, nil, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
@@ -213,7 +213,7 @@ func (h *Handler) updateSeveral(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.UpdateSeveral(c, dto); err != nil {
+	if err := h.service.UpdateSeveral(c, nil, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return

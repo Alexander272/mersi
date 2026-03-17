@@ -63,6 +63,10 @@ func (h *Handler) get(c *gin.Context) {
 	}
 
 	params := utils.GetFilterParams(c)
+	if params == nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Отправлены некорректные данные")
+		return
+	}
 	params.SectionId = section
 
 	data, err := h.service.Get(c, params)

@@ -29,6 +29,7 @@ const (
 	SortingTable            = "public.sorting"
 	ChannelTable            = "public.channels"
 	DepartmentTable         = "public.departments"
+	DepartmentAccessTable   = "public.department_access"
 	EmployeeTable           = "public.employee"
 	UserTable               = "public.users"
 	ResponsibleTable        = "public.responsible"
