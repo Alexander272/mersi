@@ -72,7 +72,7 @@ func (h *Handler) makeScheduler(c *gin.Context) {
 	section := c.Query("section")
 	err := uuid.Validate(section)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Секция не задана")
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Область не задана")
 		return
 	}
 
@@ -92,9 +92,10 @@ func (h *Handler) makeScheduler(c *gin.Context) {
 	}
 
 	req := &models.Period{
-		StartAt:   start,
-		FinishAt:  end,
-		SectionId: section,
+		StartAt:         start,
+		FinishAt:        end,
+		SectionId:       section,
+		ChannelIsOption: true,
 	}
 
 	buffer, err := h.service.MakeScheduler(c, req)

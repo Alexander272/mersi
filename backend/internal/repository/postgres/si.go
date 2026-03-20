@@ -318,7 +318,7 @@ func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*mo
 		LEFT JOIN LATERAL (SELECT date_start AS preservation FROM %s WHERE instrument_id=i.id AND date_end='0001-01-01'::DATE) AS p ON TRUE 
 		LEFT JOIN LATERAL (SELECT date_start AS transferred FROM %s WHERE instrument_id=i.id AND date_end='0001-01-01'::DATE) AS t ON TRUE
  		WHERE next_date>=$1 AND next_date<=$2 AND (CASE WHEN $3!='' THEN section_id::text=$3 ELSE true END) AND 
-		is_active=true AND expiration_notice=true AND notification_channel!='' AND 
+		is_active=true AND expiration_notice=true AND (notification_channel!='' OR $4) AND 
 		deleted IS NULL AND write_off IS NULL AND preservation IS NULL AND transferred IS NULL
 		ORDER BY notification_channel, i.position`,
 		InstrumentsTable, SectionTable, RealmTable, VerificationTable, WriteOffTable, PreservationTable, TransferToSaveTable,
@@ -326,7 +326,7 @@ func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*mo
 	//TODO проверить
 
 	tmp := []*pq_models.SI{}
-	if err := r.db.SelectContext(ctx, &tmp, query, req.StartAt, req.FinishAt, req.SectionId); err != nil {
+	if err := r.db.SelectContext(ctx, &tmp, query, req.StartAt, req.FinishAt, req.SectionId, req.ChannelIsOption); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 

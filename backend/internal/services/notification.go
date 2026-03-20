@@ -165,9 +165,10 @@ func (s *NotificationService) CheckVerification() error {
 		logger.Debug("Check verification", logger.AnyAttr("section", item))
 
 		dto := &models.Period{
-			StartAt:   time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()),
-			FinishAt:  time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location()),
-			SectionId: item.ID,
+			StartAt:         time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()),
+			FinishAt:        time.Date(now.Year(), now.Month()+2, 0, 0, 0, 0, 0, now.Location()),
+			SectionId:       item.ID,
+			ChannelIsOption: false,
 		}
 
 		data, err := s.si.GetVerification(context.Background(), dto)

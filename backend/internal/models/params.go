@@ -23,9 +23,10 @@ type FilterValue struct {
 }
 
 type Period struct {
-	StartAt   time.Time `json:"startAt"`
-	FinishAt  time.Time `json:"finishAt"`
-	SectionId string    `json:"sectionId"`
+	StartAt         time.Time `json:"startAt"`
+	FinishAt        time.Time `json:"finishAt"`
+	SectionId       string    `json:"sectionId"`
+	ChannelIsOption bool      `json:"channelIsOption"`
 }
 
 type Search struct {
