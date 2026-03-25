@@ -58,7 +58,31 @@ const exportApiSlice = apiSlice.injectEndpoints({
 				return { data: null }
 			},
 		}),
+
+		makeAccountingLog: builder.query<null, IPeriod>({
+			queryFn: async (params, _api, _, baseQuery) => {
+				const filename = `Журнал учета средств измерения от ${dayjs().format('DD-MM-YYYY')}.xlsx`
+				const result = await baseQuery({
+					url: API.si.log,
+					params: new URLSearchParams({
+						section: params.section,
+					}),
+					cache: 'no-cache',
+					responseHandler: response => (response.status === HttpCodes.OK ? response.blob() : response.json()),
+				})
+
+				if (result.error) {
+					console.log(result.error)
+					const fetchError = result.error as IFetchError
+					toast.error(fetchError.data.message, { autoClose: false })
+				}
+
+				if (result.data instanceof Blob) saveAs(result.data, filename)
+				return { data: null }
+			},
+		}),
 	}),
 })
 
-export const { useMakeSchedulerQuery, useLazyMakeSchedulerQuery, useLazyExportQuery } = exportApiSlice
+export const { useMakeSchedulerQuery, useLazyMakeSchedulerQuery, useLazyMakeAccountingLogQuery, useLazyExportQuery } =
+	exportApiSlice

@@ -15,6 +15,7 @@ import type { IFetchError } from '@/app/types/error'
 import type { DialogVariants } from '@/features/dialog/dialogSlice'
 import type { IToolsMenu } from '../types/toolsMenu'
 import { useToggleFavoriteMutation } from '../toolsMenuApiSlice'
+import { AppRoutes } from '@/pages/router/routes'
 import { VerifyIcon } from '@/components/Icons/VerifyIcon'
 import { RepairIcon } from '@/components/Icons/RepairIcon'
 import { ToolboxIcon } from '@/components/Icons/ToolboxIcon'
@@ -27,8 +28,8 @@ import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
 import { ExchangeIcon } from '@/components/Icons/ExchangeIcon'
 import { FileSyncIcon } from '@/components/Icons/FileSyncIcon'
 import { EditEmployeeIcon } from '@/components/Icons/EditEmployeeIcon'
-import { AppRoutes } from '@/pages/router/routes'
 import { VerifyInProgressIcon } from '@/components/Icons/VerifyInProgressIcon'
+import { FileForwardIcon } from '@/components/Icons/FileForwardIcon'
 
 type Props = { onClick?: () => void; item: IToolsMenu; label?: string }
 type MenuItem = { el: FC<Props>; action?: DialogVariants; link?: string; label?: string }
@@ -36,6 +37,7 @@ type MenuItem = { el: FC<Props>; action?: DialogVariants; link?: string; label?:
 export const Icons = new Map<string, JSX.Element>([
 	['graphic', <DocumentCheckIcon fontSize={20} fill={'#757575'} />],
 	['export', <FileDownloadIcon fontSize={20} fill={'#757575'} />],
+	['log', <FileForwardIcon fontSize={20} fill={'#757575'} />],
 	['verification', <VerifyIcon fontSize={18} fill={'#757575'} />],
 	['send-to-verification', <VerifyInProgressIcon fontSize={18} fill={'#757575'} />],
 	['locations', <ExchangeIcon fontSize={18} fill={'#757575'} />],
@@ -96,6 +98,7 @@ export const ToolsItem: FC<Props> = ({ onClick, item, label }) => {
 export const MenuItems = new Map<string, MenuItem>([
 	['export', { el: ToolsItem, action: 'Export' }],
 	['graphic', { el: ToolsItem, action: 'Schedule' }],
+	['log', { el: ToolsItem, action: 'Log' }],
 	['verification', { el: ToolsItem, action: 'NewVerification' }],
 	['send-to-verification', { el: ToolsItem, action: 'SendToVerification' }],
 	['locations', { el: ToolsItem, action: 'NewLocation' }],

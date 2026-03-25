@@ -36,6 +36,7 @@ const defaultData: IToolsMenuDTO = {
 const ToolCodes = [
 	'graphic',
 	'export',
+	'log',
 	'verification',
 	'send-to-verification',
 	'locations',

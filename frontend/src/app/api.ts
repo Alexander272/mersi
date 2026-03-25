@@ -35,6 +35,7 @@ export const API = {
 		},
 		export: 'export' as const,
 		schedule: 'export/schedule' as const,
+		log: 'export/accounting' as const,
 		context: 'context-menu' as const,
 		tools: 'tools-menu' as const,
 		repair: 'repair' as const,

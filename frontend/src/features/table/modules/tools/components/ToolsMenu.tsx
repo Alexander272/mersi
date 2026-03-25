@@ -16,6 +16,7 @@ import { CreateTransferToDepartmentDialog } from '../../transferToDep/components
 import { CreateWriteOffDialog } from '../../writeOff/components/Dialogs/Create'
 import { ScheduleDialog } from '../../export/components/ScheduleDialog'
 import { ExportDialog } from '../../export/components/ExportDialog'
+import { AccountingLogDialog } from '../../export/components/LogDialog'
 import { CreateLocationDialog } from '../../locations/components/Dialogs/Create'
 import { SendToReserveDialog } from '../../locations/components/Dialogs/SendToReserve'
 import { ReceiptDialog } from '../../locations/components/Dialogs/Receipt'
@@ -114,6 +115,7 @@ export const ToolsMenu = () => {
 			<CreateWriteOffDialog />
 			<ScheduleDialog />
 			<ExportDialog />
+			<AccountingLogDialog />
 		</>
 	)
 }

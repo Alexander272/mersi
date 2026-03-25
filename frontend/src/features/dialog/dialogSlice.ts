@@ -31,6 +31,7 @@ export type DialogVariants =
 	| 'WriteOff'
 	| 'Schedule'
 	| 'Export'
+	| 'Log'
 	| 'EditStatus'
 	| 'EditContextMenu'
 	| 'EditToolsMenu'

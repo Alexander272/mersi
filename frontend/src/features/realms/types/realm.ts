@@ -7,6 +7,7 @@ export interface IRealm {
 	isActive: boolean
 	notificationChannel: string
 	expirationNotice: boolean
+	returnNotice: boolean
 	locationType: Locations
 	needConfirmed: boolean
 	hasResponsible: boolean
@@ -24,6 +25,7 @@ export interface IRealmDTO {
 	isActive: boolean
 	notificationChannel: string
 	expirationNotice: boolean
+	returnNotice: boolean
 	locationType: Locations
 	needConfirmed: boolean
 	hasResponsible: boolean

@@ -4,21 +4,24 @@ import type { ColumnTypes } from '@/features/sections/modules/columns/types/colu
 import { NullDate } from '@/constants/defaultValues'
 
 const DateFormat = 'DD.MM.YYYY'
+const ShortDateFormat = 'MMMM YYYY'
 
 type Formatter = (type: ColumnTypes, value: unknown) => string
 
 export const Formatter: Formatter = (type, value) => {
-	if (!value || value == NullDate) return '-'
+	if (value == null || value === '' || value === NullDate) return '-'
 
-	switch (type) {
-		case 'date':
-			return dayjs(value as string).format(DateFormat)
-		case 'short_date':
-			return dayjs(value as string).format('MMMM YYYY')
-		// case 'number':
-		// 	return new Intl.NumberFormat('ru').format((value as number) || 0)
+	if (type === 'date' || type === 'short_date') {
+		const strValue = String(value)
+		if (strValue.startsWith('0001-01-01')) return '-'
 
-		default:
-			return value as string
+		const date = dayjs(value as string)
+		if (!date.isValid()) return '-'
+
+		return date.format(type === 'date' ? DateFormat : ShortDateFormat)
 	}
+
+	// if (type === 'number') return new Intl.NumberFormat('ru').format(Number(value) || 0)
+
+	return String(value)
 }

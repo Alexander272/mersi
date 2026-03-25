@@ -42,6 +42,7 @@ const defaultValues: Form = {
 	isActive: true,
 	notificationChannel: '',
 	expirationNotice: false,
+	returnNotice: false,
 	locationType: 'department',
 	needConfirmed: true,
 	hasResponsible: true,
@@ -199,19 +200,31 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 				/>
 			</Stack>
 
+			<Stack direction={'row'} flexGrow={1} spacing={2} mb={2}>
+				<Controller
+					control={control}
+					name={'expirationNotice'}
+					render={({ field }) => (
+						<FormControlLabel
+							control={<Switch checked={field.value} {...field} />}
+							label={`Уведомления о поверках ${field.value ? 'включены' : 'выключены'}`}
+						/>
+					)}
+				/>
+				<Controller
+					control={control}
+					name={'returnNotice'}
+					render={({ field }) => (
+						<FormControlLabel
+							control={<Switch checked={field.value} {...field} />}
+							label={`Уведомления о необходимости возврата ${field.value ? 'включены' : 'выключены'}`}
+						/>
+					)}
+				/>
+			</Stack>
+
 			<Stack direction={'row'} flexGrow={1} alignItems={'center'} justifyContent={'space-between'}>
 				<Stack direction={'row'} flexGrow={1} spacing={2} mb={2}>
-					<Controller
-						control={control}
-						name={'expirationNotice'}
-						render={({ field }) => (
-							<FormControlLabel
-								control={<Switch checked={field.value} {...field} />}
-								label={`Уведомления о поверках ${field.value ? 'включены' : 'выключены'}`}
-							/>
-						)}
-					/>
-
 					<Controller
 						control={control}
 						name={'isActive'}
@@ -223,6 +236,7 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 						)}
 					/>
 				</Stack>
+
 				<Stack direction={'row'} flexGrow={1} spacing={2} mb={1} justifyContent={'flex-end'} height={38}>
 					<Button
 						variant='outlined'
