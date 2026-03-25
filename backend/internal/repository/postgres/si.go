@@ -527,8 +527,8 @@ func (r *SIRepo) GetUsed(ctx context.Context, req *models.Period) ([]*models.SiR
 
 func (r *SIRepo) GetLog(ctx context.Context, req *models.Period) ([]*models.SiWithLog, error) {
 	query := fmt.Sprintf(`SELECT i.id, i.name, i.date_of_receipt, i.type, i.factory_number, i.responsible, 
-			COALESCE(r.repair, '') AS repair, COALESCE(p.preservation, '') AS preservation,
-			COALESCE(t.saving, '') AS saving, COALESCE(w.write_off, '') AS write_off
+			COALESCE(r.repair, '–') AS repair, COALESCE(p.preservation, '–') AS preservation,
+			COALESCE(t.saving, '–') AS saving, COALESCE(w.write_off, '–') AS write_off
 		FROM %s AS i
 
 		LEFT JOIN LATERAL (

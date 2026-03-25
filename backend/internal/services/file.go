@@ -251,8 +251,13 @@ func (s *FileService) MakeAccountingLog(ctx context.Context, dto []*models.SiWit
 
 	rows := make([][]interface{}, len(dto))
 	for i, d := range dto {
+		date := d.DateOfReceipt.Format(constants.ShortDateFormat)
+		if d.DateOfReceipt.Before(time.Date(1900, 1, 1, 0, 0, 0, 0, time.Local)) {
+			date = "–"
+		}
+
 		rows[i] = []interface{}{
-			d.DateOfReceipt.Format(constants.ShortDateFormat),
+			date,
 			d.Name, d.Type, d.FactoryNumber, d.Responsible,
 			d.RepairInfo, d.PreservationInfo, d.SavingInfo, d.WriteOff,
 		}
