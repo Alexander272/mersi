@@ -99,35 +99,48 @@ func (s *NotificationService) CheckUsed() error {
 		FinishAt: finishAt,
 	}
 
-	data, err := s.si.GetUsed(context.Background(), period)
+	params := &models.GetAllSectionsDTO{
+		IsActive:        models.NewOptional(true),
+		HasReturnNotice: models.NewOptional(true),
+	}
+	sections, err := s.section.GetAll(context.Background(), params)
 	if err != nil {
 		return err
 	}
 
-	for _, d := range data {
-		table := []string{
-			"| Наименование СИ | зав.№ | Держатель |",
-			"|:--|:--|:--|",
-		}
+	for _, section := range sections {
+		period.SectionId = section.ID
 
-		for _, si := range d.SI {
-			table = append(table, fmt.Sprintf("|%s|%s|%s|", si.Name, si.FactoryNumber, si.Person))
-		}
-		term := monday.Format(monthEnd.Add(-s.conf.Times[len(s.conf.Times)-1]), "Mon 2 Jan 2006", monday.LocaleRuRU)
-		if s.iteration == len(s.conf.Times)-1 {
-			term += " (Сегодня)"
-		}
-
-		post := &models.CreatePostDTO{
-			ChannelId: d.Channel,
-		}
-		post.Message = "#### Необходимо сдать инструменты до `" + term + "`\n" + strings.Join(table, "\n")
-		post.Props = []*models.Props{
-			{Key: "service", Value: "sia"},
-		}
-
-		if err := s.most.Post.Create(context.Background(), post); err != nil {
+		data, err := s.si.GetUsed(context.Background(), period)
+		if err != nil {
 			return err
+		}
+
+		for _, d := range data {
+			table := []string{
+				"| Наименование СИ | зав.№ | Держатель |",
+				"|:--|:--|:--|",
+			}
+
+			for _, si := range d.SI {
+				table = append(table, fmt.Sprintf("|%s|%s|%s|", si.Name, si.FactoryNumber, si.Person))
+			}
+			term := monday.Format(monthEnd.Add(-s.conf.Times[len(s.conf.Times)-1]), "Mon 2 Jan 2006", monday.LocaleRuRU)
+			if s.iteration == len(s.conf.Times)-1 {
+				term += " (Сегодня)"
+			}
+
+			post := &models.CreatePostDTO{
+				ChannelId: d.Channel,
+			}
+			post.Message = "#### Необходимо сдать инструменты до `" + term + "`\n" + strings.Join(table, "\n")
+			post.Props = []*models.Props{
+				{Key: "service", Value: "sia"},
+			}
+
+			if err := s.most.Post.Create(context.Background(), post); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -142,7 +155,8 @@ func (s *NotificationService) CheckUsed() error {
 func (s *NotificationService) CheckVerification() error {
 	logger.Info("Check verification")
 
-	sections, err := s.section.GetAll(context.Background())
+	params := &models.GetAllSectionsDTO{IsActive: models.NewOptional(true)}
+	sections, err := s.section.GetAll(context.Background(), params)
 	if err != nil {
 		return err
 	}

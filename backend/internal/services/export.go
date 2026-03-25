@@ -30,6 +30,7 @@ func NewExportService(deps *ExportDeps) *ExportService {
 
 type Export interface {
 	Export(ctx context.Context, req *models.GetSiDTO) (*bytes.Buffer, error)
+	MakeAccountingLog(ctx context.Context, req *models.Period) (*bytes.Buffer, error)
 	MakeScheduler(ctx context.Context, req *models.Period) (*bytes.Buffer, error)
 }
 
@@ -51,8 +52,22 @@ func (s *ExportService) Export(ctx context.Context, req *models.GetSiDTO) (*byte
 	return buffer, nil
 }
 
-func (s *ExportService) MakeAccLog(ctx context.Context, req *models.Period) (*bytes.Buffer, error) {
-	return nil, nil
+func (s *ExportService) MakeAccountingLog(ctx context.Context, req *models.Period) (*bytes.Buffer, error) {
+	data, err := s.si.GetLog(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return nil, models.ErrNoRows
+	}
+
+	buffer, err := s.file.MakeAccountingLog(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return buffer, nil
 }
 
 func (s *ExportService) MakeScheduler(ctx context.Context, req *models.Period) (*bytes.Buffer, error) {

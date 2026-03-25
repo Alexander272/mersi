@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Section struct {
 	ID              string    `json:"id" db:"id"`
@@ -20,6 +22,21 @@ type GroupedSections struct {
 }
 
 type GetGroupedSectionDTO struct{}
+
+type GetAllSectionsDTO struct {
+	IsActive        Optional[bool]
+	HasReturnNotice Optional[bool]
+}
+
+type Optional[T any] struct {
+	Value   T
+	Defined bool // true, если значение было установлено (даже если это false)
+}
+
+// Удобный конструктор
+func NewOptional[T any](v T) Optional[T] {
+	return Optional[T]{Value: v, Defined: true}
+}
 
 type GetSectionsDTO struct {
 	RealmID string `json:"realmId"`

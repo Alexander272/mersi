@@ -42,6 +42,7 @@ type SI interface {
 	GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error)
 	GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.SiReceiving, error)
 	GetUsed(ctx context.Context, req *models.Period) ([]*models.SiReceiving, error)
+	GetLog(ctx context.Context, req *models.Period) ([]*models.SiWithLog, error)
 	Create(ctx context.Context, dto *models.SiDTO) error
 	Update(ctx context.Context, dto *models.SiDTO) error
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
@@ -97,6 +98,14 @@ func (s *SIService) GetUsed(ctx context.Context, req *models.Period) ([]*models.
 	data, err := s.repo.GetUsed(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get used si. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *SIService) GetLog(ctx context.Context, req *models.Period) ([]*models.SiWithLog, error) {
+	data, err := s.repo.GetLog(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get si log. error: %w", err)
 	}
 	return data, nil
 }

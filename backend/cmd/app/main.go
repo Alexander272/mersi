@@ -27,8 +27,10 @@ import (
 
 func main() {
 	//* Init config
-	if err := gotenv.Load("../.env"); err != nil {
-		log.Fatalf("error loading env variables: %s", err.Error())
+	if os.Getenv("APP_ENV") == "" {
+		if err := gotenv.Load("../.env"); err != nil {
+			log.Fatalf("error loading env variables: %s", err.Error())
+		}
 	}
 
 	conf, err := config.Init("configs/config.yaml")

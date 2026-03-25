@@ -31,33 +31,34 @@ type SI interface {
 	GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error)
 	GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.SiReceiving, error)
 	GetUsed(ctx context.Context, req *models.Period) ([]*models.SiReceiving, error)
+	GetLog(ctx context.Context, req *models.Period) ([]*models.SiWithLog, error)
 }
 
 var siFieldsMap = map[string]string{
 	"id":                        "i.id",
-	"position":                  "position",
-	"name":                      "name",
-	"dateOfReceipt":             "date_of_receipt",
-	"type":                      "type",
-	"factoryNumber":             "factory_number",
-	"measurementLimits":         "measurement_limits",
-	"accuracy":                  "accuracy",
-	"stateRegister":             "state_register",
-	"countryOfProduce":          "country_of_produce",
-	"manufacturer":              "manufacturer",
-	"responsible":               "responsible",
-	"inventory":                 "inventory",
-	"yearOfIssue":               "year_of_issue",
-	"interVerificationInterval": "inter_verification_interval",
-	"actOfEntering":             "act_of_entering",
-	"actOfEnteringId":           "act_of_entering_id",
+	"position":                  "i.position",
+	"name":                      "i.name",
+	"dateOfReceipt":             "i.date_of_receipt",
+	"type":                      "i.type",
+	"factoryNumber":             "i.factory_number",
+	"measurementLimits":         "i.measurement_limits",
+	"accuracy":                  "i.accuracy",
+	"stateRegister":             "i.state_register",
+	"countryOfProduce":          "i.country_of_produce",
+	"manufacturer":              "i.manufacturer",
+	"responsible":               "i.responsible",
+	"inventory":                 "i.inventory",
+	"yearOfIssue":               "i.year_of_issue",
+	"interVerificationInterval": "i.inter_verification_interval",
+	"actOfEntering":             "i.act_of_entering",
+	"actOfEnteringId":           "i.act_of_entering_id",
 	"repairInfo":                "r.period_start",
-	"notes":                     "notes",
-	"verificationDate":          "date",
-	"nextVerificationDate":      "next_date",
-	"department":                "department_id",
-	"place":                     "place",
-	"person":                    "person",
+	"notes":                     "i.notes",
+	"verificationDate":          "v.date",
+	"nextVerificationDate":      "v.next_date",
+	"department":                "l.department_id",
+	"place":                     "l.place",
+	"person":                    "l.person",
 	"status":                    "l.status",
 }
 
@@ -441,21 +442,49 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 }
 
 func (r *SIRepo) GetUsed(ctx context.Context, req *models.Period) ([]*models.SiReceiving, error) {
-	query := fmt.Sprintf(`SELECT i.id, i.name, factory_number, year_of_issue, state_register, measurement_limits, date, next_date,
-		COALESCE(person, e.emp, '') AS person, COALESCE(place, d.dep, '') AS place, COALESCE(l.last_place, lp.name, '') AS last_place,
-		COALESCE(most_channel_id, channel, '') AS notification_channel
+	query := fmt.Sprintf(`SELECT 
+			i.id, i.name, i.factory_number, i.year_of_issue, i.state_register, i.measurement_limits, 
+			v.date, v.next_date,
+			COALESCE(l.person, e.name, '') AS person, 
+			COALESCE(l.place, d.name, '') AS place, 
+			COALESCE(l.last_place, lp.name, '') AS last_place,
+			COALESCE(c.most_channel_id, r.channel, '') AS notification_channel
 		FROM %s AS i
-		LEFT JOIN LATERAL (SELECT date, next_date FROM %s WHERE instrument_id=i.id ORDER BY date DESC, created_at DESC LIMIT 1) AS v ON TRUE
-		LEFT JOIN LATERAL (SELECT status, person, place, last_place, person_id, department_id, last_place_id FROM %s WHERE instrument_id=i.id 
-			ORDER BY date_of_issue DESC, created_at DESC LIMIT 1) AS l ON TRUE
-		LEFT JOIN LATERAL (SELECT name AS emp FROM %s WHERE l.person_id::uuid=id) AS e ON true
-		LEFT JOIN LATERAL (SELECT name AS dep, channel_id FROM %s WHERE l.department_id::uuid=id) AS d ON true
-		LEFT JOIN LATERAL (SELECT name FROM %s WHERE l.last_place_id::uuid=id) AS lp ON true
-		LEFT JOIN LATERAL (SELECT most_channel_id FROM %s WHERE id=d.channel_id) AS c ON TRUE
-		LEFT JOIN LATERAL (SELECT notification_channel AS channel FROM %s AS r INNER JOIN %s AS s ON s.realm_id=r.id WHERE s.id=i.section_id) AS r ON TRUE
-		WHERE CASE WHEN $1!='' THEN section_id::text=$1 ELSE TRUE END AND l.status=$2 AND next_date>=$3 AND next_date<=$4
-		ORDER BY channel_id, place, last_place, next_date`,
-		InstrumentsTable, VerificationTable, LocationTable, EmployeeTable, DepartmentTable, DepartmentTable,
+		-- Последняя поверка
+		LEFT JOIN LATERAL (
+			SELECT date, next_date 
+			FROM %s 
+			WHERE instrument_id = i.id 
+			ORDER BY date DESC, created_at DESC 
+			LIMIT 1
+		) AS v ON TRUE
+		-- Последнее местоположение (обязательно для фильтра status=$2)
+		LEFT JOIN LATERAL (
+			SELECT status, person, place, last_place, person_id, department_id, last_place_id 
+			FROM %s 
+			WHERE instrument_id = i.id 
+			ORDER BY date_of_issue DESC, created_at DESC 
+			LIMIT 1
+		) AS l ON TRUE
+		-- Справочники (джоиним только если ID валиден)
+		LEFT JOIN %s AS e ON (l.person_id::text = e.id::text)
+		LEFT JOIN %s AS d ON (l.department_id::text = d.id::text)
+		LEFT JOIN %s AS lp ON (l.last_place_id::text = lp.id::text)
+		-- Каналы уведомлений
+		LEFT JOIN %s AS c ON (d.channel_id = c.id)
+		LEFT JOIN LATERAL (
+			SELECT r.notification_channel AS channel 
+			FROM %s AS r 
+			INNER JOIN %s AS s ON s.realm_id = r.id 
+			WHERE s.id = i.section_id
+		) AS r ON TRUE
+		WHERE 
+			($1 = '' OR i.section_id::text = $1) AND 
+			l.status = $2 AND 
+			v.next_date BETWEEN $3 AND $4
+		ORDER BY d.channel_id, place, last_place, v.next_date`,
+		InstrumentsTable, VerificationTable, LocationTable,
+		EmployeeTable, DepartmentTable, DepartmentTable,
 		ChannelTable, RealmTable, SectionTable,
 	)
 
@@ -493,5 +522,70 @@ func (r *SIRepo) GetUsed(ctx context.Context, req *models.Period) ([]*models.SiR
 		}
 	}
 
+	return data, nil
+}
+
+func (r *SIRepo) GetLog(ctx context.Context, req *models.Period) ([]*models.SiWithLog, error) {
+	query := fmt.Sprintf(`SELECT i.id, i.name, i.date_of_receipt, i.type, i.factory_number, i.responsible, 
+			COALESCE(r.repair, '') AS repair, COALESCE(p.preservation, '') AS preservation,
+			COALESCE(t.saving, '') AS saving, COALESCE(w.write_off, '') AS write_off
+		FROM %s AS i
+
+		LEFT JOIN LATERAL (
+			SELECT string_agg(
+				concat_ws(' ', 
+					CASE 
+						WHEN period_end < '1900-01-01'::date OR period_end IS NULL 
+						THEN to_char(period_start, 'DD.MM.YYYY') 
+						ELSE to_char(period_start, 'DD.MM.YYYY') || '-' || to_char(period_end, 'DD.MM.YYYY') 
+					END,
+					CASE WHEN work <> '' THEN '(' || work || ')' END
+				), ', ' ORDER BY created_at
+			) AS repair
+			FROM %s 
+			WHERE instrument_id = i.id
+		) r ON TRUE
+		
+		LEFT JOIN LATERAL (
+			SELECT string_agg(
+				'Консервация ' || to_char(date_start, 'DD.MM.YYYY') || 
+				CASE 
+					WHEN date_end > '1900-01-01'::date 
+					THEN ' - Расконсервация ' || to_char(date_end, 'DD.MM.YYYY') 
+					ELSE '' 
+				END, ', ' ORDER BY created_at
+			) AS preservation
+			FROM %s 
+			WHERE instrument_id = i.id
+		) p ON TRUE
+		
+		LEFT JOIN LATERAL (
+			SELECT string_agg(
+				'Передано ' || to_char(date_start, 'DD.MM.YYYY') || 
+				CASE 
+					WHEN date_end > '1900-01-01'::date 
+					THEN ' - Возвращено ' || to_char(date_end, 'DD.MM.YYYY') 
+					ELSE '' 
+				END, ', ' ORDER BY created_at
+			) AS saving
+			FROM %s 
+			WHERE instrument_id = i.id
+		) t ON TRUE
+		
+		LEFT JOIN LATERAL (
+			SELECT string_agg(
+				'Списан ' || to_char(date, 'DD.MM.YYYY'), ', ' ORDER BY created_at
+			) AS write_off
+			FROM %s 
+			WHERE instrument_id = i.id
+		) w ON TRUE		
+		WHERE i.section_id::text = $1`,
+		InstrumentsTable, RepairTable, PreservationTable, TransferToSaveTable, WriteOffTable,
+	)
+
+	data := []*models.SiWithLog{}
+	if err := r.db.SelectContext(ctx, &data, query, req.SectionId); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
 	return data, nil
 }

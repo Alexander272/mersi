@@ -36,9 +36,20 @@ type SI struct {
 	Place                     string           `json:"place" db:"place"`
 	LastPlace                 string           `json:"lastPlace" db:"last_place"`
 	Status                    InstrumentStatus `json:"status" db:"status"`
-	//TODO дописать оставшиеся поля
+	Total                     int              `json:"total" db:"total"`
+}
 
-	Total int `json:"total" db:"total"`
+type SiWithLog struct {
+	Id               string    `json:"id" db:"id"`
+	Name             string    `json:"name" db:"name"`
+	DateOfReceipt    time.Time `json:"dateOfReceipt" db:"date_of_receipt"`
+	Type             string    `json:"type" db:"type"`
+	FactoryNumber    string    `json:"factoryNumber" db:"factory_number"`
+	Responsible      string    `json:"responsible" db:"responsible"`
+	RepairInfo       string    `json:"repairInfo" db:"repair"`
+	PreservationInfo string    `json:"preservationInfo" db:"preservation"`
+	SavingInfo       string    `json:"savingInfo" db:"saving"`
+	WriteOff         string    `json:"writeOff" db:"write_off"`
 }
 
 type BaseSI struct {

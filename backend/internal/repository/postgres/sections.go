@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
@@ -22,7 +23,7 @@ func NewSectionRepo(db *sqlx.DB) *SectionRepo {
 
 type Section interface {
 	Get(ctx context.Context, req *models.GetSectionsDTO) ([]*models.Section, error)
-	GetAll(ctx context.Context) ([]*models.Section, error)
+	GetAll(ctx context.Context, req *models.GetAllSectionsDTO) ([]*models.Section, error)
 	GetGrouped(ctx context.Context, req *models.GetGroupedSectionDTO) ([]*models.GroupedSections, error)
 	Create(ctx context.Context, dto *models.SectionDTO) error
 	Update(ctx context.Context, dto *models.SectionDTO) error
@@ -42,10 +43,26 @@ func (r *SectionRepo) Get(ctx context.Context, req *models.GetSectionsDTO) ([]*m
 	return data, nil
 }
 
-func (r *SectionRepo) GetAll(ctx context.Context) ([]*models.Section, error) {
-	query := fmt.Sprintf(`SELECT id, name, realm_id, position, bid_type, verification_day, created_at 
-		FROM %s ORDER BY position`,
-		SectionTable,
+func (r *SectionRepo) GetAll(ctx context.Context, req *models.GetAllSectionsDTO) ([]*models.Section, error) {
+	conditionsParts := []string{}
+
+	if req.IsActive.Defined {
+		conditionsParts = append(conditionsParts, fmt.Sprintf("r.is_active=%t", req.IsActive.Value))
+	}
+	if req.HasReturnNotice.Defined {
+		conditionsParts = append(conditionsParts, fmt.Sprintf("r.return_notice=%t", req.HasReturnNotice.Value))
+	}
+
+	conditions := ""
+	if len(conditionsParts) > 0 {
+		conditions = fmt.Sprintf("WHERE %s", strings.Join(conditionsParts, " AND "))
+	}
+
+	query := fmt.Sprintf(`SELECT s.id, s.name, realm_id, s.position, s.bid_type, s.verification_day, s.created_at 
+		FROM %s AS s JOIN %s AS r ON realm_id=id
+		%s
+		ORDER BY position`,
+		SectionTable, RealmTable, conditions,
 	)
 	data := []*models.Section{}
 

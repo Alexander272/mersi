@@ -24,6 +24,7 @@ func NewFileService() *FileService {
 type File interface {
 	Export(ctx context.Context, dto *models.ExportDTO) (*bytes.Buffer, error)
 	MakeDocSchedule(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error)
+	MakeAccountingLog(ctx context.Context, dto []*models.SiWithLog) (*bytes.Buffer, error)
 	MakeVerificationSchedule(ctx context.Context, dto *models.SiVerification) (*bytes.Buffer, error)
 }
 
@@ -52,120 +53,150 @@ var cellStyle = &excelize.Style{
 	},
 }
 
-func (s *FileService) Export(ctx context.Context, dto *models.ExportDTO) (buffer *bytes.Buffer, err error) {
+type ColumnWidthRule struct {
+	StartCol int // индекс колонки (0 = A)
+	EndCol   int // включительно
+	Width    float64
+}
+
+func (s *FileService) generateExcel(headers []string, rows [][]interface{}, widthRules []ColumnWidthRule) (*bytes.Buffer, error) {
 	file := excelize.NewFile()
-	sheetName := file.GetSheetName(file.GetActiveSheetIndex())
+	defer file.Close()
+	sheetName := "Sheet1"
 
-	headerStyle, err := file.NewStyle(headerStyle)
+	// 1. Подготовка стилей
+	hStyle, err := file.NewStyle(headerStyle)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create header style. error: %w", err)
+		return nil, fmt.Errorf("header style err: %w", err)
 	}
-
-	mainStyle, err := file.NewStyle(cellStyle)
+	mStyle, err := file.NewStyle(cellStyle)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create main style. error: %w", err)
+		return nil, fmt.Errorf("main style err: %w", err)
 	}
 
-	flatColumns := []*models.Column{}
-	columnNames := []string{}
-	for _, column := range dto.Columns {
-		if len(column.Children) > 0 {
-			for _, child := range column.Children {
-				columnNames = append(columnNames, child.Name)
-				flatColumns = append(flatColumns, child)
-			}
-			continue
-		}
-		columnNames = append(columnNames, column.Name)
-		flatColumns = append(flatColumns, column)
-	}
-	if err := file.SetSheetRow(sheetName, "A1", &columnNames); err != nil {
-		return nil, fmt.Errorf("failed to set header row. error: %w", err)
+	// 2. Пишем заголовки
+	if err := file.SetSheetRow(sheetName, "A1", &headers); err != nil {
+		return nil, fmt.Errorf("failed to set headers: %w", err)
 	}
 
-	endColumn, err := excelize.ColumnNumberToName(len(columnNames))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get column name. error: %w", err)
-	}
-
-	if err := file.SetColWidth(sheetName, "A", endColumn, 25); err != nil {
-		return nil, fmt.Errorf("failed to set column width. error: %w", err)
-	}
-	if err = file.SetCellStyle(sheetName, "A1", endColumn+"1", headerStyle); err != nil {
-		return nil, fmt.Errorf("failed to set header style. error: %w", err)
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("unexpected error: %v", r)
-		}
-	}()
-
-	for i, d := range dto.SI {
-		values := []interface{}{}
-		data := reflect.ValueOf(d)
-
-		if data.Kind() == reflect.Ptr {
-			data = data.Elem() // Dereference the pointer
-		}
-
-		for _, c := range flatColumns {
-			// if len(c.Children) > 0 {
-			// 	for _, child := range c.Children {
-			// 		field := data.FieldByName(child.Field)
-
-			// 		if field.IsValid() {
-			// 			values = append(values, field.Interface())
-			// 		} else {
-			// 			return nil, fmt.Errorf("field %s not found", child.Field)
-			// 		}
-			// 	}
-			// 	continue
-			// }
-
-			field := strings.ToUpper(c.Field[:1]) + c.Field[1:]
-			value := data.FieldByName(field)
-
-			if value.IsValid() {
-				if value.Kind() == reflect.Struct && (c.Type == "date" || c.Type == "short_date") {
-					newValue, ok := value.Interface().(time.Time)
-					if !ok {
-						return nil, fmt.Errorf("failed to convert value to time.Time")
-					}
-					if newValue.IsZero() {
-						values = append(values, "")
-						continue
-					}
-
-					date := newValue.Format(constants.DateFormat)
-					values = append(values, date)
-					continue
-				}
-
-				values = append(values, value.Interface())
-			} else {
-				return nil, fmt.Errorf("field %s not found", field)
-			}
-		}
-
-		// values := []interface{}{
-		// 	d.Name, d.Type, d.FactoryNumber, d.MeasurementLimits, d.Accuracy, d.StateRegister, d.Manufacturer, d.YearOfIssue, d.Date,
-		// 	d.InterVerificationInterval, d.NextDate, d.Place, d.Person, d.Notes,
-		// }
-
-		if err := file.SetSheetRow(sheetName, fmt.Sprintf("A%d", i+2), &values); err != nil {
-			return nil, fmt.Errorf("failed to set header row. error: %w", err)
-		}
-		if err = file.SetCellStyle(sheetName, fmt.Sprintf("A%d", i+2), fmt.Sprintf("%s%d", endColumn, i+2), mainStyle); err != nil {
-			return nil, fmt.Errorf("failed to set style. error: %w", err)
+	// 3. Пишем данные
+	for i, item := range rows {
+		cell, _ := excelize.CoordinatesToCellName(1, i+2)
+		if err := file.SetSheetRow(sheetName, cell, &item); err != nil {
+			return nil, fmt.Errorf("failed to set row %d: %w", i+2, err)
 		}
 	}
 
-	buffer, err = file.WriteToBuffer()
+	// 4. Финальное оформление (пакетно)
+	lastCol, _ := excelize.ColumnNumberToName(len(headers))
+	lastRow := len(rows) + 1
+
+	// if err := file.SetColWidth(sheetName, "A", lastCol, 20); err != nil {
+	// 	return nil, fmt.Errorf("failed to set column width: %w", err)
+	// }
+	for _, rule := range widthRules {
+		startName, err := excelize.ColumnNumberToName(rule.StartCol + 1)
+		if err != nil {
+			return nil, fmt.Errorf("invalid start column index %d: %w", rule.StartCol, err)
+		}
+		endName, err := excelize.ColumnNumberToName(rule.EndCol + 1)
+		if err != nil {
+			return nil, fmt.Errorf("invalid end column index %d: %w", rule.EndCol, err)
+		}
+		if err := file.SetColWidth(sheetName, startName, endName, rule.Width); err != nil {
+			return nil, fmt.Errorf("failed to set width for %s-%s: %w", startName, endName, err)
+		}
+	}
+
+	if err := file.SetCellStyle(sheetName, "A1", lastCol+"1", hStyle); err != nil {
+		return nil, fmt.Errorf("failed to set header style: %w", err)
+	}
+
+	if lastRow > 1 {
+		if err = file.SetCellStyle(sheetName, "A2", fmt.Sprintf("%s%d", lastCol, lastRow), mStyle); err != nil {
+			return nil, fmt.Errorf("failed to set main style: %w", err)
+		}
+	}
+
+	buffer, err := file.WriteToBuffer()
 	if err != nil {
 		return nil, fmt.Errorf("failed to write to buffer. error: %w", err)
 	}
 	return buffer, nil
+}
+
+func (s *FileService) Export(ctx context.Context, dto *models.ExportDTO) (*bytes.Buffer, error) {
+	// 1. Плоский список колонок (обработка вложенности)
+	flatColumns := make([]*models.Column, 0, len(dto.Columns))
+	columnNames := make([]string, 0, len(dto.Columns))
+
+	for _, col := range dto.Columns {
+		if len(col.Children) > 0 {
+			for _, child := range col.Children {
+				columnNames = append(columnNames, child.Name)
+				flatColumns = append(flatColumns, child)
+			}
+		} else {
+			columnNames = append(columnNames, col.Name)
+			flatColumns = append(flatColumns, col)
+		}
+	}
+
+	// 2. Подготовка данных через рефлексию
+	rows := make([][]interface{}, len(dto.SI))
+	for i, item := range dto.SI {
+		rowData, err := s.mapReflectRow(item, flatColumns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to map row %d: %w", i, err)
+		}
+		rows[i] = rowData
+	}
+
+	rules := []ColumnWidthRule{
+		{StartCol: 0, EndCol: len(columnNames), Width: 20},
+	}
+
+	// 3. Генерация файла через наш общий метод
+	return s.generateExcel(columnNames, rows, rules)
+}
+
+func (s *FileService) mapReflectRow(d interface{}, columns []*models.Column) ([]interface{}, error) {
+	val := reflect.ValueOf(d)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	row := make([]interface{}, 0, len(columns))
+
+	for _, col := range columns {
+		// Приводим первую букву к верхнему регистру (Go convention для экспортируемых полей)
+		fieldName := strings.ToUpper(col.Field[:1]) + col.Field[1:]
+		field := val.FieldByName(fieldName)
+
+		if !field.IsValid() {
+			return nil, fmt.Errorf("field %s not found in struct", fieldName)
+		}
+
+		// Обработка дат
+		if (col.Type == "date" || col.Type == "short_date") && field.Kind() == reflect.Struct {
+			if t, ok := field.Interface().(time.Time); ok {
+				if t.IsZero() {
+					row = append(row, "")
+				} else {
+					fmtStr := constants.DateFormat
+					if col.Type == "short_date" {
+						fmtStr = constants.ShortDateFormat
+					}
+					row = append(row, t.Format(fmtStr))
+				}
+				continue
+			}
+		}
+
+		row = append(row, field.Interface())
+	}
+
+	return row, nil
 }
 
 func (s *FileService) MakeDocSchedule(ctx context.Context, dto []*models.SI) (*bytes.Buffer, error) {
@@ -208,141 +239,113 @@ func (s *FileService) MakeDocSchedule(ctx context.Context, dto []*models.SI) (*b
 	return buffer, nil
 }
 
+func (s *FileService) MakeAccountingLog(ctx context.Context, dto []*models.SiWithLog) (*bytes.Buffer, error) {
+	headers := []string{
+		"Дата поступл.", "Наименование СИ", "Вид (тип, марка) СИ", "Зав. №",
+		"Лицо, ответств. за экспл. СИ", "Сведения о ремонте", "Сведения о консервации",
+		"Сведения о передаче на хранение", "Сведения о списании",
+	}
+	rules := []ColumnWidthRule{
+		{StartCol: 0, EndCol: len(headers), Width: 20},
+	}
+
+	rows := make([][]interface{}, len(dto))
+	for i, d := range dto {
+		rows[i] = []interface{}{
+			d.DateOfReceipt.Format(constants.ShortDateFormat),
+			d.Name, d.Type, d.FactoryNumber, d.Responsible,
+			d.RepairInfo, d.PreservationInfo, d.SavingInfo, d.WriteOff,
+		}
+	}
+
+	return s.generateExcel(headers, rows, rules)
+}
+
 func (s *FileService) MakeVerificationSchedule(ctx context.Context, dto *models.SiVerification) (*bytes.Buffer, error) {
-	file := excelize.NewFile()
-	sheetName := file.GetSheetName(file.GetActiveSheetIndex())
+	strategy := s.resolveReportStrategy(dto.BidType)
 
-	headerStyle, err := file.NewStyle(headerStyle)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create header style. error: %w", err)
+	rows := make([][]interface{}, len(dto.SI))
+	for i, item := range dto.SI {
+		rows[i] = strategy.mapFunc(i, item)
 	}
 
-	mainStyle, err := file.NewStyle(cellStyle)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create main style. error: %w", err)
-	}
+	return s.generateExcel(strategy.headers, rows, strategy.widthRules)
+}
 
-	columnNames := make([]string, 0, 10)
+// Вспомогательная структура для инкапсуляции логики типов отчетов
+type reportStrategy struct {
+	headers    []string
+	widthRules []ColumnWidthRule
+	mapFunc    func(int, *models.SI) []interface{}
+}
+
+func (s *FileService) resolveReportStrategy(bidType string) reportStrategy {
 	switch {
-	case dto.BidType == "met_si" || dto.BidType == "eq_si":
-		columnNames = []string{
-			"№ п/п", "Наименование", "Тип СИ", "Заводской номер", "Диапазон измерений", "Периодичность поверки", "Дата последней поверки",
-			"Дата следующей поверки", "Примечание",
+	case bidType == "met_si" || bidType == "eq_si":
+		headers := []string{"№ п/п", "Наименование", "Тип СИ", "Заводской номер", "Диапазон измерений", "Периодичность поверки", "Дата последней поверки", "Дата следующей поверки", "Примечание"}
+		return reportStrategy{
+			headers: headers,
+			widthRules: []ColumnWidthRule{
+				{StartCol: 0, EndCol: len(headers), Width: 20},
+			},
+			mapFunc: func(i int, d *models.SI) []interface{} {
+				return []interface{}{
+					i + 1, d.Name, d.Type, d.FactoryNumber, d.MeasurementLimits, d.InterVerificationInterval,
+					d.VerificationDate.Format(constants.DateFormat),
+					d.NextVerificationDate.Format(constants.DateFormat),
+					d.Notes,
+				}
+			},
 		}
-	case strings.Contains(dto.BidType, "eq"):
-		columnNames = []string{
-			"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал аттестации, мес.",
-			"Дата последней аттестации", "Дата следующей аттестации", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
+
+	case strings.Contains(bidType, "eq"):
+		return reportStrategy{
+			headers: []string{"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал аттестации, мес.", "Дата последней аттестации", "Дата следующей аттестации", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание"},
+			widthRules: []ColumnWidthRule{
+				{StartCol: 0, EndCol: 6, Width: 20},
+				{StartCol: 7, EndCol: 18, Width: 5},
+				{StartCol: 19, EndCol: 19, Width: 20},
+			},
+			mapFunc: func(i int, d *models.SI) []interface{} {
+				return s.mapWithMonthlyGrid(i, d, constants.ShortDateFormat)
+			},
 		}
-	// case "ointo_si":
-	// 	columnNames = []string{
-	// 		"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал поверки, мес.",
-	// 		"Дата последней поверки", "Дата следующей поверки", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
-	// 	}
-	// case "ointo_eq":
-	// 	columnNames = []string{
-	// 		"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал аттестации, мес.",
-	// 		"Дата последней аттестации", "Дата следующей аттестации", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
-	// 	}
-	// case "ots_si":
-	// 	columnNames = []string{
-	// 		"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал поверки, мес.",
-	// 		"Дата последней поверки", "Дата следующей поверки", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
-	// 	}
-	// case "ots_eq":
-	// 	columnNames = []string{
-	// 		"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал аттестации, мес.",
-	// 		"Дата последней аттестации", "Дата следующей аттестации", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
-	// 	}
+
 	default:
-		columnNames = []string{
-			"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал аттестации, мес.",
-			"Дата последней аттестации", "Дата следующей аттестации", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание",
+		return reportStrategy{
+			headers: []string{"№ п/п", "Наименование", "Марка, тип", "Заводской номер", "Интервал поверки, мес.", "Дата последней поверки", "Дата следующей поверки", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Примечание"},
+			widthRules: []ColumnWidthRule{
+				{StartCol: 0, EndCol: 6, Width: 20},
+				{StartCol: 7, EndCol: 18, Width: 5},
+				{StartCol: 19, EndCol: 19, Width: 20},
+			},
+			mapFunc: func(i int, d *models.SI) []interface{} {
+				return s.mapWithMonthlyGrid(i, d, constants.ShortDateFormat)
+			},
 		}
 	}
-	// default:
-	// 	columnNames = []string{
-	// 		"№ п/п", "Наименование", "Тип СИ", "Заводской номер", "Диапазон измерений", "Периодичность поверки", "Дата последней поверки",
-	// 		"Дата следующей поверки", "Примечание",
-	// 	}
-	// }
+}
 
-	if err := file.SetSheetRow(sheetName, "A1", &columnNames); err != nil {
-		return nil, fmt.Errorf("failed to set header row. error: %w", err)
+// Вынес общую логику для отчетов с сеткой месяцев (I-XII)
+func (s *FileService) mapWithMonthlyGrid(i int, d *models.SI, dateFmt string) []interface{} {
+	res := []interface{}{
+		i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval,
+		d.VerificationDate.Format(dateFmt),
+		d.NextVerificationDate.Format(dateFmt),
 	}
 
-	endColumn, err := excelize.ColumnNumberToName(len(columnNames))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get column name. error: %w", err)
+	// Сетка месяцев
+	months := make([]interface{}, 12)
+	for m := 0; m < 12; m++ {
+		months[m] = ""
 	}
 
-	if err := file.SetColWidth(sheetName, "A", endColumn, 20); err != nil {
-		return nil, fmt.Errorf("failed to set column width. error: %w", err)
-	}
-	if err = file.SetCellStyle(sheetName, "A1", endColumn+"1", headerStyle); err != nil {
-		return nil, fmt.Errorf("failed to set header style. error: %w", err)
+	mIdx := int(d.NextVerificationDate.Month()) - 1
+	if mIdx >= 0 && mIdx < 12 {
+		months[mIdx] = "*"
 	}
 
-	for i, d := range dto.SI {
-		values := make([]interface{}, 0, len(columnNames))
-		date := d.VerificationDate.Format(constants.ShortDateFormat)
-		nextDate := d.NextVerificationDate.Format(constants.ShortDateFormat)
-		// monthArray := make([]string, 12)
-		// monthArray[int(d.NextVerificationDate.Month())-1] = "⨯"
-
-		switch dto.BidType {
-		case "ointo_si":
-			values = []interface{}{
-				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
-			}
-			num := len(values)
-			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
-			values[num+int(d.NextVerificationDate.Month())-1] = "*"
-		case "ointo_eq":
-			values = []interface{}{
-				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
-			}
-			num := len(values)
-			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
-			values[num+int(d.NextVerificationDate.Month())-1] = "*"
-		case "ots_si":
-			values = []interface{}{
-				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
-			}
-			num := len(values)
-			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
-			values[num+int(d.NextVerificationDate.Month())-1] = "*"
-		case "ots_eq":
-			values = []interface{}{
-				i + 1, d.Name, d.Type, d.FactoryNumber, d.InterVerificationInterval, date, nextDate,
-			}
-			num := len(values)
-			values = append(values, "", "", "", "", "", "", "", "", "", "", "", "")
-			values[num+int(d.NextVerificationDate.Month())-1] = "*"
-		default:
-			date := d.VerificationDate.Format(constants.DateFormat)
-			nextDate := d.NextVerificationDate.Format(constants.DateFormat)
-			values = []interface{}{
-				i + 1, d.Name, d.Type, d.FactoryNumber, d.MeasurementLimits, d.InterVerificationInterval,
-				date, nextDate, d.Notes,
-			}
-		}
-
-		if err := file.SetSheetRow(sheetName, fmt.Sprintf("A%d", i+2), &values); err != nil {
-			return nil, fmt.Errorf("failed to set row. error: %w", err)
-		}
-		if err = file.SetCellStyle(sheetName, fmt.Sprintf("A%d", i+2), fmt.Sprintf("%s%d", endColumn, i+2), mainStyle); err != nil {
-			return nil, fmt.Errorf("failed to set style. error: %w", err)
-		}
-
-		// if dto.BidType == "ointo_si" || dto.BidType == "ointo_eq" {
-		// 	// file.SetCellFormula()
-		// }
-	}
-
-	buffer, err := file.WriteToBuffer()
-	if err != nil {
-		return nil, fmt.Errorf("failed to write to buffer. error: %w", err)
-	}
-	return buffer, nil
+	res = append(res, months...)
+	res = append(res, d.Notes)
+	return res
 }

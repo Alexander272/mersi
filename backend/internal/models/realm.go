@@ -9,6 +9,7 @@ type Realm struct {
 	IsActive             bool      `json:"isActive" db:"is_active"`
 	NotificationChannel  string    `json:"notificationChannel" db:"notification_channel"`
 	ExpirationNotice     bool      `json:"expirationNotice" db:"expiration_notice"`
+	ReturnNotice         bool      `json:"returnNotice" db:"return_notice"`
 	LocationType         string    `json:"locationType" db:"location_type"`
 	NeedConfirmed        bool      `json:"needConfirmed" db:"need_confirmed"`
 	NasEmployees         bool      `json:"hasEmployees" db:"has_employees"`
@@ -44,6 +45,7 @@ type RealmDTO struct {
 	IsActive             bool   `json:"isActive" db:"is_active"`
 	NotificationChannel  string `json:"notificationChannel" db:"notification_channel"`
 	ExpirationNotice     bool   `json:"expirationNotice" db:"expiration_notice"`
+	ReturnNotice         bool   `json:"returnNotice" db:"return_notice"`
 	LocationType         string `json:"locationType" db:"location_type"`
 	NeedConfirmed        bool   `json:"needConfirmed" db:"need_confirmed"`
 	NasEmployees         bool   `json:"hasEmployees" db:"has_employees"`

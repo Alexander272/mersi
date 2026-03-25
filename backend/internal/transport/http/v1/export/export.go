@@ -1,6 +1,7 @@
 package export
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -35,6 +36,7 @@ func Register(api *gin.RouterGroup, service services.Export, middleware *middlew
 	{
 		export.GET("", handler.export)
 		export.GET("/schedule", handler.makeScheduler)
+		export.GET("/accounting", handler.makeAccountingLog)
 	}
 }
 
@@ -60,60 +62,85 @@ func (h *Handler) export(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename=Список инструментов от "+monday.Format(time.Now(), "Mon 2 Jan 2006", monday.LocaleRuRU)+".xlsx")
-	c.Header("Content-Description", "File Transfer")
-	c.Header("Content-Transfer-Encoding", "binary")
-	c.Header("Content-Type", "application/vnd.openxmlformats-package.relationships+xml")
-	c.Header("Accept-Length", fmt.Sprintf("%d", buffer.Cap()))
-	c.Writer.Write(buffer.Bytes())
+	h.sendExcel(c, buffer, "Список инструментов")
 }
 
 func (h *Handler) makeScheduler(c *gin.Context) {
-	section := c.Query("section")
-	err := uuid.Validate(section)
+	req, err := h.parsePeriod(c)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Область не задана")
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Неверно заданы параметры периода или области")
 		return
-	}
-
-	period := c.QueryMap("period")
-	if len(period) == 0 {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Период не задан")
-		return
-	}
-
-	// start, errStart := strconv.ParseInt(period["gte"], 10, 64)
-	// end, errEnd := strconv.ParseInt(period["lte"], 10, 64)
-	start, errStart := time.Parse(time.RFC3339, period["gte"])
-	end, errEnd := time.Parse(time.RFC3339, period["lte"])
-	if errStart != nil || errEnd != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Период не задан")
-		return
-	}
-
-	req := &models.Period{
-		StartAt:         start,
-		FinishAt:        end,
-		SectionId:       section,
-		ChannelIsOption: true,
 	}
 
 	buffer, err := h.service.MakeScheduler(c, req)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRows) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "В заданном периоде ничего не найдено")
-			return
-		}
-
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		h.handleServiceError(c, err, req)
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename=График поверки от "+monday.Format(time.Now(), "Mon 2 Jan 2006", monday.LocaleRuRU)+".xlsx")
-	c.Header("Content-Description", "File Transfer")
+	h.sendExcel(c, buffer, "График поверки")
+}
+
+func (h *Handler) makeAccountingLog(c *gin.Context) {
+	section := c.Query("section")
+	if err := uuid.Validate(section); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Сессия не найдена")
+		return
+	}
+
+	req := &models.Period{
+		SectionId: section,
+	}
+
+	buffer, err := h.service.MakeAccountingLog(c, req)
+	if err != nil {
+		h.handleServiceError(c, err, req)
+		return
+	}
+
+	h.sendExcel(c, buffer, "Журнал учета средств измерения")
+}
+
+// Вспомогательный метод для обработки ошибок сервиса (чтобы не дублировать error_bot)
+func (h *Handler) handleServiceError(c *gin.Context, err error, req interface{}) {
+	if errors.Is(err, models.ErrNoRows) {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Нет данных для выгрузки")
+		return
+	}
+	response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла внутренняя ошибка")
+	error_bot.Send(c, err.Error(), req)
+}
+
+func (h *Handler) parsePeriod(c *gin.Context) (*models.Period, error) {
+	section := c.Query("section")
+	if err := uuid.Validate(section); err != nil {
+		return nil, fmt.Errorf("invalid section UUID")
+	}
+
+	period := c.QueryMap("period")
+	start, errStart := time.Parse(time.RFC3339, period["gte"])
+	end, errEnd := time.Parse(time.RFC3339, period["lte"])
+
+	if errStart != nil || errEnd != nil {
+		return nil, fmt.Errorf("invalid or missing period dates")
+	}
+
+	return &models.Period{
+		StartAt:         start,
+		FinishAt:        end,
+		SectionId:       section,
+		ChannelIsOption: true,
+	}, nil
+}
+
+func (h *Handler) sendExcel(c *gin.Context, buffer *bytes.Buffer, fileNamePrefix string) {
+	fileName := fmt.Sprintf("%s от %s.xlsx", fileNamePrefix, monday.Format(time.Now(), "Mon 2 Jan 2006", monday.LocaleRuRU))
+
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Length", fmt.Sprintf("%d", buffer.Len()))
 	c.Header("Content-Transfer-Encoding", "binary")
-	c.Header("Content-Type", "application/vnd.openxmlformats-package.relationships+xml")
-	c.Header("Accept-Length", fmt.Sprintf("%d", buffer.Cap()))
+	c.Header("Cache-Control", "no-cache")
+
 	c.Writer.Write(buffer.Bytes())
 }

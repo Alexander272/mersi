@@ -20,7 +20,7 @@ func NewSectionService(repo repository.Section) *SectionService {
 
 type Section interface {
 	Get(ctx context.Context, req *models.GetSectionsDTO) ([]*models.Section, error)
-	GetAll(ctx context.Context) ([]*models.Section, error)
+	GetAll(ctx context.Context, req *models.GetAllSectionsDTO) ([]*models.Section, error)
 	GetGrouped(ctx context.Context, req *models.GetGroupedSectionDTO) ([]*models.GroupedSections, error)
 	Create(ctx context.Context, dto *models.SectionDTO) error
 	Update(ctx context.Context, dto *models.SectionDTO) error
@@ -35,8 +35,8 @@ func (s *SectionService) Get(ctx context.Context, req *models.GetSectionsDTO) ([
 	return data, nil
 }
 
-func (s *SectionService) GetAll(ctx context.Context) ([]*models.Section, error) {
-	data, err := s.repo.GetAll(ctx)
+func (s *SectionService) GetAll(ctx context.Context, req *models.GetAllSectionsDTO) ([]*models.Section, error) {
+	data, err := s.repo.GetAll(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all sections. error: %w", err)
 	}
