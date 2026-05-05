@@ -98,5 +98,6 @@ type SiReceiving struct {
 }
 
 type DeleteSiDTO struct {
-	Id string
+	Id    string
+	Actor *Actor
 }

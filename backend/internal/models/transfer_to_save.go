@@ -13,11 +13,13 @@ type TransferToSave struct {
 }
 
 type GetTransferToSaveDTO struct {
+	Id           string `json:"id" db:"id"`
 	InstrumentId string `json:"instrumentId"`
 }
 
 type TransferToSaveDTO struct {
-	Id           string    `json:"id" db:"id"`
+	Id           string `json:"id" db:"id"`
+	Actor        *Actor
 	InstrumentId string    `json:"instrumentId" db:"instrument_id"`
 	DateStart    time.Time `json:"dateStart" db:"date_start"`
 	DateEnd      time.Time `json:"dateEnd" db:"date_end"`
@@ -26,5 +28,6 @@ type TransferToSaveDTO struct {
 }
 
 type DeleteTransferToSaveDTO struct {
-	Id string `json:"id" db:"id"`
+	Id    string `json:"id" db:"id"`
+	Actor *Actor
 }

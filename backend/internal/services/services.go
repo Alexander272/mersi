@@ -38,6 +38,7 @@ type Services struct {
 	TransferToDepartment
 	WriteOff
 	HistoryType
+	ActivityLog
 	Filters
 	Sorting
 	File
@@ -91,25 +92,28 @@ func NewServices(deps *Deps) *Services {
 
 	document := NewDocumentService(deps.Repo.Document)
 	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
-	instrument := NewInstrumentService(deps.Repo.Instrument, document)
+	activityLog := NewActivityLogService(deps.Repo.ActivityLog)
+	instrument := NewInstrumentService(deps.Repo.Instrument, document, activityLog)
 	verification := NewVerificationService(&VerificationDeps{
 		Repo:       deps.Repo.Verification,
 		TxManager:  txManager,
 		VerDocs:    verificationDoc,
 		Instrument: instrument,
 		Docs:       document,
+		ActivityLog: activityLog,
 	})
 
 	verificationFields := NewVerificationFieldService(deps.Repo.VerificationFields)
 	contextMenu := NewContextService(deps.Repo.ContextMenu, role, accesses)
 	customContext := NewCustomContextService(deps.Repo.CustomContextMenu)
 	toolsMenu := NewToolsMenuService(deps.Repo.ToolsMenu, customContext, role, accesses)
-	repair := NewRepairService(deps.Repo.Repair, txManager, instrument)
-	preservation := NewPreservationService(deps.Repo.Preservation, txManager, instrument)
-	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave, txManager, instrument)
-	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment, txManager, instrument, document)
-	writeOff := NewWriteOffService(deps.Repo.WriteOff, txManager, instrument, document)
+	repair := NewRepairService(deps.Repo.Repair, txManager, instrument, activityLog)
+	preservation := NewPreservationService(deps.Repo.Preservation, txManager, instrument, activityLog)
+	transferToSave := NewTransferToSaveService(deps.Repo.TransferToSave, txManager, instrument, activityLog)
+	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment, txManager, instrument, document, activityLog)
+	writeOff := NewWriteOffService(deps.Repo.WriteOff, txManager, instrument, document, activityLog)
 	historyType := NewHistoryTypeService(deps.Repo.HistoryType)
+	// activityLog := NewActivityLogService(deps.Repo.ActivityLog)
 
 	filters := NewFilterService(deps.Repo.Filters)
 	sorting := NewSortingService(deps.Repo.Sorting)
@@ -122,7 +126,7 @@ func NewServices(deps *Deps) *Services {
 		TxManager:    txManager,
 		Instrument:   instrument,
 		Verification: verification,
-		Location:     NewLocationService(&LocationDeps{Repo: deps.Repo.Location, Responsible: responsible}),
+		Location:     NewLocationService(&LocationDeps{Repo: deps.Repo.Location, TxManager: txManager, Responsible: responsible, ActivityLog: activityLog}),
 	})
 
 	file := NewFileService()
@@ -136,9 +140,11 @@ func NewServices(deps *Deps) *Services {
 	})
 	location := NewLocationService(&LocationDeps{
 		Repo:         deps.Repo.Location,
+		TxManager:    txManager,
 		Responsible:  responsible,
 		Notification: notification,
 		Most:         most,
+		ActivityLog:  activityLog,
 	})
 	department := NewDepartmentService(deps.Repo.Department, location)
 	employee := NewEmployeeService(deps.Repo.Employee, location)
@@ -196,6 +202,7 @@ func NewServices(deps *Deps) *Services {
 		TransferToDepartment: transferToDep,
 		WriteOff:             writeOff,
 		HistoryType:          historyType,
+		ActivityLog:          activityLog,
 		Filters:              filters,
 		Sorting:              sorting,
 		Department:           department,

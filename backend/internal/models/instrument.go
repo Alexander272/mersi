@@ -53,7 +53,8 @@ type GetUniqueDTO struct {
 }
 
 type InstrumentDTO struct {
-	Id                        string           `json:"id" db:"id"`
+	Id                        string `json:"id" db:"id"`
+	Actor                     *Actor
 	SectionId                 string           `json:"sectionId" db:"section_id"`
 	UserId                    string           `json:"userId" db:"user_id"`
 	Position                  int              `json:"position" db:"position"`

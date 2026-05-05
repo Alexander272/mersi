@@ -25,11 +25,12 @@ func NewPreservationRepo(db *sqlx.DB, transaction Transaction) *PreservationRepo
 
 type Preservation interface {
 	Get(ctx context.Context, req *models.GetPreservationsDTO) ([]*models.Preservation, error)
+	GetById(ctx context.Context, dto *models.GetPreservationsDTO) (*models.Preservation, error)
 	GetLast(ctx context.Context, tx Tx, req *models.GetPreservationsDTO) (*models.Preservation, error)
 	Create(ctx context.Context, tx Tx, dto *models.PreservationDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.PreservationDTO) error
 	Update(ctx context.Context, tx Tx, dto *models.PreservationDTO) error
-	Delete(ctx context.Context, dto *models.DeletePreservationDTO) error
+	Delete(ctx context.Context, tx Tx, dto *models.DeletePreservationDTO) error
 }
 
 func (r *PreservationRepo) Get(ctx context.Context, req *models.GetPreservationsDTO) ([]*models.Preservation, error) {
@@ -40,6 +41,22 @@ func (r *PreservationRepo) Get(ctx context.Context, req *models.GetPreservations
 	data := []*models.Preservation{}
 
 	if err := r.db.SelectContext(ctx, &data, query, req.InstrumentId); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
+func (r *PreservationRepo) GetById(ctx context.Context, dto *models.GetPreservationsDTO) (*models.Preservation, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, date_start, date_end, notes_start, notes_end, created_at FROM %s
+		WHERE id=$1`,
+		PreservationTable,
+	)
+	data := &models.Preservation{}
+
+	if err := r.db.GetContext(ctx, data, query, dto.Id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return data, nil
@@ -100,10 +117,10 @@ func (r *PreservationRepo) Update(ctx context.Context, tx Tx, dto *models.Preser
 	return nil
 }
 
-func (r *PreservationRepo) Delete(ctx context.Context, dto *models.DeletePreservationDTO) error {
+func (r *PreservationRepo) Delete(ctx context.Context, tx Tx, dto *models.DeletePreservationDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, PreservationTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

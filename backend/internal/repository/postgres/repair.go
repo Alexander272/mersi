@@ -25,15 +25,16 @@ func NewRepairRepo(db *sqlx.DB, transaction Transaction) *RepairRepo {
 
 type Repair interface {
 	Get(ctx context.Context, req *models.GetRepairDTO) ([]*models.Repair, error)
+	GetById(ctx context.Context, id string) (*models.Repair, error)
 	GetLast(ctx context.Context, req *models.GetRepairDTO) (*models.Repair, error)
 	Create(ctx context.Context, tx Tx, dto *models.RepairDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.RepairDTO) error
 	Update(ctx context.Context, tx Tx, dto *models.RepairDTO) error
-	Delete(ctx context.Context, dto *models.DeleteRepairDTO) error
+	Delete(ctx context.Context, tx Tx, dto *models.DeleteRepairDTO) error
 }
 
 func (r *RepairRepo) Get(ctx context.Context, req *models.GetRepairDTO) ([]*models.Repair, error) {
-	query := fmt.Sprintf(`SELECT id, defect, work, period_start, period_end, description, created_at FROM %s
+	query := fmt.Sprintf(`SELECT id, instrument_id, defect, work, period_start, period_end, description, created_at FROM %s
 		WHERE instrument_id=$1 ORDER BY period_start DESC`,
 		RepairTable,
 	)
@@ -45,8 +46,24 @@ func (r *RepairRepo) Get(ctx context.Context, req *models.GetRepairDTO) ([]*mode
 	return data, nil
 }
 
+func (r *RepairRepo) GetById(ctx context.Context, id string) (*models.Repair, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, defect, work, period_start, period_end, description, created_at FROM %s
+		WHERE id=$1`,
+		RepairTable,
+	)
+	repair := &models.Repair{}
+
+	if err := r.db.GetContext(ctx, repair, query, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return repair, nil
+}
+
 func (r *RepairRepo) GetLast(ctx context.Context, req *models.GetRepairDTO) (*models.Repair, error) {
-	query := fmt.Sprintf(`SELECT id, defect, work, period_start, period_end, description, created_at FROM %s
+	query := fmt.Sprintf(`SELECT id, instrument_id, defect, work, period_start, period_end, description, created_at FROM %s
 		WHERE instrument_id=$1 ORDER BY period_start DESC LIMIT 1`,
 		RepairTable,
 	)
@@ -101,10 +118,10 @@ func (r *RepairRepo) Update(ctx context.Context, tx Tx, dto *models.RepairDTO) e
 	return nil
 }
 
-func (r *RepairRepo) Delete(ctx context.Context, dto *models.DeleteRepairDTO) error {
+func (r *RepairRepo) Delete(ctx context.Context, tx Tx, dto *models.DeleteRepairDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, RepairTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

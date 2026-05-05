@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/utils"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/verifications/fields"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
@@ -38,6 +39,7 @@ func Register(api *gin.RouterGroup, service *services.Services, middleware *midd
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)
+			write.DELETE("/:id", handler.delete)
 		}
 	}
 
@@ -89,12 +91,12 @@ func (h *Handler) create(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
 	}
-	dto.UserId = user.ID
+	dto.Actor = actor
+	dto.UserId = actor.ID
 
 	if err := h.service.Create(c, nil, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
@@ -103,8 +105,8 @@ func (h *Handler) create(c *gin.Context) {
 	}
 
 	logger.Info("Добавлена поверка",
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 		logger.StringAttr("instrument_id", dto.InstrumentId),
 		logger.AnyAttr("verification", dto),
 	)
@@ -129,25 +131,55 @@ func (h *Handler) update(c *gin.Context) {
 		return
 	}
 
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
+	dto.UserId = actor.ID
+
 	if err := h.service.Update(c, nil, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
-	}
-
 	logger.Info("Поверка обновлена",
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 		logger.StringAttr("instrument_id", dto.InstrumentId),
 		logger.StringAttr("verification_id", dto.Id),
 		logger.AnyAttr("verification", dto),
 	)
 
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о поверке успешно обновлены"})
+}
+
+func (h *Handler) delete(c *gin.Context) {
+	id := c.Param("id")
+	if err := uuid.Validate(id); err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		return
+	}
+
+	dto := &models.DeleteVerificationDTO{Id: id}
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
+
+	if err := h.service.Delete(c, dto); err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+		error_bot.Send(c, err.Error(), dto)
+		return
+	}
+
+	logger.Info("Поверка удалена",
+		logger.StringAttr("id", dto.Id),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
+	)
+
+	c.JSON(http.StatusNoContent, response.IdResponse{})
 }

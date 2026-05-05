@@ -85,6 +85,9 @@ type WriteOff interface {
 type HistoryType interface {
 	postgres.HistoryType
 }
+type ActivityLog interface {
+	postgres.ActivityLog
+}
 type Filters interface {
 	postgres.Filters
 }
@@ -139,6 +142,7 @@ type Repository struct {
 	TransferToDepartment
 	WriteOff
 	HistoryType
+	ActivityLog
 	Filters
 	Sorting
 	Department
@@ -181,6 +185,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 		TransferToDepartment: postgres.NewTransferToDepRepo(db, transactions),
 		WriteOff:             postgres.NewWriteOffRepo(db, transactions),
 		HistoryType:          postgres.NewHistoryTypeRepo(db),
+		ActivityLog:          postgres.NewActivityLogRepo(db),
 		Filters:              postgres.NewFilterRepo(db),
 		Sorting:              postgres.NewSortingRepo(db),
 		Department:           postgres.NewDepartmentRepo(db),

@@ -11,6 +11,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/utils"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -136,12 +137,12 @@ func (h *Handler) create(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
 	}
-	dto.UserId = user.ID
+	dto.Actor = actor
+	dto.UserId = actor.ID
 
 	if err := h.service.Create(c, nil, dto); err != nil {
 		if errors.Is(err, models.ErrNoChannel) {
@@ -161,8 +162,8 @@ func (h *Handler) create(c *gin.Context) {
 	logger.Info("Инструмент перемещен",
 		logger.StringAttr("instrument_id", dto.InstrumentId),
 		logger.StringAttr("status", dto.Status),
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 	)
 
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о месте нахождения успешно добавлены"})
@@ -175,13 +176,13 @@ func (h *Handler) createSeveral(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
 	}
 	for i := range dto {
-		dto[i].UserId = user.ID
+		dto[i].Actor = actor
+		dto[i].UserId = actor.ID
 	}
 
 	full, err := h.service.CreateSeveral(c, dto)
@@ -199,7 +200,7 @@ func (h *Handler) createSeveral(c *gin.Context) {
 		return
 	}
 
-	logger.Info("Инструменты перемещены", logger.BoolAttr("full", full), logger.StringAttr("user_id", user.ID), logger.StringAttr("username", user.Name))
+	logger.Info("Инструменты перемещены", logger.BoolAttr("full", full), logger.StringAttr("user_id", actor.ID), logger.StringAttr("username", actor.Name))
 
 	message := "Данные о месте нахождения успешно добавлены"
 	if !full {
@@ -320,22 +321,24 @@ func (h *Handler) update(c *gin.Context) {
 	}
 	dto.Id = id
 
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
+	dto.UserId = actor.ID
+
 	if err := h.service.Update(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
-	}
 	logger.Info("Место нахождения инструмента изменено",
 		logger.StringAttr("instrument_id", dto.InstrumentId),
 		logger.StringAttr("status", dto.Status),
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 	)
 
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о месте нахождения успешно обновлены"})
@@ -349,21 +352,22 @@ func (h *Handler) delete(c *gin.Context) {
 	}
 
 	dto := &models.DeleteLocationDTO{Id: id}
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
+
 	if err := h.service.Delete(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
-	}
 	logger.Info("Место нахождения инструмента удалено",
 		logger.StringAttr("id", dto.Id),
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 	)
 
 	c.JSON(http.StatusNoContent, response.IdResponse{})

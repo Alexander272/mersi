@@ -11,28 +11,31 @@ import (
 )
 
 type VerificationService struct {
-	repo       repository.Verification
-	txManager  TransactionManager
-	verDocs    VerificationDoc
-	instrument Instrument
-	docs       Document
+	repo        repository.Verification
+	txManager   TransactionManager
+	verDocs     VerificationDoc
+	instrument  Instrument
+	docs        Document
+	activityLog ActivityLog
 }
 
 type VerificationDeps struct {
-	Repo       repository.Verification
-	TxManager  TransactionManager
-	VerDocs    VerificationDoc
-	Instrument Instrument
-	Docs       Document
+	Repo        repository.Verification
+	TxManager   TransactionManager
+	VerDocs     VerificationDoc
+	Instrument  Instrument
+	Docs        Document
+	ActivityLog ActivityLog
 }
 
 func NewVerificationService(deps *VerificationDeps) *VerificationService {
 	return &VerificationService{
-		repo:       deps.Repo,
-		txManager:  deps.TxManager,
-		verDocs:    deps.VerDocs,
-		instrument: deps.Instrument,
-		docs:       deps.Docs,
+		repo:        deps.Repo,
+		txManager:   deps.TxManager,
+		verDocs:     deps.VerDocs,
+		instrument:  deps.Instrument,
+		docs:        deps.Docs,
+		activityLog: deps.ActivityLog,
 	}
 }
 
@@ -40,7 +43,6 @@ type Verification interface {
 	Get(ctx context.Context, req *models.GetVerificationDTO) ([]*models.Verification, error)
 	GetLast(ctx context.Context, req *models.GetVerificationDTO) (*models.Verification, error)
 	Create(ctx context.Context, tx postgres.Tx, dto *models.VerificationDTO) error
-	// Create(ctx context.Context, dto *models.VerificationDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.VerificationDTO) error
 	Update(ctx context.Context, tx postgres.Tx, dto *models.VerificationDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerificationDTO) error
@@ -58,11 +60,11 @@ func (s *VerificationService) Get(ctx context.Context, req *models.GetVerificati
 	}
 
 	for i := range data {
-		group, exists := docs.Groups[data[i].Id]
-		if exists {
+		if group, ok := docs.Groups[data[i].Id]; ok {
 			data[i].Docs = group.Docs
 		}
 	}
+
 	return data, nil
 }
 
@@ -75,11 +77,14 @@ func (s *VerificationService) GetLast(ctx context.Context, req *models.GetVerifi
 		return nil, fmt.Errorf("failed to get last verification. error: %w", err)
 	}
 
-	docs, err := s.verDocs.Get(ctx, &models.GetVerificationDocsDTO{VerificationId: data.Id})
+	docs, err := s.verDocs.GetGrouped(ctx, &models.GetGroupedVerificationDocsDTO{InstrumentId: req.InstrumentId})
 	if err != nil {
 		return nil, err
 	}
-	data.Docs = docs
+
+	if group, ok := docs.Groups[data.Id]; ok {
+		data.Docs = group.Docs
+	}
 
 	return data, nil
 }
@@ -100,75 +105,42 @@ func (s *VerificationService) executeCreate(ctx context.Context, tx postgres.Tx,
 		return fmt.Errorf("failed to create verification. error: %w", err)
 	}
 
-	for i := range dto.Docs {
-		dto.Docs[i].VerificationId = dto.Id
-	}
-
-	if err := s.verDocs.CreateSeveral(ctx, tx, dto.Docs); err != nil {
-		s.Delete(ctx, &models.DeleteVerificationDTO{Id: dto.Id})
-		return err
-	}
-
 	if len(dto.Docs) > 0 {
-		pathDTO := &models.PathParts{
-			InstrumentId: dto.InstrumentId,
-			Group:        "verifications",
-			UserId:       dto.UserId,
+		for i := range dto.Docs {
+			dto.Docs[i].VerificationId = dto.Id
 		}
-		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
+		if err := s.verDocs.CreateSeveral(ctx, tx, dto.Docs); err != nil {
 			return err
 		}
 	}
 
-	instDTO := &models.UpdateStatus{
+	instrumentDTO := &models.UpdateStatus{
 		Id:     dto.InstrumentId,
 		Status: models.InstrumentStatus(dto.Status),
 	}
-
-	if err := s.instrument.ChangeStatus(ctx, tx, instDTO); err != nil {
+	if err := s.instrument.ChangeStatus(ctx, tx, instrumentDTO); err != nil {
 		return err
 	}
+
+	recordName := fmt.Sprintf("%s - %s",
+		dto.Date.Format("02.01.2006"),
+		dto.NextDate.Format("02.01.2006"),
+	)
+	// Логирование создания
+	s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+		TableName:  "verifications",
+		RecordId:   dto.Id,
+		RecordName: recordName,
+		Action:     "CREATE",
+		UserId:     dto.Actor.ID,
+		UserName:   dto.Actor.Name,
+		NewValue:   dto,
+	})
 
 	return nil
 }
 
-// func (s *VerificationService) Create(ctx context.Context, dto *models.VerificationDTO) error {
-// 	if err := s.repo.Create(ctx, dto); err != nil {
-// 		return fmt.Errorf("failed to create verification. error: %w", err)
-// 	}
-
-// 	for i := range dto.Docs {
-// 		dto.Docs[i].VerificationId = dto.Id
-// 	}
-// 	if err := s.verDocs.CreateSeveral(ctx, nil, dto.Docs); err != nil {
-// 		s.Delete(ctx, &models.DeleteVerificationDTO{Id: dto.Id})
-// 		return err
-// 	}
-
-// 	if len(dto.Docs) > 0 {
-// 		pathDTO := &models.PathParts{
-// 			InstrumentId: dto.InstrumentId,
-// 			Group:        "verifications",
-// 			UserId:       dto.UserId,
-// 		}
-// 		if err := s.docs.ChangePath(ctx, pathDTO); err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	instDTO := &models.UpdateStatus{
-// 		Id:     dto.InstrumentId,
-// 		Status: models.InstrumentStatus(dto.Status),
-// 	}
-// 	if err := s.instrument.ChangeStatus(ctx, nil, instDTO); err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
 func (s *VerificationService) CreateSeveral(ctx context.Context, dto []*models.VerificationDTO) error {
-
 	if len(dto) == 0 {
 		return nil
 	}
@@ -204,6 +176,12 @@ func (s *VerificationService) Update(ctx context.Context, tx postgres.Tx, dto *m
 	return s.executeUpdate(ctx, tx, dto)
 }
 func (s *VerificationService) executeUpdate(ctx context.Context, tx postgres.Tx, dto *models.VerificationDTO) error {
+	// Получаем старые данные для логирования
+	oldData, err := s.repo.GetById(ctx, dto.Id)
+	if err != nil && !errors.Is(err, models.ErrNoRows) {
+		return fmt.Errorf("failed to get old verification data. error: %w", err)
+	}
+
 	if err := s.repo.Update(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to update verification. error: %w", err)
 	}
@@ -229,12 +207,90 @@ func (s *VerificationService) executeUpdate(ctx context.Context, tx postgres.Tx,
 			return err
 		}
 	}
+
+	instrumentDTO := &models.UpdateStatus{
+		Id:     dto.InstrumentId,
+		Status: models.InstrumentStatus(dto.Status),
+	}
+	if err := s.instrument.ChangeStatus(ctx, tx, instrumentDTO); err != nil {
+		return err
+	}
+
+	// Логирование обновления
+	if oldData != nil {
+		recordName := fmt.Sprintf("%s - %s",
+			dto.Date.Format("02.01.2006"),
+			dto.NextDate.Format("02.01.2006"),
+		)
+
+		s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+			TableName:  "verifications",
+			RecordId:   dto.Id,
+			RecordName: recordName,
+			Action:     "UPDATE",
+			UserId:     dto.Actor.ID,
+			UserName:   dto.Actor.Name,
+			OldValue:   oldData,
+			NewValue:   dto,
+		})
+	}
+
 	return nil
 }
 
 func (s *VerificationService) Delete(ctx context.Context, dto *models.DeleteVerificationDTO) error {
-	if err := s.repo.Delete(ctx, dto); err != nil {
-		return fmt.Errorf("failed to delete verification. error: %w", err)
-	}
-	return nil
+	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		// Получение записи для удаления
+		oldData, err := s.repo.GetById(ctx, dto.Id)
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return fmt.Errorf("failed to get verification data. error: %w", err)
+		}
+
+		// Проверка: является ли удаляемая запись последней (один вызов GetLast)
+		isLast := false
+		if oldData != nil {
+			lastData, err := s.GetLast(ctx, &models.GetVerificationDTO{InstrumentId: oldData.InstrumentId})
+			if err != nil && !errors.Is(err, models.ErrNoRows) {
+				return err
+			}
+			if lastData != nil && lastData.Id == oldData.Id {
+				isLast = true
+			}
+		}
+
+		// Удаление записи
+		if err := s.repo.Delete(ctx, tx, dto); err != nil {
+			return fmt.Errorf("failed to delete verification. error: %w", err)
+		}
+
+		// Обновление статуса только если удалена последняя запись
+		if isLast {
+			instrumentDTO := &models.UpdateStatus{
+				Id:     oldData.InstrumentId,
+				Status: models.InstrumentStatusWork,
+			}
+			if err := s.instrument.ChangeStatus(ctx, tx, instrumentDTO); err != nil {
+				return err
+			}
+		}
+
+		// Логирование действия
+		if oldData != nil {
+			recordName := fmt.Sprintf("%s - %s",
+				oldData.Date.Format("02.01.2006"),
+				oldData.NextDate.Format("02.01.2006"),
+			)
+			s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+				TableName:  "verifications",
+				RecordId:   dto.Id,
+				RecordName: recordName,
+				Action:     "DELETE",
+				UserId:     dto.Actor.ID,
+				UserName:   dto.Actor.Name,
+				OldValue:   oldData,
+			})
+		}
+
+		return nil
+	})
 }

@@ -11,14 +11,16 @@ import (
 )
 
 type InstrumentService struct {
-	repo repository.Instrument
-	docs Document
+	repo        repository.Instrument
+	docs        Document
+	activityLog ActivityLog
 }
 
-func NewInstrumentService(repo repository.Instrument, docs Document) *InstrumentService {
+func NewInstrumentService(repo repository.Instrument, docs Document, activityLog ActivityLog) *InstrumentService {
 	return &InstrumentService{
-		repo: repo,
-		docs: docs,
+		repo:        repo,
+		docs:        docs,
+		activityLog: activityLog,
 	}
 }
 
@@ -32,7 +34,7 @@ type Instrument interface {
 	ChangePosition(ctx context.Context, dto *models.ChangePositionDTO) error
 	ChangeStatus(ctx context.Context, tx postgres.Tx, dto *models.UpdateStatus) error
 	ChangeSeveralStatuses(ctx context.Context, dto []*models.UpdateStatus) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, dto *models.DeleteSiDTO) error
 }
 
 func (s *InstrumentService) GetById(ctx context.Context, req *models.GetInstrumentByIdDTO) (*models.Instrument, error) {
@@ -70,6 +72,17 @@ func (s *InstrumentService) Create(ctx context.Context, tx postgres.Tx, dto *mod
 			return err
 		}
 	}
+
+	// Логирование создания
+	s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+		TableName:  "instruments",
+		RecordId:   dto.Id,
+		RecordName: dto.Name,
+		Action:     "CREATE",
+		UserId:     dto.Actor.ID,
+		UserName:   dto.Actor.Name,
+		NewValue:   dto,
+	})
 	return nil
 }
 
@@ -105,9 +118,27 @@ func (s *InstrumentService) CreateSeveral(ctx context.Context, dto []*models.Ins
 }
 
 func (s *InstrumentService) Update(ctx context.Context, tx postgres.Tx, dto *models.InstrumentDTO) error {
+	// Получаем старые данные для логирования
+	oldData, err := s.repo.GetById(ctx, &models.GetInstrumentByIdDTO{Id: dto.Id})
+	if err != nil {
+		return fmt.Errorf("failed to get old instrument data. error: %w", err)
+	}
+
 	if err := s.repo.Update(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to update instrument. error: %w", err)
 	}
+
+	// Логирование обновления
+	s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+		TableName:  "instruments",
+		RecordId:   dto.Id,
+		RecordName: dto.Name,
+		Action:     "UPDATE",
+		UserId:     dto.Actor.ID,
+		UserName:   dto.Actor.Name,
+		OldValue:   oldData,
+		NewValue:   dto,
+	})
 	return nil
 }
 
@@ -131,9 +162,28 @@ func (s *InstrumentService) ChangeSeveralStatuses(ctx context.Context, dto []*mo
 	return nil
 }
 
-func (s *InstrumentService) Delete(ctx context.Context, id string) error {
-	if err := s.repo.Delete(ctx, id); err != nil {
+func (s *InstrumentService) Delete(ctx context.Context, dto *models.DeleteSiDTO) error {
+	// Получаем данные перед удалением для логирования
+	oldData, err := s.repo.GetById(ctx, &models.GetInstrumentByIdDTO{Id: dto.Id})
+	if err != nil && !errors.Is(err, models.ErrNoRows) {
+		return fmt.Errorf("failed to get instrument before delete. error: %w", err)
+	}
+
+	if err := s.repo.Delete(ctx, dto.Id); err != nil {
 		return fmt.Errorf("failed to delete instrument. error: %w", err)
+	}
+
+	// Логирование удаления
+	if oldData != nil {
+		s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+			TableName:  "instruments",
+			RecordId:   dto.Id,
+			RecordName: oldData.Name,
+			Action:     "DELETE",
+			UserId:     dto.Actor.ID,
+			UserName:   dto.Actor.Name,
+			OldValue:   oldData,
+		})
 	}
 	return nil
 }

@@ -20,6 +20,7 @@ type Location struct {
 }
 
 type GetLocationDTO struct {
+	Id           string `json:"id" db:"id"`
 	InstrumentId string `json:"instrumentId" db:"instrument_id"`
 }
 
@@ -36,6 +37,7 @@ type GetLocationByDepartmentDTO struct {
 
 type LocationDTO struct {
 	Id           string `json:"id" db:"id"`
+	Actor        *Actor
 	InstrumentId string `json:"instrumentId" db:"instrument_id"`
 	PersonId     string `json:"person" db:"person_id"`
 	DepartmentId string `json:"department" db:"department_id"`
@@ -49,7 +51,8 @@ type LocationDTO struct {
 }
 
 type DeleteLocationDTO struct {
-	Id string `json:"id" db:"id"`
+	Id    string `json:"id" db:"id"`
+	Actor *Actor
 }
 
 type ReceivingDTO struct {

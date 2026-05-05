@@ -29,6 +29,7 @@ func NewLocationRepo(db *sqlx.DB, transaction Transaction) *LocationRepo {
 
 type Location interface {
 	Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error)
+	GetById(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
 	GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
 	GetSeveralLast(ctx context.Context, req *models.GetSeveralLocationsDTO) ([]*models.Location, error)
 	GetUsedByHolder(ctx context.Context, req *models.GetLocationByHolderDTO) ([]*models.Location, error)
@@ -43,7 +44,7 @@ type Location interface {
 	Receiving(ctx context.Context, dto *models.ReceivingDTO) error
 	ForcedReceipt(ctx context.Context, dto *models.ForcedReceiptDTO) error
 	ForcedReceiptAll(ctx context.Context) error
-	Delete(ctx context.Context, dto *models.DeleteLocationDTO) error
+	Delete(ctx context.Context, tx Tx, dto *models.DeleteLocationDTO) error
 }
 
 func (r *LocationRepo) Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error) {
@@ -62,6 +63,24 @@ func (r *LocationRepo) Get(ctx context.Context, dto *models.GetLocationDTO) ([]*
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 
+	return data, nil
+}
+
+func (r *LocationRepo) GetById(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, date_of_issue, date_of_receiving, status, need_confirmed,
+		COALESCE(person_id::text, '') AS person_id, COALESCE(department_id::text, '') AS department_id,
+		COALESCE(last_place_id::text, '') AS last_place_id
+		FROM %s WHERE id=$1`,
+		LocationTable,
+	)
+	data := &models.Location{}
+
+	if err := r.db.GetContext(ctx, data, query, dto.Id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
 	return data, nil
 }
 
@@ -360,14 +379,19 @@ func (r *LocationRepo) ForcedReceiptAll(ctx context.Context) error {
 	return nil
 }
 
-func (r *LocationRepo) Delete(ctx context.Context, dto *models.DeleteLocationDTO) error {
+func (r *LocationRepo) Delete(ctx context.Context, tx Tx, dto *models.DeleteLocationDTO) error {
 	//? удалить перемещение, если оно не единственное
 	query := fmt.Sprintf(`DELETE FROM %s AS m WHERE id=:id
 		AND (SELECT COUNT(id) FROM %s WHERE instrument_id=m.instrument_id)>1`,
 		LocationTable, LocationTable,
 	)
 
-	_, err := r.db.NamedExecContext(ctx, query, dto)
+	var err error
+	if tx != nil {
+		_, err = tx.TX().NamedExecContext(ctx, query, dto)
+	} else {
+		_, err = r.db.NamedExecContext(ctx, query, dto)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}

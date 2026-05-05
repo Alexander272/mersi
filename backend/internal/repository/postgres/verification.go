@@ -25,12 +25,12 @@ func NewVerificationRepo(db *sqlx.DB, transaction Transaction) *VerificationRepo
 
 type Verification interface {
 	Get(ctx context.Context, req *models.GetVerificationDTO) ([]*models.Verification, error)
+	GetById(ctx context.Context, id string) (*models.Verification, error)
 	GetLast(ctx context.Context, req *models.GetVerificationDTO) (*models.Verification, error)
 	CreateInTx(ctx context.Context, tx Tx, dto *models.VerificationDTO) error
-	Create(ctx context.Context, dto *models.VerificationDTO) error
 	CreateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDTO) error
 	Update(ctx context.Context, tx Tx, dto *models.VerificationDTO) error
-	Delete(ctx context.Context, dto *models.DeleteVerificationDTO) error
+	Delete(ctx context.Context, tx Tx, dto *models.DeleteVerificationDTO) error
 }
 
 func (r *VerificationRepo) Get(ctx context.Context, req *models.GetVerificationDTO) ([]*models.Verification, error) {
@@ -44,6 +44,22 @@ func (r *VerificationRepo) Get(ctx context.Context, req *models.GetVerificationD
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return data, nil
+}
+
+func (r *VerificationRepo) GetById(ctx context.Context, id string) (*models.Verification, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, date, next_date, register_link, not_verified, notes, status 
+		FROM %s WHERE id=$1`,
+		VerificationTable,
+	)
+	verification := &models.Verification{}
+
+	if err := r.db.GetContext(ctx, verification, query, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return verification, nil
 }
 
 func (r *VerificationRepo) GetLast(ctx context.Context, req *models.GetVerificationDTO) (*models.Verification, error) {
@@ -115,10 +131,10 @@ func (r *VerificationRepo) Update(ctx context.Context, tx Tx, dto *models.Verifi
 	return nil
 }
 
-func (r *VerificationRepo) Delete(ctx context.Context, dto *models.DeleteVerificationDTO) error {
+func (r *VerificationRepo) Delete(ctx context.Context, tx Tx, dto *models.DeleteVerificationDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, VerificationTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

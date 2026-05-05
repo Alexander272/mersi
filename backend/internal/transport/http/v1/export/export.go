@@ -12,7 +12,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
-	"github.com/Alexander272/mersi/backend/internal/utils"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/utils"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/gin-gonic/gin"
 	"github.com/goodsign/monday"

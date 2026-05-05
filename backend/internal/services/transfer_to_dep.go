@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -10,23 +11,27 @@ import (
 )
 
 type TransferToDepService struct {
-	repo       repository.TransferToDepartment
-	txManager  TransactionManager
-	instrument Instrument
-	docs       Document
+	repo        repository.TransferToDepartment
+	txManager   TransactionManager
+	instrument  Instrument
+	docs        Document
+	activityLog ActivityLog
 }
 
-func NewTransferToDepService(repo repository.TransferToDepartment, txManager TransactionManager, instrument Instrument, docs Document) *TransferToDepService {
+func NewTransferToDepService(repo repository.TransferToDepartment, txManager TransactionManager, instrument Instrument, docs Document, activityLog ActivityLog) *TransferToDepService {
 	return &TransferToDepService{
-		repo:       repo,
-		txManager:  txManager,
-		instrument: instrument,
-		docs:       docs,
+		repo:        repo,
+		txManager:   txManager,
+		instrument:  instrument,
+		docs:        docs,
+		activityLog: activityLog,
 	}
 }
 
 type TransferToDepartment interface {
 	Get(ctx context.Context, req *models.GetTransferToDepDTO) ([]*models.TransferToDepartment, error)
+	GetById(ctx context.Context, req *models.GetTransferToDepDTO) (*models.TransferToDepartment, error)
+	GetLast(ctx context.Context, req *models.GetTransferToDepDTO) (*models.TransferToDepartment, error)
 	Create(ctx context.Context, dto *models.TransferToDepartmentDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.TransferToDepartmentDTO) error
 	Update(ctx context.Context, dto *models.TransferToDepartmentDTO) error
@@ -37,6 +42,25 @@ func (s *TransferToDepService) Get(ctx context.Context, req *models.GetTransferT
 	data, err := s.repo.Get(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transfers to department. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *TransferToDepService) GetById(ctx context.Context, req *models.GetTransferToDepDTO) (*models.TransferToDepartment, error) {
+	data, err := s.repo.GetById(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transfer to department by id. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *TransferToDepService) GetLast(ctx context.Context, req *models.GetTransferToDepDTO) (*models.TransferToDepartment, error) {
+	data, err := s.repo.GetLast(ctx, nil, req)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to get last transfer to department. error: %w", err)
 	}
 	return data, nil
 }
@@ -66,6 +90,15 @@ func (s *TransferToDepService) Create(ctx context.Context, dto *models.TransferT
 			return fmt.Errorf("failed to change instrument status. error: %w", err)
 		}
 
+		s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+			TableName:  "transfer_to_department",
+			RecordId:   dto.Id,
+			RecordName: dto.DocName,
+			Action:     "CREATE",
+			UserId:     dto.Actor.ID,
+			UserName:   dto.Actor.Name,
+			NewValue:   dto,
+		})
 		return nil
 	})
 }
@@ -74,7 +107,6 @@ func (s *TransferToDepService) CreateSeveral(ctx context.Context, dto []*models.
 	if len(dto) == 0 {
 		return nil
 	}
-
 	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create several transfers to department. error: %w", err)
 	}
@@ -82,15 +114,81 @@ func (s *TransferToDepService) CreateSeveral(ctx context.Context, dto []*models.
 }
 
 func (s *TransferToDepService) Update(ctx context.Context, dto *models.TransferToDepartmentDTO) error {
-	if err := s.repo.Update(ctx, dto); err != nil {
-		return fmt.Errorf("failed to update transfer to department. error: %w", err)
-	}
-	return nil
+	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		oldData, err := s.repo.Get(ctx, &models.GetTransferToDepDTO{InstrumentId: dto.Id})
+		if err != nil {
+			return fmt.Errorf("failed to get old transfer to save data. error: %w", err)
+		}
+
+		if err := s.repo.Update(ctx, tx, dto); err != nil {
+			return fmt.Errorf("failed to update transfer to department. error: %w", err)
+		}
+
+		if len(oldData) > 0 {
+			s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+				TableName:  "transfer_to_department",
+				RecordId:   dto.Id,
+				RecordName: dto.DocName,
+				Action:     "UPDATE",
+				UserId:     dto.Actor.ID,
+				UserName:   dto.Actor.Name,
+				NewValue:   dto,
+				OldValue:   oldData[len(oldData)-1],
+			})
+		}
+		return nil
+	})
 }
 
 func (s *TransferToDepService) Delete(ctx context.Context, dto *models.DeleteTransferToDepDTO) error {
-	if err := s.repo.Delete(ctx, dto); err != nil {
-		return fmt.Errorf("failed to delete transfer to department. error: %w", err)
-	}
-	return nil
+	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		// Получение записи для удаления
+		oldData, err := s.GetById(ctx, &models.GetTransferToDepDTO{Id: dto.Id})
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return fmt.Errorf("failed to get transfer to department data. error: %w", err)
+		}
+
+		// Проверка: является ли удаляемая запись последней (один вызов GetLast)
+		isLast := false
+		if oldData != nil {
+			lastData, err := s.GetLast(ctx, &models.GetTransferToDepDTO{InstrumentId: oldData.InstrumentId})
+			if err != nil && !errors.Is(err, models.ErrNoRows) {
+				return err
+			}
+			if lastData != nil && lastData.Id == oldData.Id {
+				isLast = true
+			}
+		}
+
+		// Удаление записи
+		if err := s.repo.Delete(ctx, tx, dto); err != nil {
+			return fmt.Errorf("failed to delete transfer to department. error: %w", err)
+		}
+
+		// Обновление статуса только если удалена последняя запись
+		if isLast {
+			instrumentDTO := &models.UpdateStatus{
+				Id:     oldData.InstrumentId,
+				Status: models.InstrumentStatusWork,
+			}
+			if err := s.instrument.ChangeStatus(ctx, tx, instrumentDTO); err != nil {
+				return err
+			}
+		}
+
+		// Логирование действия
+		if oldData != nil {
+			s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+				TableName:  "transfer_to_department",
+				RecordId:   dto.Id,
+				RecordName: oldData.DocName,
+				Action:     "DELETE",
+				UserId:     dto.Actor.ID,
+				UserName:   dto.Actor.Name,
+				OldValue:   oldData,
+			})
+		}
+
+		return nil
+	})
 }

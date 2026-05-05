@@ -16,29 +16,36 @@ import (
 
 type LocationService struct {
 	repo         repository.Location
+	txManager    TransactionManager
 	responsible  Responsible
 	notification Notification
 	most         *most.MostService
+	activityLog  ActivityLog
 }
 
 type LocationDeps struct {
 	Repo         repository.Location
+	TxManager    TransactionManager
 	Responsible  Responsible
 	Notification Notification
 	Most         *most.MostService
+	ActivityLog  ActivityLog
 }
 
 func NewLocationService(deps *LocationDeps) *LocationService {
 	return &LocationService{
 		repo:         deps.Repo,
+		txManager:    deps.TxManager,
 		responsible:  deps.Responsible,
 		notification: deps.Notification,
 		most:         deps.Most,
+		activityLog:  deps.ActivityLog,
 	}
 }
 
 type Location interface {
 	Get(ctx context.Context, dto *models.GetLocationDTO) ([]*models.Location, error)
+	GetById(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
 	GetLast(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error)
 	GetSeveralLast(ctx context.Context, req *models.GetSeveralLocationsDTO) ([]*models.Location, error)
 	GetUsedByHolder(ctx context.Context, dto *models.GetLocationByHolderDTO) ([]*models.Location, error)
@@ -62,6 +69,17 @@ func (s *LocationService) Get(ctx context.Context, dto *models.GetLocationDTO) (
 	data, err := s.repo.Get(ctx, dto)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get locations. error: %w", err)
+	}
+	return data, nil
+}
+
+func (s *LocationService) GetById(ctx context.Context, dto *models.GetLocationDTO) (*models.Location, error) {
+	data, err := s.repo.GetById(ctx, dto)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to get location by id. error: %w", err)
 	}
 	return data, nil
 }
@@ -125,6 +143,19 @@ func (s *LocationService) Create(ctx context.Context, tx postgres.Tx, dto *model
 	if err := s.repo.CreateInTx(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to create location. error: %w", err)
 	}
+
+	recordName := fmt.Sprintf("%s (%s)", dto.DepartmentId, dto.Status)
+	// Логирование создания
+	s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+		TableName:  "locations",
+		RecordId:   dto.Id,
+		RecordName: recordName,
+		Action:     "CREATE",
+		UserId:     dto.Actor.ID,
+		UserName:   dto.Actor.Name,
+		NewValue:   dto,
+	})
+
 	return nil
 }
 
@@ -208,9 +239,31 @@ func (s *LocationService) CreateSeveral(ctx context.Context, dto []*models.Locat
 }
 
 func (s *LocationService) Update(ctx context.Context, dto *models.LocationDTO) error {
+	// Получаем старые данные для логирования
+	oldData, err := s.repo.GetById(ctx, &models.GetLocationDTO{Id: dto.Id})
+	if err != nil && !errors.Is(err, models.ErrNoRows) {
+		return fmt.Errorf("failed to get old location data. error: %w", err)
+	}
+
 	if err := s.repo.Update(ctx, dto); err != nil {
 		return fmt.Errorf("failed to update location. error: %w", err)
 	}
+
+	recordName := fmt.Sprintf("%s (%s)", dto.DepartmentId, dto.Status)
+	// Логирование обновления
+	if oldData != nil {
+		s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+			TableName:  "locations",
+			RecordId:   dto.Id,
+			RecordName: recordName,
+			Action:     "UPDATE",
+			UserId:     dto.Actor.ID,
+			UserName:   dto.Actor.Name,
+			OldValue:   oldData,
+			NewValue:   dto,
+		})
+	}
+
 	return nil
 }
 
@@ -328,8 +381,30 @@ func (s *LocationService) ForcedReceiptAll(ctx context.Context) error {
 }
 
 func (s *LocationService) Delete(ctx context.Context, dto *models.DeleteLocationDTO) error {
-	if err := s.repo.Delete(ctx, dto); err != nil {
-		return fmt.Errorf("failed to delete si location. error: %w", err)
-	}
-	return nil
+	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		// Получаем старые данные для логирования
+		oldData, err := s.repo.GetById(ctx, &models.GetLocationDTO{Id: dto.Id})
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return fmt.Errorf("failed to get old location data. error: %w", err)
+		}
+
+		if err := s.repo.Delete(ctx, tx, dto); err != nil {
+			return fmt.Errorf("failed to delete location. error: %w", err)
+		}
+
+		// Логирование удаления
+		if oldData != nil {
+			recordName := fmt.Sprintf("%s (%s)", oldData.Place, oldData.Status)
+			s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
+				TableName:  "locations",
+				RecordId:   dto.Id,
+				RecordName: recordName,
+				Action:     "DELETE",
+				UserId:     dto.Actor.ID,
+				UserName:   dto.Actor.Name,
+				OldValue:   oldData,
+			})
+		}
+		return nil
+	})
 }

@@ -59,7 +59,7 @@ func (r *SectionRepo) GetAll(ctx context.Context, req *models.GetAllSectionsDTO)
 	}
 
 	query := fmt.Sprintf(`SELECT s.id, s.name, realm_id, s.position, s.bid_type, s.verification_day, s.created_at 
-		FROM %s AS s JOIN %s AS r ON realm_id=id
+		FROM %s AS s JOIN %s AS r ON realm_id=r.id
 		%s
 		ORDER BY position`,
 		SectionTable, RealmTable, conditions,

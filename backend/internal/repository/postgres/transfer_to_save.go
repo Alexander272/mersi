@@ -25,11 +25,12 @@ func NewTransferToSaveRepo(db *sqlx.DB, transaction Transaction) *TransferToSave
 
 type TransferToSave interface {
 	Get(ctx context.Context, req *models.GetTransferToSaveDTO) ([]*models.TransferToSave, error)
+	GetById(ctx context.Context, dto *models.GetTransferToSaveDTO) (*models.TransferToSave, error)
 	GetLast(ctx context.Context, tx Tx, req *models.GetTransferToSaveDTO) (*models.TransferToSave, error)
 	Create(ctx context.Context, tx Tx, dto *models.TransferToSaveDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.TransferToSaveDTO) error
 	Update(ctx context.Context, tx Tx, dto *models.TransferToSaveDTO) error
-	Delete(ctx context.Context, dto *models.DeleteTransferToSaveDTO) error
+	Delete(ctx context.Context, tx Tx, dto *models.DeleteTransferToSaveDTO) error
 }
 
 func (r *TransferToSaveRepo) Get(ctx context.Context, req *models.GetTransferToSaveDTO) ([]*models.TransferToSave, error) {
@@ -40,6 +41,22 @@ func (r *TransferToSaveRepo) Get(ctx context.Context, req *models.GetTransferToS
 	data := []*models.TransferToSave{}
 
 	if err := r.db.SelectContext(ctx, &data, query, req.InstrumentId); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
+func (r *TransferToSaveRepo) GetById(ctx context.Context, dto *models.GetTransferToSaveDTO) (*models.TransferToSave, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, date_start, notes_start, date_end, notes_end, created_at
+		FROM %s WHERE id=$1`,
+		TransferToSaveTable,
+	)
+	data := &models.TransferToSave{}
+
+	if err := r.db.GetContext(ctx, data, query, dto.Id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return data, nil
@@ -101,10 +118,10 @@ func (r *TransferToSaveRepo) Update(ctx context.Context, tx Tx, dto *models.Tran
 	return nil
 }
 
-func (r *TransferToSaveRepo) Delete(ctx context.Context, dto *models.DeleteTransferToSaveDTO) error {
+func (r *TransferToSaveRepo) Delete(ctx context.Context, tx Tx, dto *models.DeleteTransferToSaveDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, TransferToSaveTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return nil

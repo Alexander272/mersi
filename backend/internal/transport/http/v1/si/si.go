@@ -9,11 +9,11 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/utils"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/documents"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/instruments"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/locations"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/verifications"
-	"github.com/Alexander272/mersi/backend/internal/utils"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -152,15 +152,21 @@ func (h *Handler) create(c *gin.Context) {
 		return
 	}
 
-	u, exists := c.Get(constants.CtxUser)
-	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+	actor := utils.GetActor(c)
+	if actor == nil {
 		return
 	}
-	user := u.(models.User)
-	dto.Instrument.UserId = user.ID
+
+	dto.Instrument.UserId = actor.ID
+	dto.Instrument.Actor = actor
+
+	if dto.Verification != nil {
+		dto.Verification.Actor = actor
+	}
+
 	if dto.Location != nil {
-		dto.Location.UserId = user.ID
+		dto.Location.UserId = actor.ID
+		dto.Location.Actor = actor
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
@@ -170,8 +176,8 @@ func (h *Handler) create(c *gin.Context) {
 	}
 
 	logger.Info("СИ сохранено",
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 		logger.AnyAttr("instrument-dto", dto.Instrument),
 		logger.AnyAttr("verification-dto", dto.Verification),
 		// logger.AnyAttr("location-dto", dto.Location),
@@ -186,13 +192,19 @@ func (h *Handler) update(c *gin.Context) {
 		return
 	}
 
-	u, exists := c.Get(constants.CtxUser)
-	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+	actor := utils.GetActor(c)
+	if actor == nil {
 		return
 	}
-	user := u.(models.User)
-	dto.Instrument.UserId = user.ID
+
+	dto.Instrument.UserId = actor.ID
+	dto.Instrument.Actor = actor
+	if dto.Verification != nil {
+		dto.Verification.Actor = actor
+	}
+	if dto.Location != nil {
+		dto.Location.Actor = actor
+	}
 
 	if err := h.service.Update(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
@@ -201,8 +213,8 @@ func (h *Handler) update(c *gin.Context) {
 	}
 
 	logger.Info("СИ обновлено",
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 		logger.AnyAttr("instrument-dto", dto.Instrument),
 		logger.AnyAttr("verification-dto", dto.Verification),
 	)
@@ -232,6 +244,12 @@ func (h *Handler) delete(c *gin.Context) {
 	}
 	dto := &models.DeleteSiDTO{Id: id}
 
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
+
 	if err := h.service.Delete(c, dto); err != nil {
 		if errors.Is(err, models.ErrNoRows) {
 			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Не удалось удалить инструмент. Нельзя удалить инструмент находящийся у сотрудника.")
@@ -242,16 +260,10 @@ func (h *Handler) delete(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
-	}
-
 	logger.Info("Инструмент отмечен как удаленный",
 		logger.StringAttr("instrument_id", id),
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 	)
 
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные об инструменте успешно удалены"})

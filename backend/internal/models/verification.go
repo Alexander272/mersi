@@ -19,7 +19,8 @@ type GetVerificationDTO struct {
 }
 
 type VerificationDTO struct {
-	Id           string                `json:"id" db:"id"`
+	Id           string `json:"id" db:"id"`
+	Actor        *Actor
 	InstrumentId string                `json:"instrumentId" db:"instrument_id"`
 	UserId       string                `json:"userId" db:"user_id"`
 	Date         time.Time             `json:"verificationDate" db:"date"`
@@ -32,5 +33,6 @@ type VerificationDTO struct {
 }
 
 type DeleteVerificationDTO struct {
-	Id string `json:"id" db:"id"`
+	Id    string `json:"id" db:"id"`
+	Actor *Actor
 }

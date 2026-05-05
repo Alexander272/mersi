@@ -8,6 +8,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/utils"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -63,13 +64,12 @@ func (h *Handler) create(c *gin.Context) {
 		return
 	}
 
-	u, exists := c.Get(constants.CtxUser)
-	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+	actor := utils.GetActor(c)
+	if actor == nil {
 		return
 	}
-	user := u.(models.User)
-	dto.UserId = user.ID
+	dto.Actor = actor
+	dto.UserId = actor.ID
 
 	if err := h.service.Create(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
@@ -92,6 +92,12 @@ func (h *Handler) update(c *gin.Context) {
 	}
 	dto.Id = id
 
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
+
 	if err := h.service.Update(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
@@ -107,6 +113,12 @@ func (h *Handler) delete(c *gin.Context) {
 		return
 	}
 	dto := &models.DeleteTransferToDepDTO{Id: id}
+
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
 
 	if err := h.service.Delete(c, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())

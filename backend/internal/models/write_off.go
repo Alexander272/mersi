@@ -13,11 +13,13 @@ type WriteOff struct {
 }
 
 type GetWriteOffDTO struct {
+	Id           string `json:"id" db:"id"`
 	InstrumentId string `json:"instrumentId"`
 }
 
 type WriteOffDTO struct {
-	Id           string    `json:"id" db:"id"`
+	Id           string `json:"id" db:"id"`
+	Actor        *Actor
 	InstrumentId string    `json:"instrumentId" db:"instrument_id"`
 	Date         time.Time `json:"date" db:"date"`
 	Notes        string    `json:"notes" db:"notes"`
@@ -27,5 +29,6 @@ type WriteOffDTO struct {
 }
 
 type DeleteWriteOffDTO struct {
-	Id string `json:"id" db:"id"`
+	Id    string `json:"id" db:"id"`
+	Actor *Actor
 }

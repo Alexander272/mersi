@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/utils"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -103,13 +104,12 @@ func (h *Handler) create(c *gin.Context) {
 	// }
 	// dto.RealmId = realm
 
-	u, exists := c.Get(constants.CtxUser)
-	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+	actor := utils.GetActor(c)
+	if actor == nil {
 		return
 	}
-	user := u.(models.User)
-	dto.UserId = user.ID
+	dto.Actor = actor
+	dto.UserId = actor.ID
 
 	if err := h.service.Create(c, nil, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
@@ -117,8 +117,8 @@ func (h *Handler) create(c *gin.Context) {
 		return
 	}
 	logger.Info("Создан инструмент",
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 		logger.StringAttr("instrument_id", dto.Id),
 		logger.StringAttr("instrument_name", dto.Name),
 		logger.AnyAttr("instrument", dto),
@@ -141,21 +141,22 @@ func (h *Handler) update(c *gin.Context) {
 	}
 	dto.Id = id
 
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
+	dto.UserId = actor.ID
+
 	if err := h.service.Update(c, nil, dto); err != nil {
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
 	}
 
-	var user models.User
-	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
-	}
-
 	logger.Info("Инструмент обновлен",
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("username", user.Name),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 		logger.StringAttr("instrument_id", dto.Id),
 		logger.StringAttr("instrument_name", dto.Name),
 		logger.AnyAttr("instrument", dto),

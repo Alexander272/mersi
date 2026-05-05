@@ -13,6 +13,11 @@ type User struct {
 	RefreshToken string `json:"-"`
 }
 
+type Actor struct {
+	ID   string
+	Name string
+}
+
 type UserData struct {
 	ID        string `json:"id" db:"id"`
 	SSO_ID    string `json:"ssoId" db:"sso_id"`
