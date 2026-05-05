@@ -74,7 +74,7 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 	tmp := []*pq_models.SI{}
 	params := []interface{}{req.SectionId, req.Status}
 
-	// 1. Сортировка (Безопасная)
+	// 1. Сортировка
 	orderClause := r.buildOrderClause(req.Sort)
 	// 2. Фильтры
 	filterClause, params := r.buildFilterClause(req.Filters, params)
@@ -197,6 +197,7 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 	)
 
 	// logger.Debug("get si", logger.StringAttr("query", query))
+	// logger.Debug("get si", logger.AnyAttr("filterClause", filterClause), logger.AnyAttr("searchClause", searchClause), logger.AnyAttr("orderClause", orderClause))
 	// logger.Debug("get si", logger.AnyAttr("params", params))
 
 	if err := r.db.SelectContext(ctx, &tmp, query, params...); err != nil {

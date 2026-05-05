@@ -7,22 +7,22 @@ import (
 func getFilterLine(compare string, fieldName string, count int) string {
 	switch compare {
 	case "con":
-		return fmt.Sprintf("LOWER(%s) LIKE LOWER('%%'||$%d||'%%')", fieldName, count)
+		return fmt.Sprintf("%s ILIKE '%%'||$%d||'%%'", fieldName, count)
 	case "start":
-		return fmt.Sprintf("LOWER(%s) LIKE LOWER($%d||'%%')", fieldName, count)
+		return fmt.Sprintf("%s ILIKE $%d||'%%'", fieldName, count)
 	case "end":
-		return fmt.Sprintf("LOWER(%s) LIKE LOWER('%%'||$%d)", fieldName, count)
+		return fmt.Sprintf("%s ILIKE '%%'||$%d", fieldName, count)
 	case "like":
 		return fmt.Sprintf("LOWER(%s) = LOWER($%d)", fieldName, count)
 	case "nlike":
-		return fmt.Sprintf("LOWER(%s) != LOWER($%d)", fieldName, count)
+		return fmt.Sprintf("LOWER(%s::text) IS DISTINCT FROM LOWER($%d)", fieldName, count)
 
 	case "in":
 		// LOWER(place) ~* 'test|Отдел технического сервиса'
 		// LOWER(place) ILIKE ANY (ARRAY['test %','Отдел технического сервиса %'])
 		return fmt.Sprintf("LOWER(%s::text) ~* $%d", fieldName, count)
 	case "nin":
-		return fmt.Sprintf("LOWER(%s::text) !~* $%d", fieldName, count)
+		return fmt.Sprintf("LOWER(COALESCE(%s::text, '')) !~* $%d", fieldName, count)
 
 	case "eq":
 		return fmt.Sprintf("%s = $%d", fieldName, count)
