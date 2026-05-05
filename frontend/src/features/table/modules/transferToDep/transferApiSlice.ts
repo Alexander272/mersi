@@ -46,6 +46,16 @@ const transferApiSlice = apiSlice.injectEndpoints({
 				{ type: 'SI', id: 'ALL' },
 			],
 		}),
+		deleteTransferToDepartment: builder.mutation<null, { id: string; instrumentId: string }>({
+			query: ({ id }) => ({
+				url: `${API.si.transferToDep}/${id}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'TransferToDepartment' },
+				{ type: 'SI', id: 'ALL' },
+			],
+		}),
 	}),
 })
 
@@ -53,4 +63,5 @@ export const {
 	useGetTransferToDepartmentQuery,
 	useCreateTransferToDepartmentMutation,
 	useUpdateTransferToDepartmentMutation,
+	useDeleteTransferToDepartmentMutation,
 } = transferApiSlice

@@ -52,7 +52,7 @@ export const Create: FC<Props> = ({ ids }) => {
 
 		try {
 			await create(form).unwrap()
-			toast.success('Сведения о передаче в другое подразделение добавлены')
+			toast.success('Сведения о списании добавлены')
 			savedIds.current.add(ids[active])
 			setActive(prev => prev + 1)
 			if (savedIds.current.size == ids.length) closeHandler()

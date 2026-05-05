@@ -1,5 +1,6 @@
 export interface IPreservation {
 	id: string
+	instrumentId: string
 	dateStart: string
 	dateEnd: string
 	notesStart: string

@@ -1,5 +1,6 @@
 export interface IRepair {
 	id: string
+	instrumentId: string
 	defect: string
 	work: string
 	periodStart: string

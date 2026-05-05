@@ -62,8 +62,18 @@ const repairApiSlice = apiSlice.injectEndpoints({
 				{ type: 'SI', id: 'ALL' },
 			],
 		}),
+		deleteRepair: builder.mutation<null, { id: string; instrumentId: string }>({
+			query: ({ id }) => ({
+				url: `${API.si.repair}/${id}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'Repair' },
+				{ type: 'SI', id: 'ALL' },
+			],
+		}),
 	}),
 })
 
-export const { useGetRepairQuery, useGetLastRepairQuery, useCreateRepairMutation, useUpdateRepairMutation } =
+export const { useGetRepairQuery, useGetLastRepairQuery, useCreateRepairMutation, useUpdateRepairMutation, useDeleteRepairMutation } =
 	repairApiSlice

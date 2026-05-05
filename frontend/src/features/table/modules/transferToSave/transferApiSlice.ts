@@ -64,6 +64,17 @@ const transferApiSlice = apiSlice.injectEndpoints({
 				{ type: 'SI', id: 'ALL' },
 			],
 		}),
+		deleteTransferToSave: builder.mutation<null, { id: string; instrumentId: string }>({
+			query: ({ id }) => ({
+				url: `${API.si.transferToSave}/${id}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'TransferToSave' },
+				{ type: 'SI', id: 'LastTransferToSave' },
+				{ type: 'SI', id: 'ALL' },
+			],
+		}),
 	}),
 })
 
@@ -72,4 +83,5 @@ export const {
 	useGetLastTransferToSaveQuery,
 	useCreateTransferToSaveMutation,
 	useUpdateTransferToSaveMutation,
+	useDeleteTransferToSaveMutation,
 } = transferApiSlice

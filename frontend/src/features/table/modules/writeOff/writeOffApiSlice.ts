@@ -35,7 +35,29 @@ const writeOffApiSlice = apiSlice.injectEndpoints({
 				{ type: 'SI', id: 'ALL' },
 			],
 		}),
+		updateWriteOff: builder.mutation<IWriteOff, IWriteOffDTO>({
+			query: data => ({
+				url: `${API.si.writeOff}/${data.id}`,
+				method: 'PUT',
+				body: data,
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'WriteOff' },
+				{ type: 'SI', id: 'ALL' },
+			],
+		}),
+		deleteWriteOff: builder.mutation<null, { id: string; instrumentId: string }>({
+			query: ({ id }) => ({
+				url: `${API.si.writeOff}/${id}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'WriteOff' },
+				{ type: 'SI', id: 'ALL' },
+			],
+		}),
 	}),
 })
 
-export const { useGetWriteOffQuery, useCreateWriteOffMutation } = writeOffApiSlice
+export const { useGetWriteOffQuery, useCreateWriteOffMutation, useUpdateWriteOffMutation, useDeleteWriteOffMutation } =
+	writeOffApiSlice

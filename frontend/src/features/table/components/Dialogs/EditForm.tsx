@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react'
-import { Button, Divider, Stack, useTheme } from '@mui/material'
+import { Button, Divider, Stack, Tooltip, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import dayjs from 'dayjs'
@@ -7,7 +7,9 @@ import dayjs from 'dayjs'
 import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
 import { NullDate } from '@/constants/defaultValues'
+import { PermRules } from '@/constants/permissions'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
+import { useCheckPermission } from '@/features/user/hooks/check'
 import { useGetCreateFormStepsQuery } from '@/features/sections/modules/form/formApiSlice'
 import { useDeleteSIMutation, useGetSIByIdQuery, useUpdateSIMutation } from '../../siApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
@@ -17,6 +19,7 @@ import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { FileDeleteIcon } from '@/components/Icons/FileDeleteIcon'
 import { Confirm } from '@/components/Confirm/Confirm'
 import { Form as FormFields } from '../Form/Form'
+import { AspectRatioIcon } from '@/components/Icons/AspectRatioIcon'
 
 type Props = {
 	id: string
@@ -28,12 +31,20 @@ export const EditForm: FC<Props> = ({ id }) => {
 
 	const { palette } = useTheme()
 
+	const canEditDetails = useCheckPermission([
+		PermRules.Repair.Write,
+		PermRules.Preservation.Write,
+		PermRules.WriteOff.Write,
+		PermRules.TransferToDep.Write,
+		PermRules.TransferToSave.Write,
+	])
+
 	const section = useAppSelector(getSection)
 	const dispatch = useAppDispatch()
 
 	const { data, isFetching } = useGetCreateFormStepsQuery(
 		{ section: section?.id || '', action: 'Update' },
-		{ skip: !section?.id }
+		{ skip: !section?.id },
 	)
 	const { data: si } = useGetSIByIdQuery(id, { skip: !id })
 	const [update, { isLoading }] = useUpdateSIMutation()
@@ -46,6 +57,11 @@ export const EditForm: FC<Props> = ({ id }) => {
 	}, [data])
 
 	const methods = useForm<ISiForm>({ values: si?.data as ISiForm })
+
+	const openDetailsDialog = () => {
+		dispatch(changeDialogIsOpen({ variant: 'EditTableItem', isOpen: false }))
+		dispatch(changeDialogIsOpen({ variant: 'UpdateTableDetails', isOpen: true, context: { id } }))
+	}
 
 	const closeHandler = () => {
 		dispatch(changeDialogIsOpen({ variant: 'EditTableItem', isOpen: false }))
@@ -67,6 +83,7 @@ export const EditForm: FC<Props> = ({ id }) => {
 		//TODO потенциальная проблема с удалением файлов. Если пользователь удалил файл, но потом передумал и нажал отменить,
 		// то надо будет как-то фиксировать это на сервере (т.к. файл то уже удален)
 
+		if (!form.instrument.dateOfReceipt) form.instrument.dateOfReceipt = NullDate
 		form.instrument.name = form.instrument.name.trim()
 		form.instrument.type = form.instrument.type?.trim()
 		form.instrument.factoryNumber = form.instrument.factoryNumber?.trim()
@@ -80,7 +97,11 @@ export const EditForm: FC<Props> = ({ id }) => {
 			form.verification.notes = form.verification.notes?.trim()
 			form.verification.registerLink = form.verification.registerLink?.trim()
 
-			if (form.verification.verificationDate != '' && form.instrument.interVerificationInterval) {
+			if (
+				form.verification.verificationDate &&
+				form.verification.verificationDate != '' &&
+				form.instrument.interVerificationInterval
+			) {
 				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate)
 					.add(+form.instrument.interVerificationInterval, 'month')
 					.toISOString()
@@ -127,6 +148,14 @@ export const EditForm: FC<Props> = ({ id }) => {
 			<Stack direction={'row'} width={'100%'} alignItems={'center'} mb={1.5}>
 				{steps.length > 1 ? <Stepper steps={steps} active={activeStep} sx={{ width: '100%' }} /> : null}
 
+				{canEditDetails && (
+					<Tooltip title='Редактировать сведения'>
+						<Button variant='outlined' color='primary' onClick={openDetailsDialog} sx={{ mr: 1 }}>
+							<AspectRatioIcon fontSize={20} fill={palette.primary.main} />
+						</Button>
+					</Tooltip>
+				)}
+
 				<Confirm
 					width='64px'
 					onClick={deleteHandler}
@@ -135,7 +164,7 @@ export const EditForm: FC<Props> = ({ id }) => {
 							<FileDeleteIcon fontSize={20} fill={palette.error.main} />
 						</Button>
 					}
-					confirmText='Вы уверены, что хотите удалить реактив?'
+					confirmText='Вы уверены, что хотите удалить инструмент?'
 				/>
 			</Stack>
 

@@ -4,6 +4,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 export type DialogVariants =
 	| 'CreateTableItem'
 	| 'EditTableItem'
+	| 'UpdateTableDetails'
 	| 'ChangePosition'
 	| 'NewVerification'
 	| 'SeveralVerifications'

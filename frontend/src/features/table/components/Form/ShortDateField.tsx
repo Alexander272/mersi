@@ -25,7 +25,7 @@ export const ShortDateField: FC<Props> = ({ data }) => {
 					{...field}
 					value={field.value ? dayjs(field.value) : null}
 					onChange={value => {
-						field.onChange(value?.startOf('d').toISOString())
+						field.onChange(value ? value.startOf('d').toISOString() : '')
 					}}
 					label={data.fieldName}
 					views={['month', 'year']}

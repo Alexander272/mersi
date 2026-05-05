@@ -64,6 +64,17 @@ const preservationApiSlice = apiSlice.injectEndpoints({
 				{ type: 'SI', id: 'ALL' },
 			],
 		}),
+		deletePreservation: builder.mutation<null, { id: string; instrumentId: string }>({
+			query: ({ id }) => ({
+				url: `${API.si.preservation}/${id}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'Preservation' },
+				{ type: 'SI', id: 'LastPreservation' },
+				{ type: 'SI', id: 'ALL' },
+			],
+		}),
 	}),
 })
 
@@ -72,4 +83,5 @@ export const {
 	useGetLastPreservationQuery,
 	useCreatePreservationMutation,
 	useUpdatePreservationMutation,
+	useDeletePreservationMutation,
 } = preservationApiSlice

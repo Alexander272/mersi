@@ -22,6 +22,7 @@ import { SendToReserveDialog } from '../../locations/components/Dialogs/SendToRe
 import { ReceiptDialog } from '../../locations/components/Dialogs/Receipt'
 import { SendToVerificationDialog } from '../../status/components/SendToVerification/SendToVerification'
 import { MenuItems } from './ToolsMenuItems'
+import { UpdateDetailsDialog } from '@/features/table/components/Dialogs/UpdateDetailsDialog'
 
 export const ToolsMenu = () => {
 	const anchor = useRef<HTMLButtonElement>(null)
@@ -116,6 +117,7 @@ export const ToolsMenu = () => {
 			<ScheduleDialog />
 			<ExportDialog />
 			<AccountingLogDialog />
+			<UpdateDetailsDialog />
 		</>
 	)
 }

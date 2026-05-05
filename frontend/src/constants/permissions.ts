@@ -33,4 +33,25 @@ export const PermRules = Object.freeze({
 	Import: {
 		Write: 'import:write' as const,
 	},
+
+	Repair: {
+		Read: 'repair:read' as const,
+		Write: 'repair:write' as const,
+	},
+	Preservation: {
+		Read: 'preservation:read' as const,
+		Write: 'preservation:write' as const,
+	},
+	TransferToDep: {
+		Read: 'transfer-to-department:read' as const,
+		Write: 'transfer-to-department:write' as const,
+	},
+	TransferToSave: {
+		Read: 'transfer-to-save:read' as const,
+		Write: 'transfer-to-save:write' as const,
+	},
+	WriteOff: {
+		Read: 'write-off:read' as const,
+		Write: 'write-off:write' as const,
+	},
 })

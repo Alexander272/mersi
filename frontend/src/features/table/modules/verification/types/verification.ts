@@ -2,6 +2,7 @@ import { IVerDocs } from './verificationDocs'
 
 export interface IVerification {
 	id: string
+	instrumentId: string
 	verificationDate: string
 	nextVerificationDate: string
 	registerLink: string

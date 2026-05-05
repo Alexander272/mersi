@@ -52,8 +52,36 @@ const verificationApiSlice = apiSlice.injectEndpoints({
 				{ type: 'Verification', id: 'ALL' },
 			],
 		}),
+		updateVerification: builder.mutation<null, IVerificationDTO>({
+			query: data => ({
+				url: `${API.si.verification.base}/${data.id}`,
+				method: 'PUT',
+				body: data,
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'ALL' },
+				{ type: 'Verification', id: 'Last' },
+				{ type: 'Verification', id: 'ALL' },
+			],
+		}),
+		deleteVerification: builder.mutation<null, string>({
+			query: id => ({
+				url: `${API.si.verification.base}/${id}`,
+				method: 'DELETE',
+			}),
+			invalidatesTags: [
+				{ type: 'SI', id: 'ALL' },
+				{ type: 'Verification', id: 'Last' },
+				{ type: 'Verification', id: 'ALL' },
+			],
+		}),
 	}),
 })
 
-export const { useGetVerificationsQuery, useGetLastVerificationQuery, useCreateVerificationMutation } =
-	verificationApiSlice
+export const {
+	useGetVerificationsQuery,
+	useGetLastVerificationQuery,
+	useCreateVerificationMutation,
+	useUpdateVerificationMutation,
+	useDeleteVerificationMutation,
+} = verificationApiSlice
