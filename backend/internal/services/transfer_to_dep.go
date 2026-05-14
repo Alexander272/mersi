@@ -124,7 +124,24 @@ func (s *TransferToDepService) Update(ctx context.Context, dto *models.TransferT
 			return fmt.Errorf("failed to update transfer to department. error: %w", err)
 		}
 
-		if len(oldData) > 0 {
+		// Обработка удаляемых документов
+		if len(dto.DeletedDocs) >0 {
+			for _, doc := range dto.DeletedDocs {
+				deleteDto := &models.DeleteDocumentDTO{
+					Id:           doc.DocId,
+					Filename:     doc.Filename,
+					Group:        "transferToDep",
+					InstrumentId: dto.InstrumentId,
+					UserId:       dto.UserId,
+					IsTemp:       false,
+				}
+				if err := s.docs.Delete(ctx, deleteDto); err != nil {
+					return fmt.Errorf("failed to delete document: %w", err)
+				}
+			}
+		}
+
+		if len(oldData) >0 {
 			s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
 				TableName:  "transfer_to_department",
 				RecordId:   dto.Id,

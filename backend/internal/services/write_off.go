@@ -104,6 +104,9 @@ func (s *WriteOffService) Create(ctx context.Context, dto *models.WriteOffDTO) e
 }
 
 func (s *WriteOffService) CreateSeveral(ctx context.Context, dto []*models.WriteOffDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
 	if err := s.repo.CreateSeveral(ctx, dto); err != nil {
 		return fmt.Errorf("failed to create several write offs. error: %w", err)
 	}
@@ -121,7 +124,24 @@ func (s *WriteOffService) Update(ctx context.Context, dto *models.WriteOffDTO) e
 			return fmt.Errorf("failed to update write off. error: %w", err)
 		}
 
-		if len(oldData) > 0 {
+		// Обработка удаляемых документов
+		if len(dto.DeletedDocs) >0 {
+			for _, doc := range dto.DeletedDocs {
+				deleteDto := &models.DeleteDocumentDTO{
+					Id:           doc.DocId,
+					Filename:     doc.Filename,
+					Group:        "writeOff",
+					InstrumentId: dto.InstrumentId,
+					UserId:       dto.UserId,
+					IsTemp:       false,
+				}
+				if err := s.docs.Delete(ctx, deleteDto); err != nil {
+					return fmt.Errorf("failed to delete document: %w", err)
+				}
+			}
+		}
+
+		if len(oldData) >0 {
 			s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
 				TableName:  "write_off",
 				RecordId:   dto.Id,

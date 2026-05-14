@@ -26,6 +26,7 @@ type VerificationDoc interface {
 	Update(ctx context.Context, dto *models.VerificationDocDTO) error
 	UpdateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.VerificationDocDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerificationDocDTO) error
+	DeleteByDocId(ctx context.Context, tx postgres.Tx, docId string) error
 }
 
 func (s *VerificationDocService) Get(ctx context.Context, req *models.GetVerificationDocsDTO) ([]*models.VerificationDoc, error) {
@@ -74,6 +75,13 @@ func (s *VerificationDocService) UpdateSeveral(ctx context.Context, tx postgres.
 func (s *VerificationDocService) Delete(ctx context.Context, dto *models.DeleteVerificationDocDTO) error {
 	if err := s.repo.Delete(ctx, dto); err != nil {
 		return fmt.Errorf("failed to delete verification document. error: %w", err)
+	}
+	return nil
+}
+
+func (s *VerificationDocService) DeleteByDocId(ctx context.Context, tx postgres.Tx, docId string) error {
+	if err := s.repo.DeleteByDocId(ctx, tx, docId); err != nil {
+		return fmt.Errorf("failed to delete verification document by doc_id. error: %w", err)
 	}
 	return nil
 }

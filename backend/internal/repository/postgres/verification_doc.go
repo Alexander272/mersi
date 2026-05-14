@@ -30,6 +30,7 @@ type VerificationDoc interface {
 	Update(ctx context.Context, dto *models.VerificationDocDTO) error
 	UpdateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDocDTO) error
 	Delete(ctx context.Context, dto *models.DeleteVerificationDocDTO) error
+	DeleteByDocId(ctx context.Context, tx Tx, docId string) error
 }
 
 func (r *VerificationDocRepo) Get(ctx context.Context, req *models.GetVerificationDocsDTO) ([]*models.VerificationDoc, error) {
@@ -133,6 +134,15 @@ func (r *VerificationDocRepo) Delete(ctx context.Context, dto *models.DeleteVeri
 
 	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return nil
+}
+
+func (r *VerificationDocRepo) DeleteByDocId(ctx context.Context, tx Tx, docId string) error {
+	query := fmt.Sprintf(`DELETE FROM %s WHERE doc_id=$1`, VerificationDocsTable)
+
+	if _, err := r.getExec(tx).ExecContext(ctx, query, docId); err != nil {
+		return fmt.Errorf("failed to delete verification doc by doc_id. error: %w", err)
 	}
 	return nil
 }

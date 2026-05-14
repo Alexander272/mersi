@@ -18,6 +18,11 @@ type GetVerificationDTO struct {
 	InstrumentId string `json:"instrumentId" db:"instrument_id"`
 }
 
+type DeletedDoc struct {
+	DocId    string `json:"docId"`
+	Filename string `json:"filename"`
+}
+
 type VerificationDTO struct {
 	Id           string `json:"id" db:"id"`
 	Actor        *Actor
@@ -30,6 +35,7 @@ type VerificationDTO struct {
 	Notes        string                `json:"notes" db:"notes"`
 	Status       string                `json:"status" db:"status"`
 	Docs         []*VerificationDocDTO `json:"docs"`
+	DeletedDocs  []DeletedDoc         `json:"deletedDocs"`
 }
 
 type DeleteVerificationDTO struct {

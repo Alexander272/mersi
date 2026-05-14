@@ -202,35 +202,6 @@ func (s *DocumentService) ChangePath(ctx context.Context, req *models.PathParts)
 		logger.Info("No documents updated in DB despite successful file move", logger.StringAttr("userId", req.UserId), logger.StringAttr("group", req.Group))
 	}
 	return nil
-
-	// count, err := s.repo.UpdatePath(ctx, req)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to update path documents. error: %w", err)
-	// }
-
-	// if count > 0 {
-	// 	newPath := filepath.Join(s.path, req.Group, req.InstrumentId)
-	// 	// думаю тут еще надо id пользователя использовать (чтобы во время одновременного создания ничего лишнего не попало)
-	// 	// по хорошему это еще надо синхронизировать между устройствами
-	// 	// еще можно добавить какую-нибудь группировку чтобы файлы из разных мест не пересекались или она мне не нужна
-	// 	srcPath := filepath.Join(s.path, "temp", req.UserId, req.Group, req.InstrumentId)
-	// 	if req.IdWasEmpty {
-	// 		srcPath = filepath.Join(s.path, "temp", req.UserId, req.Group)
-	// 	}
-
-	// 	if err = os.MkdirAll(filepath.Dir(newPath), 0750); err != nil {
-	// 		return err
-	// 	}
-	// 	if _, err := os.Stat(srcPath); os.IsNotExist(err) {
-	// 		return fmt.Errorf("source path does not exist: %s", srcPath)
-	// 	}
-
-	// 	if err := os.Rename(srcPath, newPath); err != nil {
-	// 		logger.Error("Failed to move files after dir creation", logger.StringAttr("newPath", newPath), logger.ErrAttr(err))
-	// 		return fmt.Errorf("failed to move files. error: %w", err)
-	// 	}
-	// }
-	// return nil
 }
 func isValidPathSegment(s string) bool {
 	if s == "" || strings.ContainsAny(s, `/\\.:*?"<>|`) || strings.Contains(s, "..") {

@@ -208,6 +208,27 @@ func (s *VerificationService) executeUpdate(ctx context.Context, tx postgres.Tx,
 		}
 	}
 
+	// Обработка удаляемых документов
+	if len(dto.DeletedDocs) > 0 {
+		for _, doc := range dto.DeletedDocs {
+			deleteDto := &models.DeleteDocumentDTO{
+				Id:           doc.DocId,
+				Filename:     doc.Filename,
+				Group:        "verification",
+				InstrumentId: dto.InstrumentId,
+				UserId:       dto.UserId,
+				IsTemp:       false,
+			}
+			if err := s.docs.Delete(ctx, deleteDto); err != nil {
+				return fmt.Errorf("failed to delete document: %w", err)
+			}
+			// Удаляем связь из verification_docs
+			if err := s.verDocs.DeleteByDocId(ctx, tx, doc.DocId); err != nil {
+				return err
+			}
+		}
+	}
+
 	instrumentDTO := &models.UpdateStatus{
 		Id:     dto.InstrumentId,
 		Status: models.InstrumentStatus(dto.Status),
