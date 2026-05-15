@@ -52,6 +52,7 @@ func (h *Handler) Init(conf *config.Config) *gin.Engine {
 	})
 
 	h.initAPI(router, conf)
+	h.initStatic(router)
 
 	return router
 }
