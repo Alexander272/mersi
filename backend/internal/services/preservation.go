@@ -76,6 +76,14 @@ func (s *PreservationService) Create(ctx context.Context, dto *models.Preservati
 			return models.ErrNotValid
 		}
 
+		duplicate, err := s.repo.GetByInstrumentAndDateStart(ctx, tx, dto.InstrumentId, dto.DateStart)
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return err
+		}
+		if duplicate != nil {
+			return models.ErrAlreadyExists
+		}
+
 		if err := s.repo.Create(ctx, tx, dto); err != nil {
 			return fmt.Errorf("failed to create preservation. error: %w", err)
 		}
@@ -118,7 +126,7 @@ func (s *PreservationService) Update(ctx context.Context, dto *models.Preservati
 			return models.ErrNotValid
 		}
 
-		oldData, err := s.GetLast(ctx, tx, &models.GetPreservationsDTO{InstrumentId: dto.InstrumentId})
+		oldData, err := s.repo.GetById(ctx, &models.GetPreservationsDTO{Id: dto.Id})
 		if err != nil && !errors.Is(err, models.ErrNoRows) {
 			return err
 		}

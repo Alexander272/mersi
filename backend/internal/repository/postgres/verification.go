@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/google/uuid"
@@ -26,6 +27,7 @@ func NewVerificationRepo(db *sqlx.DB, transaction Transaction) *VerificationRepo
 type Verification interface {
 	Get(ctx context.Context, req *models.GetVerificationDTO) ([]*models.Verification, error)
 	GetById(ctx context.Context, id string) (*models.Verification, error)
+	GetByInstrumentAndDate(ctx context.Context, tx Tx, instrumentId string, date time.Time) (*models.Verification, error)
 	GetLast(ctx context.Context, req *models.GetVerificationDTO) (*models.Verification, error)
 	CreateInTx(ctx context.Context, tx Tx, dto *models.VerificationDTO) error
 	CreateSeveral(ctx context.Context, tx Tx, dto []*models.VerificationDTO) error
@@ -54,6 +56,22 @@ func (r *VerificationRepo) GetById(ctx context.Context, id string) (*models.Veri
 	verification := &models.Verification{}
 
 	if err := r.db.GetContext(ctx, verification, query, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return verification, nil
+}
+
+func (r *VerificationRepo) GetByInstrumentAndDate(ctx context.Context, tx Tx, instrumentId string, date time.Time) (*models.Verification, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, date, next_date, register_link, not_verified, notes, status 
+		FROM %s WHERE instrument_id=$1 AND date=$2 LIMIT 1`,
+		VerificationTable,
+	)
+	verification := &models.Verification{}
+
+	if err := r.getExec(tx).GetContext(ctx, verification, query, instrumentId, date); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRows
 		}

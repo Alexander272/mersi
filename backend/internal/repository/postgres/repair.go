@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/google/uuid"
@@ -26,6 +27,7 @@ func NewRepairRepo(db *sqlx.DB, transaction Transaction) *RepairRepo {
 type Repair interface {
 	Get(ctx context.Context, req *models.GetRepairDTO) ([]*models.Repair, error)
 	GetById(ctx context.Context, id string) (*models.Repair, error)
+	GetByInstrumentAndPeriod(ctx context.Context, tx Tx, instrumentId string, periodStart, periodEnd time.Time) (*models.Repair, error)
 	GetLast(ctx context.Context, req *models.GetRepairDTO) (*models.Repair, error)
 	Create(ctx context.Context, tx Tx, dto *models.RepairDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.RepairDTO) error
@@ -54,6 +56,22 @@ func (r *RepairRepo) GetById(ctx context.Context, id string) (*models.Repair, er
 	repair := &models.Repair{}
 
 	if err := r.db.GetContext(ctx, repair, query, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return repair, nil
+}
+
+func (r *RepairRepo) GetByInstrumentAndPeriod(ctx context.Context, tx Tx, instrumentId string, periodStart, periodEnd time.Time) (*models.Repair, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, defect, work, period_start, period_end, description FROM %s
+		WHERE instrument_id=$1 AND period_start=$2 AND period_end=$3 LIMIT 1`,
+		RepairTable,
+	)
+	repair := &models.Repair{}
+
+	if err := r.getExec(tx).GetContext(ctx, repair, query, instrumentId, periodStart, periodEnd); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRows
 		}

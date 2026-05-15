@@ -67,6 +67,14 @@ func (s *TransferToDepService) GetLast(ctx context.Context, req *models.GetTrans
 
 func (s *TransferToDepService) Create(ctx context.Context, dto *models.TransferToDepartmentDTO) error {
 	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		candidate, err := s.repo.GetByInstrumentAndDate(ctx, tx, dto.InstrumentId, dto.Date)
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return err
+		}
+		if candidate != nil {
+			return models.ErrAlreadyExists
+		}
+
 		if err := s.repo.Create(ctx, tx, dto); err != nil {
 			return fmt.Errorf("failed to create transfer to department. error: %w", err)
 		}
@@ -115,9 +123,9 @@ func (s *TransferToDepService) CreateSeveral(ctx context.Context, dto []*models.
 
 func (s *TransferToDepService) Update(ctx context.Context, dto *models.TransferToDepartmentDTO) error {
 	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
-		oldData, err := s.repo.Get(ctx, &models.GetTransferToDepDTO{InstrumentId: dto.Id})
+		oldData, err := s.repo.GetById(ctx, &models.GetTransferToDepDTO{Id: dto.Id})
 		if err != nil {
-			return fmt.Errorf("failed to get old transfer to save data. error: %w", err)
+			return fmt.Errorf("failed to get old transfer to department data. error: %w", err)
 		}
 
 		if err := s.repo.Update(ctx, tx, dto); err != nil {
@@ -141,7 +149,7 @@ func (s *TransferToDepService) Update(ctx context.Context, dto *models.TransferT
 			}
 		}
 
-		if len(oldData) >0 {
+		if oldData != nil {
 			s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
 				TableName:  "transfer_to_department",
 				RecordId:   dto.Id,
@@ -150,7 +158,7 @@ func (s *TransferToDepService) Update(ctx context.Context, dto *models.TransferT
 				UserId:     dto.Actor.ID,
 				UserName:   dto.Actor.Name,
 				NewValue:   dto,
-				OldValue:   oldData[len(oldData)-1],
+				OldValue:   oldData,
 			})
 		}
 		return nil

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/google/uuid"
@@ -26,6 +27,7 @@ func NewWriteOffRepo(db *sqlx.DB, transaction Transaction) *WriteOffRepo {
 type WriteOff interface {
 	Get(ctx context.Context, req *models.GetWriteOffDTO) ([]*models.WriteOff, error)
 	GetById(ctx context.Context, dto *models.GetWriteOffDTO) (*models.WriteOff, error)
+	GetByInstrumentAndDate(ctx context.Context, tx Tx, instrumentId string, date time.Time) (*models.WriteOff, error)
 	GetLast(ctx context.Context, tx Tx, req *models.GetWriteOffDTO) (*models.WriteOff, error)
 	Create(ctx context.Context, tx Tx, dto *models.WriteOffDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.WriteOffDTO) error
@@ -54,6 +56,22 @@ func (r *WriteOffRepo) GetById(ctx context.Context, dto *models.GetWriteOffDTO) 
 	data := &models.WriteOff{}
 
 	if err := r.db.GetContext(ctx, data, query, dto.Id); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
+func (r *WriteOffRepo) GetByInstrumentAndDate(ctx context.Context, tx Tx, instrumentId string, date time.Time) (*models.WriteOff, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, date, notes, doc_id, doc_name, created_at FROM %s 
+		WHERE instrument_id=$1 AND date=$2 LIMIT 1`,
+		WriteOffTable,
+	)
+	data := &models.WriteOff{}
+
+	if err := r.getExec(tx).GetContext(ctx, data, query, instrumentId, date); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return data, nil

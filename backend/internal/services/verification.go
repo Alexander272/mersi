@@ -101,6 +101,14 @@ func (s *VerificationService) Create(ctx context.Context, tx postgres.Tx, dto *m
 	return s.executeCreate(ctx, tx, dto)
 }
 func (s *VerificationService) executeCreate(ctx context.Context, tx postgres.Tx, dto *models.VerificationDTO) error {
+	candidate, err := s.repo.GetByInstrumentAndDate(ctx, tx, dto.InstrumentId, dto.Date)
+	if err != nil && !errors.Is(err, models.ErrNoRows) {
+		return err
+	}
+	if candidate != nil {
+		return models.ErrAlreadyExists
+	}
+
 	if err := s.repo.CreateInTx(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to create verification. error: %w", err)
 	}

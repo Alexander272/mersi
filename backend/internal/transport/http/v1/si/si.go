@@ -170,6 +170,10 @@ func (h *Handler) create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
+		if errors.Is(err, models.ErrAlreadyExists) {
+			response.NewErrorResponse(c, http.StatusConflict, err.Error(), "Поверка с такой датой уже существует")
+			return
+		}
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return

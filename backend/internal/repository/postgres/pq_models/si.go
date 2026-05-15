@@ -39,6 +39,8 @@ func (s *SI) ToModel() *models.SI {
 		NextVerificationDate:      s.NextVerificationDate,
 		Certificate:               s.Certificate,
 		CertificateId:             s.CertificateId,
+		LastCertificate:           s.LastCertificate,
+		LastCertificateId:         s.LastCertificateId,
 		PreservationDate:          s.PreservationDate,
 		DePreservationDate:        s.DePreservationDate,
 		TransferDate:              s.TransferDate,

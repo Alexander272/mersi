@@ -56,6 +56,8 @@ var siFieldsMap = map[string]string{
 	"notes":                     "i.notes",
 	"verificationDate":          "v.date",
 	"nextVerificationDate":      "v.next_date",
+	"certificate":               "fvd.name",
+	"lastCertificate":           "vd.name",
 	"department":                "l.department_id",
 	"place":                     "l.place",
 	"person":                    "l.person",
@@ -87,7 +89,11 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 	params = append(params, req.Page.Limit, req.Page.Offset)
 
 	query := fmt.Sprintf(`
-		WITH last_verification AS (
+		WITH first_verification AS (
+			SELECT DISTINCT ON (instrument_id) id, instrument_id
+			FROM %s ORDER BY instrument_id, date ASC, created_at ASC
+		),
+		last_verification AS (
 			SELECT DISTINCT ON (instrument_id) id, instrument_id, date, next_date 
 			FROM %s ORDER BY instrument_id, date DESC, created_at DESC
 		),
@@ -141,8 +147,10 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 			
 			COALESCE(v.date, '0001-01-01'::DATE) AS date, 
 			COALESCE(v.next_date, '0001-01-01'::DATE) AS next_date,
-			COALESCE(vd.name, '') AS certificate, 
-			COALESCE(vd.doc_id::text, '') AS certificate_id,
+			COALESCE(fvd.name, '') AS certificate, 
+			COALESCE(fvd.doc_id::text, '') AS certificate_id,
+			COALESCE(vd.name, '') AS last_certificate, 
+			COALESCE(vd.doc_id::text, '') AS last_certificate_id,
 			
 			COALESCE(r.work, '') AS repair_work,
 			COALESCE(r.period_start, '0001-01-01'::DATE) AS repair_start, 
@@ -165,6 +173,8 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 			COUNT(*) OVER() AS total
 
 		FROM %s AS i
+		LEFT JOIN first_verification fv ON fv.instrument_id = i.id
+		LEFT JOIN %s fvd ON fvd.verification_id = fv.id
 		LEFT JOIN last_verification v ON v.instrument_id = i.id
 		LEFT JOIN %s vd ON vd.verification_id = v.id
 		LEFT JOIN last_repair r ON r.instrument_id = i.id
@@ -176,6 +186,7 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 
         WHERE i.section_id = $1 AND i.status = $2 %s %s %s
         LIMIT $%d OFFSET $%d`,
+		VerificationTable,               // first_verification
 		VerificationTable,               // last_verification
 		RepairTable,                     // last_repair
 		PreservationTable,               // last_preservation
@@ -189,6 +200,7 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 		EmployeeTable,                   // e
 		DepartmentTable,                 // dep
 		InstrumentsTable,                // main FROM
+		VerificationDocsTable,           // fvd join
 		VerificationDocsTable,           // vd join
 		filterClause,
 		searchClause,

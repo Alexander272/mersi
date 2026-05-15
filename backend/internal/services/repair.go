@@ -60,6 +60,14 @@ func (s *RepairService) Create(ctx context.Context, dto *models.RepairDTO) error
 			return models.ErrNotValid
 		}
 
+		candidate, err := s.repo.GetByInstrumentAndPeriod(ctx, tx, dto.InstrumentId, dto.PeriodStart, dto.PeriodEnd)
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return err
+		}
+		if candidate != nil {
+			return models.ErrAlreadyExists
+		}
+
 		if err := s.repo.Create(ctx, tx, dto); err != nil {
 			return fmt.Errorf("failed to create repair info. error: %w", err)
 		}
@@ -106,6 +114,11 @@ func (s *RepairService) Update(ctx context.Context, dto *models.RepairDTO) error
 			return models.ErrNotValid
 		}
 
+		oldData, err := s.repo.GetById(ctx, dto.Id)
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return fmt.Errorf("failed to get repair data. error: %w", err)
+		}
+
 		if err := s.repo.Update(ctx, tx, dto); err != nil {
 			return fmt.Errorf("failed to update repair info. error: %w", err)
 		}
@@ -131,6 +144,7 @@ func (s *RepairService) Update(ctx context.Context, dto *models.RepairDTO) error
 			UserId:     dto.Actor.ID,
 			UserName:   dto.Actor.Name,
 			NewValue:   dto,
+			OldValue:   oldData,
 		})
 		return nil
 	})

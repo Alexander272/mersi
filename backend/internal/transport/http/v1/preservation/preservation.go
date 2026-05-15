@@ -99,6 +99,10 @@ func (h *Handler) create(c *gin.Context) {
 			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
 			return
 		}
+		if errors.Is(err, models.ErrAlreadyExists) {
+			response.NewErrorResponse(c, http.StatusConflict, err.Error(), "Консервация с такой датой начала уже существует")
+			return
+		}
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return

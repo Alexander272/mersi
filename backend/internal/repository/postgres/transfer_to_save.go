@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/google/uuid"
@@ -26,6 +27,7 @@ func NewTransferToSaveRepo(db *sqlx.DB, transaction Transaction) *TransferToSave
 type TransferToSave interface {
 	Get(ctx context.Context, req *models.GetTransferToSaveDTO) ([]*models.TransferToSave, error)
 	GetById(ctx context.Context, dto *models.GetTransferToSaveDTO) (*models.TransferToSave, error)
+	GetByInstrumentAndDateStart(ctx context.Context, tx Tx, instrumentId string, dateStart time.Time) (*models.TransferToSave, error)
 	GetLast(ctx context.Context, tx Tx, req *models.GetTransferToSaveDTO) (*models.TransferToSave, error)
 	Create(ctx context.Context, tx Tx, dto *models.TransferToSaveDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.TransferToSaveDTO) error
@@ -54,6 +56,22 @@ func (r *TransferToSaveRepo) GetById(ctx context.Context, dto *models.GetTransfe
 	data := &models.TransferToSave{}
 
 	if err := r.db.GetContext(ctx, data, query, dto.Id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
+func (r *TransferToSaveRepo) GetByInstrumentAndDateStart(ctx context.Context, tx Tx, instrumentId string, dateStart time.Time) (*models.TransferToSave, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, date_start, notes_start, date_end, notes_end, created_at
+		FROM %s WHERE instrument_id=$1 AND date_start=$2 LIMIT 1`,
+		TransferToSaveTable,
+	)
+	data := &models.TransferToSave{}
+
+	if err := r.getExec(tx).GetContext(ctx, data, query, instrumentId, dateStart); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRows
 		}

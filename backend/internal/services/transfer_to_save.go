@@ -75,6 +75,14 @@ func (s *TransferToSaveService) Create(ctx context.Context, dto *models.Transfer
 			return models.ErrNotValid
 		}
 
+		duplicate, err := s.repo.GetByInstrumentAndDateStart(ctx, tx, dto.InstrumentId, dto.DateStart)
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return err
+		}
+		if duplicate != nil {
+			return models.ErrAlreadyExists
+		}
+
 		if err := s.repo.Create(ctx, tx, dto); err != nil {
 			return fmt.Errorf("failed to create transfer to save. error: %w", err)
 		}
@@ -121,7 +129,7 @@ func (s *TransferToSaveService) Update(ctx context.Context, dto *models.Transfer
 			return models.ErrNotValid
 		}
 
-		oldData, err := s.GetLast(ctx, tx, &models.GetTransferToSaveDTO{InstrumentId: dto.InstrumentId})
+		oldData, err := s.repo.GetById(ctx, &models.GetTransferToSaveDTO{Id: dto.Id})
 		if err != nil && !errors.Is(err, models.ErrNoRows) {
 			return err
 		}

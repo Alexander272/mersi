@@ -67,6 +67,14 @@ func (s *WriteOffService) GetLast(ctx context.Context, req *models.GetWriteOffDT
 
 func (s *WriteOffService) Create(ctx context.Context, dto *models.WriteOffDTO) error {
 	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
+		candidate, err := s.repo.GetByInstrumentAndDate(ctx, tx, dto.InstrumentId, dto.Date)
+		if err != nil && !errors.Is(err, models.ErrNoRows) {
+			return err
+		}
+		if candidate != nil {
+			return models.ErrAlreadyExists
+		}
+
 		if err := s.repo.Create(ctx, tx, dto); err != nil {
 			return fmt.Errorf("failed to create write off. error: %w", err)
 		}
@@ -115,7 +123,7 @@ func (s *WriteOffService) CreateSeveral(ctx context.Context, dto []*models.Write
 
 func (s *WriteOffService) Update(ctx context.Context, dto *models.WriteOffDTO) error {
 	return s.txManager.ExecuteInTx(ctx, func(tx postgres.Tx) error {
-		oldData, err := s.repo.Get(ctx, &models.GetWriteOffDTO{InstrumentId: dto.Id})
+		oldData, err := s.repo.GetById(ctx, &models.GetWriteOffDTO{Id: dto.Id})
 		if err != nil {
 			return fmt.Errorf("failed to get old write off data. error: %w", err)
 		}
@@ -141,7 +149,7 @@ func (s *WriteOffService) Update(ctx context.Context, dto *models.WriteOffDTO) e
 			}
 		}
 
-		if len(oldData) >0 {
+		if oldData != nil {
 			s.activityLog.LogActivity(ctx, &models.CreateActivityLogDTO{
 				TableName:  "write_off",
 				RecordId:   dto.Id,
@@ -150,7 +158,7 @@ func (s *WriteOffService) Update(ctx context.Context, dto *models.WriteOffDTO) e
 				UserId:     dto.Actor.ID,
 				UserName:   dto.Actor.Name,
 				NewValue:   dto,
-				OldValue:   oldData[len(oldData)-1],
+				OldValue:   oldData,
 			})
 		}
 		return nil

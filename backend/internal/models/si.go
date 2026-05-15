@@ -25,6 +25,8 @@ type SI struct {
 	NextVerificationDate      time.Time        `json:"nextVerificationDate" db:"next_date"`
 	Certificate               string           `json:"certificate" db:"certificate"`
 	CertificateId             string           `json:"certificateId" db:"certificate_id"`
+	LastCertificate           string           `json:"lastCertificate" db:"last_certificate"`
+	LastCertificateId         string           `json:"lastCertificateId" db:"last_certificate_id"`
 	RepairInfo                string           `json:"repairInfo" db:"repair"`
 	PreservationDate          time.Time        `json:"preservationDate" db:"preservation"`
 	DePreservationDate        time.Time        `json:"dePreservationDate" db:"de_preservation"`

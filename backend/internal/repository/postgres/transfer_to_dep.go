@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/google/uuid"
@@ -26,6 +27,7 @@ func NewTransferToDepRepo(db *sqlx.DB, transaction Transaction) *TransferToDepRe
 type TransferToDepartment interface {
 	Get(ctx context.Context, req *models.GetTransferToDepDTO) ([]*models.TransferToDepartment, error)
 	GetById(ctx context.Context, dto *models.GetTransferToDepDTO) (*models.TransferToDepartment, error)
+	GetByInstrumentAndDate(ctx context.Context, tx Tx, instrumentId string, date time.Time) (*models.TransferToDepartment, error)
 	GetLast(ctx context.Context, tx Tx, req *models.GetTransferToDepDTO) (*models.TransferToDepartment, error)
 	Create(ctx context.Context, tx Tx, dto *models.TransferToDepartmentDTO) error
 	CreateSeveral(ctx context.Context, dto []*models.TransferToDepartmentDTO) error
@@ -54,6 +56,22 @@ func (r *TransferToDepRepo) GetById(ctx context.Context, dto *models.GetTransfer
 	data := &models.TransferToDepartment{}
 
 	if err := r.db.GetContext(ctx, data, query, dto.Id); err != nil {
+		return nil, fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	return data, nil
+}
+
+func (r *TransferToDepRepo) GetByInstrumentAndDate(ctx context.Context, tx Tx, instrumentId string, date time.Time) (*models.TransferToDepartment, error) {
+	query := fmt.Sprintf(`SELECT id, instrument_id, date, notes, doc_id, doc_name, created_at FROM %s 
+		WHERE instrument_id=$1 AND date=$2 LIMIT 1`,
+		TransferToDepTable,
+	)
+	data := &models.TransferToDepartment{}
+
+	if err := r.getExec(tx).GetContext(ctx, data, query, instrumentId, date); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRows
+		}
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return data, nil

@@ -1,6 +1,7 @@
 package write_off
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -73,6 +74,10 @@ func (h *Handler) create(c *gin.Context) {
 	dto.UserId = actor.ID
 
 	if err := h.service.Create(c, dto); err != nil {
+		if errors.Is(err, models.ErrAlreadyExists) {
+			response.NewErrorResponse(c, http.StatusConflict, err.Error(), "Списание с такой датой уже существует")
+			return
+		}
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 		error_bot.Send(c, err.Error(), dto)
 		return
