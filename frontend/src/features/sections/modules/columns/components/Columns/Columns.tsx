@@ -30,7 +30,7 @@ export const Columns: FC<Props> = ({ section }) => {
 	const {
 		control,
 		handleSubmit,
-		// formState: { dirtyFields },
+		formState: { dirtyFields },
 	} = methods
 	const { fields, move, insert, remove, update } = useFieldArray({ control, name: 'data' })
 
@@ -54,7 +54,6 @@ export const Columns: FC<Props> = ({ section }) => {
 			return [d, ...(d.children || [])]
 		})
 		const newData = tmp.flat()
-		console.log(newData)
 
 		try {
 			await updateColumns(newData).unwrap()
@@ -65,10 +64,7 @@ export const Columns: FC<Props> = ({ section }) => {
 	})
 
 	const dropHandler = (event: SortableEvent) => {
-		console.log('event', event)
 		if (event.oldIndex == undefined || event.newIndex == undefined) return
-		// update(event.newIndex, { ...fields[event.newIndex], position: event.newIndex + 1 })
-		// update(event.oldIndex, { ...fields[event.oldIndex], position: event.oldIndex + 1 })
 		if (!event.pullMode) {
 			move(event.oldIndex, event.newIndex)
 			return
@@ -92,10 +88,9 @@ export const Columns: FC<Props> = ({ section }) => {
 
 				<Stack direction={'row'} justifyContent={'space-between'} mb={1} mx={2}>
 					<Button
-						// onClick={updateHandler}
 						type='submit'
 						variant='outlined'
-						// disabled={!Object.keys(dirtyFields).length}
+						disabled={!Object.keys(dirtyFields).length}
 						sx={{ textTransform: 'inherit' }}
 					>
 						Обновить индексы

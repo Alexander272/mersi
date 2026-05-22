@@ -68,7 +68,7 @@ const TAB_CONFIG = [
 ] as const
 
 const Form: FC<{ id: string }> = ({ id }) => {
-	const [value, setValue] = useState('repair')
+	const [value, setValue] = useState('')
 
 	const section = useAppSelector(getSection)
 

@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 import { Button, Divider, Stack, Tooltip, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
+import type { IVerificationDTO } from '../../modules/verification/types/verification'
 import { NullDate } from '@/constants/defaultValues'
 import { PermRules } from '@/constants/permissions'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
@@ -56,7 +57,25 @@ export const EditForm: FC<Props> = ({ id }) => {
 		setSteps(newSteps)
 	}, [data])
 
-	const methods = useForm<ISiForm>({ values: si?.data as ISiForm })
+	const formValues = useMemo(() => {
+		if (!si?.data) return undefined
+		const data = { ...si.data }
+		if (!data.verification && !data.instrument.interVerificationInterval) {
+			data.verification = {
+				notVerified: true,
+				instrumentId: data.instrument.id,
+				id: '',
+				verificationDate: '',
+				nextVerificationDate: '',
+				registerLink: '',
+				status: '',
+				notes: '',
+			} as IVerificationDTO
+		}
+		return data as ISiForm
+	}, [si?.data])
+
+	const methods = useForm<ISiForm>({ values: formValues })
 
 	const openDetailsDialog = () => {
 		dispatch(changeDialogIsOpen({ variant: 'EditTableItem', isOpen: false }))
@@ -80,9 +99,6 @@ export const EditForm: FC<Props> = ({ id }) => {
 			return
 		}
 
-		//TODO потенциальная проблема с удалением файлов. Если пользователь удалил файл, но потом передумал и нажал отменить,
-		// то надо будет как-то фиксировать это на сервере (т.к. файл то уже удален)
-
 		if (!form.instrument.dateOfReceipt) form.instrument.dateOfReceipt = NullDate
 		form.instrument.name = form.instrument.name.trim()
 		form.instrument.type = form.instrument.type?.trim()
@@ -92,6 +108,19 @@ export const EditForm: FC<Props> = ({ id }) => {
 		form.instrument.stateRegister = form.instrument.stateRegister?.trim()
 		form.instrument.manufacturer = form.instrument.manufacturer?.trim()
 		form.instrument.notes = form.instrument.notes?.trim()
+
+		if (!form.verification && !form.instrument.interVerificationInterval) {
+			form.verification = {
+				notVerified: true,
+				instrumentId: form.instrument.id,
+				id: '',
+				verificationDate: '',
+				nextVerificationDate: '',
+				registerLink: '',
+				status: '',
+				notes: '',
+			} as IVerificationDTO
+		}
 
 		if (form.verification) {
 			form.verification.notes = form.verification.notes?.trim()

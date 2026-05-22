@@ -77,10 +77,10 @@ export const Create: FC<Props> = ({ ids }) => {
 	})
 
 	if (!ids?.length) return <Typography textAlign={'center'}>Инструменты не выбраны</Typography>
-	if (data?.data.interVerificationInterval == 0)
-		return <Typography textAlign={'center'}>Период поверки не задан</Typography>
 	if (ver?.data.notVerified)
 		return <Typography textAlign={'center'}>Инструмент отмечен как не нуждающийся в поверках</Typography>
+	if (data?.data.interVerificationInterval == 0)
+		return <Typography textAlign={'center'}>Период поверки не задан</Typography>
 	return (
 		<Stack position={'relative'} mt={-2.5}>
 			{isFetching || isLoading || isVerFetching ? <BoxFallback /> : null}

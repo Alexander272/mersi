@@ -36,7 +36,6 @@ export const HistoryForm: FC<Props> = ({ data, submit }) => {
 	}
 
 	const saveHandler = handleSubmit(form => {
-		console.log('save', form, dirtyFields)
 		if (Object.keys(dirtyFields).length) submit(form)
 		closeHandler()
 	})

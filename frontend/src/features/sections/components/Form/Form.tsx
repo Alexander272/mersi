@@ -64,14 +64,13 @@ export const Form: FC<Props> = ({ section, setSection }) => {
 	}, [data, reset, section])
 
 	const saveHandler = handleSubmit(async form => {
-		console.log('save', form, dirtyFields)
 		if (!Object.keys(dirtyFields).length) return
 
 		if (!data) {
 			form.position = 1
 		} else {
 			const lastIndex = data?.data.length - 1
-			const position = data?.data[lastIndex]?.sections[data?.data[lastIndex]?.sections.length - 1]?.position || 0
+			const position = data?.data[lastIndex]?.sections[data?.data[lastIndex]?.sections.length - 1]?.position ?? 0
 			if (section == 'new') form.position = position + 1
 		}
 

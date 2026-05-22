@@ -45,15 +45,11 @@ export const HistoryList: FC<Props> = ({ section }) => {
 		handleSubmit,
 		formState: { dirtyFields },
 	} = methods
-	const { fields, move, update, append, remove } = useFieldArray({ control, name: 'data', keyName: '_id' })
+	const { fields, move, update, insert, remove } = useFieldArray({ control, name: 'data', keyName: '_id' })
 
 	const dropHandler = (event: SortableEvent) => {
-		// console.log('event', event)
 		if (event.oldIndex == undefined || event.newIndex == undefined || event.oldIndex == event.newIndex) return
 
-		//! update работает не правильно потому что используется move, а не swap
-		// update(event.newIndex, { ...fields[event.newIndex], position: event.oldIndex + 1, status: 'moved' })
-		update(event.oldIndex, { ...fields[event.oldIndex], position: event.newIndex + 1, status: 'moved' })
 		move(event.oldIndex, event.newIndex)
 	}
 
@@ -64,14 +60,13 @@ export const HistoryList: FC<Props> = ({ section }) => {
 	const submitHandler = (data: IHistoryForm) => {
 		if (data.status == 'updated' || data.status == 'deleted') update(data.position - 1, data)
 		if (data.status == 'new') {
-			if (data.position == 1) append({ ...data, position: fields.length + 1 })
+			if (data.position == 1) insert(0, { ...data, position: 1 })
 			else update(data.position - 1, data)
 		}
 		if (data.status == undefined) remove(data.position - 1)
 	}
 
 	const updateHandler = handleSubmit(async form => {
-		console.log('save', form)
 
 		const updated: IHistoryTypeDTO[] = []
 		const created: IHistoryTypeDTO[] = []

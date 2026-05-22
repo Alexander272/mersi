@@ -6,12 +6,12 @@ import { PageBox } from '@/components/PageBox/PageBox'
 import { Breadcrumb } from '@/components/Breadcrumb/Breadcrumb'
 import { Fallback } from '@/components/Fallback/Fallback'
 import { Realms } from './realms/RealmsLazy'
-import { Sections } from './sections/SectionLazy'
+import { Sections } from './sections/SectionsLazy'
 import { Statuses } from './statuses/StatusesLazy'
 import { ContextMenu } from './contextMenu/ContextMenuLazy'
 import { Tools } from './tools/ToolsLazy'
 import { Verification } from './verification/VerificationLazy'
-import History from './history/History'
+import { History } from './history/HistoryLazy'
 
 const tabsData = [
 	{ id: 'realm', name: 'Области' },

@@ -77,7 +77,6 @@ const Group: FC<Props> = ({ index, id, data, isChild, insert }) => {
 	const { fields, move, remove } = useFieldArray({ control, name: `data[${index}].children` as 'data' })
 
 	const dropHandler = (event: SortableEvent) => {
-		console.log('event', event)
 		if (!event || event.oldIndex == undefined || event.newIndex == undefined) return
 		if (!event.pullMode) {
 			move(event.oldIndex, event.newIndex)

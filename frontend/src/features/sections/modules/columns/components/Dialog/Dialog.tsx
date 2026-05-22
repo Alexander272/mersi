@@ -93,7 +93,6 @@ const Form: FC<Context> = ({ item }) => {
 	const closeHandler = () => dispatch(changeDialogIsOpen({ variant: 'Columns', isOpen: false }))
 
 	const saveHandler = handleSubmit(async form => {
-		console.log('save', form, dirtyFields)
 		if (!Object.keys(dirtyFields).length) return
 
 		const newData: IColumnDTO = {

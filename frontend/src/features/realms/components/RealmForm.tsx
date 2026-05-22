@@ -76,10 +76,9 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 	}, [data, reset, realm])
 
 	const saveHandler = handleSubmit(async form => {
-		console.log('save', form, dirtyFields)
 		if (!Object.keys(dirtyFields).length) return
 
-		const newData = { ...form, id: data?.data.id || '' }
+		const newData = { ...form, id: realm != 'new' ? realm : (data?.data.id || '') }
 		try {
 			if (realm == 'new') {
 				const payload = await create(newData).unwrap()

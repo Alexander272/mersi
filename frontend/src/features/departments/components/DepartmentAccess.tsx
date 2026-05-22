@@ -98,9 +98,9 @@ export const DepartmentAccess: FC<Props> = ({ department }) => {
 							multiple
 							options={userOptions}
 							getOptionLabel={option => `${option.lastName} ${option.firstName}`}
-							value={userOptions.filter(user => value?.includes(user.id))}
+							value={userOptions.filter(user => value?.includes(user.ssoId))}
 							onChange={(_, newValue) => {
-								onChange(newValue.map(user => user.id))
+								onChange(newValue.map(user => user.ssoId))
 							}}
 							renderInput={params => (
 								<TextField {...params} label='Пользователи' variant='outlined' size='small' />

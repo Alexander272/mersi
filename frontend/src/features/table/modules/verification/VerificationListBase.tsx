@@ -5,34 +5,53 @@ import { ReactSortable, SortableEvent } from 'react-sortablejs'
 import { toast } from 'react-toastify'
 
 import type { IFetchError } from '@/app/types/error'
-import type { IStatusDTO, IStatusForm } from '../../types/status'
+import type { IVerificationFieldDTO, IVerificationFieldForm } from './modules/types/verificationFields'
 import { useAppDispatch } from '@/hooks/redux'
 import {
-	useCreateStatusesMutation,
-	useDeleteStatusesMutation,
-	useGetStatusesQuery,
-	useUpdateStatusesMutation,
-} from '../../statusApiSlice'
+	useCreateVerificationFieldsMutation,
+	useDeleteVerificationFieldsMutation,
+	useGetVerificationFieldsQuery,
+	useUpdateVerificationFieldsMutation,
+} from './modules/fieldsApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
-import { StatusDialog } from '../Dialog/Dialog'
-import { StatusItem } from './StatusItem'
-import { sortableOptions } from './options'
+
+const sortableOptions = {
+	animation: 150,
+	fallbackOnBody: true,
+	swapThreshold: 0.65,
+	group: 'columns',
+}
 
 type Props = {
 	section: string
+	group: 'form' | 'history'
+	dialogVariant: 'EditVerificationFields' | 'EditVerificationHistory'
+	toastMessage: string
+	DialogComponent: FC<{ submit: (data: IVerificationFieldForm) => void }>
+	ItemComponent: FC<{ data: IVerificationFieldForm }>
 }
 
-export const StatusesList: FC<Props> = ({ section }) => {
+export const VerificationListBase: FC<Props> = ({
+	section,
+	group,
+	dialogVariant,
+	toastMessage,
+	DialogComponent,
+	ItemComponent,
+}) => {
 	const dispatch = useAppDispatch()
 
-	const { data, isFetching } = useGetStatusesQuery(section, { skip: !section || section == 'new' })
-	const [create, { isLoading: creating }] = useCreateStatusesMutation()
-	const [updateAll, { isLoading: updating }] = useUpdateStatusesMutation()
-	const [removeAll, { isLoading: removing }] = useDeleteStatusesMutation()
+	const { data, isFetching } = useGetVerificationFieldsQuery(
+		{ section: section || '', group },
+		{ skip: !section || section == 'new' },
+	)
+	const [create, { isLoading: creating }] = useCreateVerificationFieldsMutation()
+	const [updateAll, { isLoading: updating }] = useUpdateVerificationFieldsMutation()
+	const [removeAll, { isLoading: removing }] = useDeleteVerificationFieldsMutation()
 
-	const methods = useForm<{ data: IStatusForm[] }>({
-		values: { data: data?.data.map(d => ({ ...d, status: 'none' })) || [] },
+	const methods = useForm<{ data: IVerificationFieldForm[] }>({
+		values: { data: data?.data.map(d => ({ ...d, status: 'none', group: '' })) || [] },
 	})
 	const {
 		control,
@@ -48,10 +67,10 @@ export const StatusesList: FC<Props> = ({ section }) => {
 	}
 
 	const openDialog = () => {
-		dispatch(changeDialogIsOpen({ variant: 'EditStatus', isOpen: true }))
+		dispatch(changeDialogIsOpen({ variant: dialogVariant, isOpen: true }))
 	}
 
-	const submitHandler = (data: IStatusForm) => {
+	const submitHandler = (data: IVerificationFieldForm) => {
 		if (data.status == 'updated' || data.status == 'deleted') update(data.position - 1, data)
 		if (data.status == 'new') {
 			if (data.position == 1) insert(0, { ...data, position: 1 })
@@ -61,8 +80,8 @@ export const StatusesList: FC<Props> = ({ section }) => {
 	}
 
 	const updateHandler = handleSubmit(async form => {
-		const updated: IStatusDTO[] = []
-		const created: IStatusDTO[] = []
+		const updated: IVerificationFieldDTO[] = []
+		const created: IVerificationFieldDTO[] = []
 		const deleted: string[] = []
 
 		form.data.forEach((item, idx) => {
@@ -70,9 +89,13 @@ export const StatusesList: FC<Props> = ({ section }) => {
 				item.status = 'moved'
 				item.position = idx + 1
 			}
+			item.sectionId = section
+			item.group = group
 
-			if (item.status == 'updated' || item.status == 'moved') updated.push({ ...item, sectionId: section })
-			if (item.status == 'new') created.push({ ...item, sectionId: section })
+			if (group == 'history') item.width = +item.width
+
+			if (item.status == 'updated' || item.status == 'moved') updated.push(item)
+			if (item.status == 'new') created.push(item)
 			if (item.status == 'deleted') deleted.push(item.id)
 		})
 		if (!updated.length && !created.length && !deleted.length) return
@@ -82,7 +105,7 @@ export const StatusesList: FC<Props> = ({ section }) => {
 			if (created.length) await create(created).unwrap()
 			if (deleted.length) await removeAll(deleted).unwrap()
 			methods.reset()
-			toast.success('Статусы сохранены')
+			toast.success(toastMessage)
 		} catch (error) {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })
@@ -123,13 +146,13 @@ export const StatusesList: FC<Props> = ({ section }) => {
 						{...sortableOptions}
 					>
 						{fields.map(item => (
-							<StatusItem key={item._id} data={item} />
+							<ItemComponent key={item._id} data={item} />
 						))}
 					</ReactSortable>
 				</FormProvider>
 			</Stack>
 
-			<StatusDialog submit={submitHandler} />
+			<DialogComponent submit={submitHandler} />
 		</>
 	)
 }

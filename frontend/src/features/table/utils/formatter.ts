@@ -21,6 +21,8 @@ export const Formatter: Formatter = (type, value) => {
 		return date.format(type === 'date' ? DateFormat : ShortDateFormat)
 	}
 
+	if (type == 'number' && value == 0) return '-'
+
 	// if (type === 'number') return new Intl.NumberFormat('ru').format(Number(value) || 0)
 
 	return String(value)
