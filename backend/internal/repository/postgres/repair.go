@@ -37,7 +37,7 @@ type Repair interface {
 
 func (r *RepairRepo) Get(ctx context.Context, req *models.GetRepairDTO) ([]*models.Repair, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, defect, work, period_start, period_end, description, created_at FROM %s
-		WHERE instrument_id=$1 ORDER BY period_start DESC`,
+		WHERE instrument_id=$1 ORDER BY period_start DESC, created_at DESC`,
 		RepairTable,
 	)
 	data := []*models.Repair{}

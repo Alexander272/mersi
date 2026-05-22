@@ -37,7 +37,7 @@ type TransferToDepartment interface {
 
 func (r *TransferToDepRepo) Get(ctx context.Context, req *models.GetTransferToDepDTO) ([]*models.TransferToDepartment, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, date, notes, doc_id, doc_name, created_at FROM %s 
-		WHERE instrument_id=$1 ORDER BY date DESC`,
+		WHERE instrument_id=$1 ORDER BY date DESC, created_at DESC`,
 		TransferToDepTable,
 	)
 	data := []*models.TransferToDepartment{}

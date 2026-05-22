@@ -37,7 +37,7 @@ type TransferToSave interface {
 
 func (r *TransferToSaveRepo) Get(ctx context.Context, req *models.GetTransferToSaveDTO) ([]*models.TransferToSave, error) {
 	query := fmt.Sprintf(`SELECT id, instrument_id, date_start, notes_start, date_end, notes_end, created_at
-		FROM %s WHERE instrument_id=$1 ORDER BY date_start DESC`,
+		FROM %s WHERE instrument_id=$1 ORDER BY date_start DESC, created_at DESC`,
 		TransferToSaveTable,
 	)
 	data := []*models.TransferToSave{}

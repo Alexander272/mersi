@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -12,36 +10,24 @@ import (
 )
 
 func GetFilterParams(c *gin.Context) *models.GetSiDTO {
-	// u, exists := c.Get(constants.CtxUser)
-	// if !exists {
-	// 	return nil
-	// }
-	// user := u.(models.User)
-	permissions, exists := c.Get(constants.IdentityCookie)
+	u, exists := c.Get(constants.CtxUser)
 	if !exists {
 		return nil
 	}
+	user := u.(models.User)
 
 	params := &models.GetSiDTO{
 		SectionId: "",
 		Page:      parsePage(c),
 		Sort:      parseSort(c.Query("sort_by")),
 		Filters:   make([]*models.Filter, 0),
+		UserID:    user.ID,
 	}
 
-	// 1. Проверка прав (all)
-	//TODO это не работает т.к. у user нет permissions в контексте
-	// targetPermission := fmt.Sprintf("%s:%s", constants.SI, constants.Write)
-	// hasWritePermission := slices.Contains(user.Permissions, targetPermission)
-	// logger.Debug("User has write permission", logger.BoolAttr("hasWritePermission", hasWritePermission), logger.AnyAttr("perms", user.Permissions))
-	//TODO можно добавить cookie с разрешениями и получать их оттуда
-	// есть еще такой вариант: когда я сделаю доступ по подразделениям в том списке закрепить резерв и настраивать к нему доступ также как и к подразделениям
-	// хотя резерв это статус, может это и не очень хорошая идея
-	// all := c.Query("all")
-	// hasWritePermission := all == "true"
-	//* пока реализовал это через cookie
-	targetPermission := fmt.Sprintf("%s:%s", constants.SI, constants.Write)
-	hasWritePermission := slices.Contains(strings.Split(permissions.(string), ","), targetPermission)
+	hasWritePermission := false
+	if wp, exists := c.Get(constants.CtxHasWritePermission); exists {
+		hasWritePermission = wp.(bool)
+	}
 
 	// 2. Обработка фильтров
 	filtersMap := c.QueryMap("filters")
@@ -80,6 +66,9 @@ func GetFilterParams(c *gin.Context) *models.GetSiDTO {
 
 	// 3. Ограничения для обычных пользователей
 	if !hasWritePermission {
+		if deptIDs, exists := c.Get(constants.CtxDepartmentAccess); exists {
+			params.DepartmentAccess = deptIDs.([]string)
+		}
 		applyUserRestrictions(params)
 	}
 	// 4. Поиск, статус и прочее
@@ -184,17 +173,18 @@ func handlePlaceFilter(params *models.GetSiDTO, field *string, value *string) {
 }
 
 func applyUserRestrictions(params *models.GetSiDTO) {
-	params.Filters = append(params.Filters,
-		&models.Filter{
-			Field:  "status",
-			Values: []*models.FilterValue{{CompareType: "nlike", Value: "reserve"}},
-		},
-		&models.Filter{
-			Field:     "department",
-			FieldType: "list",
-			Values:    []*models.FilterValue{{CompareType: "nin", Value: "cc718041-f3da-4490-b647-380297bd3344"}},
-		},
-	)
+	params.Filters = append(params.Filters, &models.Filter{
+		Field: "status", Values: []*models.FilterValue{{CompareType: "nlike", Value: "reserve"}},
+	})
+	if len(params.DepartmentAccess) > 0 {
+		filterVal := strings.Join(params.DepartmentAccess, ",")
+		params.Filters = append(params.Filters, &models.Filter{
+			Field: "department", FieldType: "list",
+			Values: []*models.FilterValue{{
+				CompareType: "in", Value: filterVal,
+			}},
+		})
+	}
 }
 
 func applySearchAndStatus(c *gin.Context, params *models.GetSiDTO) {

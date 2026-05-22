@@ -42,10 +42,15 @@ func (r *DepartmentAccessRepo) Get(ctx context.Context, req *models.GetDepartmen
 }
 
 func (r *DepartmentAccessRepo) GetByUserId(ctx context.Context, req *models.GetDepartmentAccessDTO) ([]*models.DepartmentAccess, error) {
-	query := fmt.Sprintf(`SELECT id, department_id, sso_id FROM %s WHERE sso_id=$1`, DepartmentAccessTable)
+	query := fmt.Sprintf(`SELECT da.id, da.department_id, da.sso_id 
+		FROM %s da
+		JOIN %s d ON d.id = da.department_id
+		WHERE da.sso_id = $1 AND ($2 = '' OR d.realm_id::text = $2)`,
+		DepartmentAccessTable, DepartmentTable,
+	)
 
 	data := []*models.DepartmentAccess{}
-	if err := r.db.SelectContext(ctx, &data, query, req.UserId); err != nil {
+	if err := r.db.SelectContext(ctx, &data, query, req.UserId, req.RealmId); err != nil {
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
 	return data, nil

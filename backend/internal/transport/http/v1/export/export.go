@@ -32,7 +32,7 @@ func NewHandler(service services.Export) *Handler {
 func Register(api *gin.RouterGroup, service services.Export, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	export := api.Group("export", middleware.CheckPermissions(constants.SI, constants.Read))
+	export := api.Group("export", middleware.DepartmentAccess, middleware.CheckPermissions(constants.SI, constants.Read))
 	{
 		export.GET("", handler.export)
 		export.GET("/schedule", handler.makeScheduler)
@@ -71,6 +71,7 @@ func (h *Handler) makeScheduler(c *gin.Context) {
 		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Неверно заданы параметры периода или области")
 		return
 	}
+	h.enrichPeriodWithDeptAccess(c, req)
 
 	buffer, err := h.service.MakeScheduler(c, req)
 	if err != nil {
@@ -91,6 +92,7 @@ func (h *Handler) makeAccountingLog(c *gin.Context) {
 	req := &models.Period{
 		SectionId: section,
 	}
+	h.enrichPeriodWithDeptAccess(c, req)
 
 	buffer, err := h.service.MakeAccountingLog(c, req)
 	if err != nil {
@@ -99,6 +101,22 @@ func (h *Handler) makeAccountingLog(c *gin.Context) {
 	}
 
 	h.sendExcel(c, buffer, "Журнал учета средств измерения")
+}
+
+func (h *Handler) enrichPeriodWithDeptAccess(c *gin.Context, req *models.Period) {
+	hasWritePermission := true
+	if wp, exists := c.Get(constants.CtxHasWritePermission); exists {
+		hasWritePermission = wp.(bool)
+	}
+	if hasWritePermission {
+		return
+	}
+	if deptIDs, exists := c.Get(constants.CtxDepartmentAccess); exists {
+		ids := deptIDs.([]string)
+		if len(ids) > 0 {
+			req.DepartmentAccess = ids
+		}
+	}
 }
 
 // Вспомогательный метод для обработки ошибок сервиса (чтобы не дублировать error_bot)

@@ -7,8 +7,9 @@ type DepartmentAccess struct {
 }
 
 type GetDepartmentAccessDTO struct {
-	DepartmentId string `json:"departmentId" binding:"required"`
-	UserId       string `json:"userId" binding:"required"`
+	DepartmentId string `json:"departmentId"`
+	UserId       string `json:"userId"`
+	RealmId      string `json:"realmId"`
 }
 
 type ReplaceDepartmentAccessDTO struct {

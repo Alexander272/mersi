@@ -9,6 +9,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
+	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/goodsign/monday"
 	"github.com/jmoiron/sqlx"
 )
@@ -276,10 +277,16 @@ func (r *SIRepo) buildFilterClause(filters []*models.Filter, params []interface{
 	}
 
 	if len(clauses) == 0 {
+		logger.Debug("buildFilter: no clauses")
 		return "", params
 	}
 
-	return "AND " + strings.Join(clauses, " AND "), params
+	result := "AND " + strings.Join(clauses, " AND ")
+	logger.Debug("buildFilter: result",
+		logger.IntAttr("clauses", len(clauses)),
+		logger.StringAttr("sql", result),
+	)
+	return result, params
 }
 func (r *SIRepo) buildSearchClause(search *models.Search, params []interface{}) (string, []interface{}) {
 	if search == nil || len(search.Fields) == 0 || search.Value == "" {

@@ -61,12 +61,14 @@ type BaseSI struct {
 }
 
 type GetSiDTO struct {
-	SectionId string
-	Page      *Page
-	Sort      []*Sort
-	Filters   []*Filter
-	Search    *Search
-	Status    InstrumentStatus
+	SectionId        string
+	Page             *Page
+	Sort             []*Sort
+	Filters          []*Filter
+	Search           *Search
+	Status           InstrumentStatus
+	UserID           string
+	DepartmentAccess []string
 }
 
 type GetSiByIdDTO struct {

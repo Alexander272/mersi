@@ -86,3 +86,37 @@ func (m *Middleware) CheckPermissionsArray(perm []*Permission) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func (m *Middleware) DepartmentAccess(c *gin.Context) {
+	u, exists := c.Get(constants.CtxUser)
+	if !exists {
+		c.Set(constants.CtxDepartmentAccess, []string{})
+		c.Set(constants.CtxHasWritePermission, false)
+		c.Next()
+		return
+	}
+	user := u.(models.User)
+
+	realm := c.GetHeader("realm")
+
+	access, err := m.services.Permission.Enforce(user.ID, realm, constants.SI, constants.Write)
+	if err == nil && access {
+		c.Set(constants.CtxHasWritePermission, true)
+	} else {
+		c.Set(constants.CtxHasWritePermission, false)
+	}
+
+	deptAccess, err := m.services.DepartmentAccess.GetByUserId(c, &models.GetDepartmentAccessDTO{UserId: user.ID, RealmId: realm})
+	if err != nil {
+		c.Set(constants.CtxDepartmentAccess, []string{})
+		c.Next()
+		return
+	}
+
+	ids := make([]string, len(deptAccess))
+	for i, da := range deptAccess {
+		ids[i] = da.DepartmentId
+	}
+	c.Set(constants.CtxDepartmentAccess, ids)
+	c.Next()
+}

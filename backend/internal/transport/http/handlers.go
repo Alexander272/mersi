@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/config"
-	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	httpV1 "github.com/Alexander272/mersi/backend/internal/transport/http/v1"
@@ -37,11 +36,20 @@ func NewHandler(services *services.Services, keycloak *auth.KeycloakClient) *Han
 }
 
 func (h *Handler) Init(conf *config.Config) *gin.Engine {
-	router := gin.Default()
+	router := gin.New()
 	router.RedirectTrailingSlash = false
 	router.RedirectFixedPath = false
 
 	router.Use(
+		gin.LoggerWithConfig(gin.LoggerConfig{
+			Skip: func(c *gin.Context) bool {
+				path := c.Request.URL.Path
+				if strings.HasPrefix(path, "/api") {
+					return false
+				}
+				return c.Writer.Status() < http.StatusBadRequest
+			},
+		}),
 		gin.CustomRecovery(h.ErrorHandler),
 		securityHeaders(),
 	)
@@ -59,9 +67,14 @@ func (h *Handler) Init(conf *config.Config) *gin.Engine {
 
 func (h *Handler) ErrorHandler(c *gin.Context, origErr any) {
 	err := fmt.Errorf("unexpected error: %v", origErr)
-	error_bot.Send(c, err.Error(), gin.H{"PANIC": true, "Stack trace": string(debug.Stack())})
+
+	rawStack := string(debug.Stack())                        // 1. Получаем стек в виде байтов
+	cleanStack := strings.ReplaceAll(rawStack, "\t", "    ") // 2. Заменяем все табуляции на 4 пробела для красоты
+	stackLines := strings.Split(cleanStack, "\n")            // 3. Превращаем в срез строк, разделяя по символу \n
+
+	// Передаем данные паники в SendError, чтобы избежать дублирования вызова error_bot
+	error_bot.Send(c, err.Error(), gin.H{"PANIC": true, "Stack trace": stackLines})
 	debug.PrintStack()
-	response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла непредвиденная ошибка: "+err.Error())
 }
 
 func securityHeaders() gin.HandlerFunc {

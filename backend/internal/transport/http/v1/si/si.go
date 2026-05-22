@@ -3,6 +3,7 @@ package si
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -33,7 +34,7 @@ func NewHandler(service services.SI) *Handler {
 func Register(api *gin.RouterGroup, services *services.Services, middleware *middleware.Middleware) {
 	handler := NewHandler(services.SI)
 
-	si := api.Group("si", middleware.VerifyToken, middleware.CheckPermissions(constants.SI, constants.Read))
+	si := api.Group("si", middleware.VerifyToken, middleware.DepartmentAccess, middleware.CheckPermissions(constants.SI, constants.Read))
 	{
 		si.GET("", handler.get)
 		si.GET("/:id", handler.getById)
@@ -134,6 +135,29 @@ func (h *Handler) getSent(c *gin.Context) {
 			Values:    values,
 		}
 		params.Filters = append(params.Filters, f)
+	}
+
+	hasWritePermission := true
+	if wp, exists := c.Get(constants.CtxHasWritePermission); exists {
+		hasWritePermission = wp.(bool)
+	}
+	if !hasWritePermission {
+			if deptIDs, exists := c.Get(constants.CtxDepartmentAccess); exists {
+				ids := deptIDs.([]string)
+				if len(ids) > 0 {
+					params.DepartmentAccess = ids
+					params.Filters = append(params.Filters, &models.Filter{
+						Field: "department", FieldType: "list",
+						Values: []*models.FilterValue{{
+							CompareType: "in",
+							Value:       strings.Join(ids, ","),
+						}},
+					})
+				}
+			}
+			params.Filters = append(params.Filters, &models.Filter{
+				Field: "status", Values: []*models.FilterValue{{CompareType: "nlike", Value: "reserve"}},
+			})
 	}
 
 	data, err := h.service.GetSent(c, params)
