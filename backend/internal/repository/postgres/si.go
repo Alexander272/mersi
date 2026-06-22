@@ -77,6 +77,10 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 	tmp := []*pq_models.SI{}
 	params := []interface{}{req.SectionId, req.Status}
 
+	if req.Page == nil {
+		req.Page = &models.Page{Limit: 15, Offset: 0}
+	}
+
 	// 1. Сортировка
 	orderClause := r.buildOrderClause(req.Sort)
 	// 2. Фильтры
@@ -128,8 +132,8 @@ func (r *SIRepo) Get(ctx context.Context, req *models.GetSiDTO) ([]*models.SI, e
 					WHEN l.status = '%s' THEN 'Резерв'
 					ELSE 
 						CASE 
-							WHEN l.last_place != '' OR l.last_place_id IS NOT NULL 
-							THEN 'Перемещение из «' || COALESCE(lp.name, l.last_place) || '»'
+							WHEN COALESCE(NULLIF(l.last_place, ''), NULLIF(l.last_place_id::text, '')) IS NOT NULL 
+							THEN COALESCE('Перемещение из «' || NULLIF(COALESCE(lp.name, l.last_place), '') || '»', 'Перемещение')
 							ELSE 'Перемещение' 
 						END
 				END AS place
@@ -269,7 +273,7 @@ func (r *SIRepo) buildFilterClause(filters []*models.Filter, params []interface{
 			if sv.CompareType == "in" {
 				val = strings.ReplaceAll(val, ",", "|")
 			}
-			params = append(params, sv.Value)
+			params = append(params, val)
 			idx := len(params)
 
 			clauses = append(clauses, getFilterLine(sv.CompareType, field, idx))

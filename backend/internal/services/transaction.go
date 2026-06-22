@@ -6,6 +6,7 @@ import (
 
 	"github.com/Alexander272/mersi/backend/internal/repository"
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres"
+	"github.com/Alexander272/mersi/backend/pkg/logger"
 )
 
 type TransactionManagerService struct {
@@ -28,10 +29,14 @@ func (tm *TransactionManagerService) ExecuteInTx(ctx context.Context, fn func(tx
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback(ctx)
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				logger.Error("failed to rollback transaction on panic", logger.StringAttr("error", rbErr.Error()))
+			}
 			panic(p)
 		} else if err != nil {
-			tx.Rollback(ctx)
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				logger.Error("failed to rollback transaction on error", logger.StringAttr("error", rbErr.Error()))
+			}
 		}
 	}()
 

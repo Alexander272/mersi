@@ -14,13 +14,15 @@ type InstrumentService struct {
 	repo        repository.Instrument
 	docs        Document
 	activityLog ActivityLog
+	txManager   TransactionManager
 }
 
-func NewInstrumentService(repo repository.Instrument, docs Document, activityLog ActivityLog) *InstrumentService {
+func NewInstrumentService(repo repository.Instrument, docs Document, activityLog ActivityLog, txManager TransactionManager) *InstrumentService {
 	return &InstrumentService{
 		repo:        repo,
 		docs:        docs,
 		activityLog: activityLog,
+		txManager:   txManager,
 	}
 }
 
@@ -57,6 +59,15 @@ func (s *InstrumentService) GetUniqueData(ctx context.Context, req *models.GetUn
 }
 
 func (s *InstrumentService) Create(ctx context.Context, tx postgres.Tx, dto *models.InstrumentDTO) error {
+	if tx == nil {
+		return s.txManager.ExecuteInTx(ctx, func(newTx postgres.Tx) error {
+			return s.executeCreate(ctx, newTx, dto)
+		})
+	}
+	return s.executeCreate(ctx, tx, dto)
+}
+
+func (s *InstrumentService) executeCreate(ctx context.Context, tx postgres.Tx, dto *models.InstrumentDTO) error {
 	if err := s.repo.CreateInTx(ctx, tx, dto); err != nil {
 		return fmt.Errorf("failed to create instrument. error: %w", err)
 	}

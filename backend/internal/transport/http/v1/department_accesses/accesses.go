@@ -26,12 +26,12 @@ func NewHandler(service services.DepartmentAccess) *Handler {
 func Register(api *gin.RouterGroup, service services.DepartmentAccess, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	accesses := api.Group("/department-accesses", middleware.CheckPermissions(constants.Realms, constants.Read))
+	accesses := api.Group("/department-accesses", middleware.CheckPermissions(constants.Department, constants.Read))
 	{
 		accesses.GET(":id", handler.get)
 		accesses.GET("/user/:id", handler.getByUser)
 
-		write := accesses.Group("", middleware.CheckPermissions(constants.Realms, constants.Write))
+		write := accesses.Group("", middleware.CheckPermissions(constants.Department, constants.Write))
 		{
 			write.POST("/replace", handler.replace)
 			write.POST("", handler.create)

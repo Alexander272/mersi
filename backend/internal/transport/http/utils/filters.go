@@ -49,6 +49,10 @@ func GetFilterParams(c *gin.Context) *models.GetSiDTO {
 				handlePlaceFilter(params, &field, &val)
 			}
 
+			if val == "" {
+				continue
+			}
+
 			filterValues = append(filterValues, &models.FilterValue{
 				CompareType: compareType,
 				Value:       val,
@@ -119,8 +123,8 @@ var (
 		"_reserve": "reserve",
 		"_moved":   "moved",
 	}
-	// Реплейсер подготовит строку, удалив все суффиксы и лишние запятые за один проход
-	placeCleaner = strings.NewReplacer("_reserve", "", "_moved", "", ",", "")
+	// Реплейсер подготовит строку, удалив все суффиксы
+	placeCleaner = strings.NewReplacer("_reserve", "", "_moved", "")
 )
 
 func handlePlaceFilter(params *models.GetSiDTO, field *string, value *string) {
@@ -146,30 +150,17 @@ func handlePlaceFilter(params *models.GetSiDTO, field *string, value *string) {
 	}
 
 	// 3. Очищаем значение и меняем имя поля
-	// strings.Trim удалит возможные "ошметки" запятых по краям после замены
-	cleanedValue := strings.Trim(placeCleaner.Replace(*value), " ")
+	cleanedValue := strings.Trim(placeCleaner.Replace(*value), " ,")
+
+	// Если после удаления суффиксов ничего не осталось (только "Резерв"/"Перемещение"),
+	// то department filter не добавляем, он не нужен
+	if cleanedValue == "" {
+		*value = ""
+		return
+	}
 
 	*value = cleanedValue
 	*field = "department"
-
-	// var statuses []string
-	// if strings.Contains(*value, "_reserve") {
-	// 	statuses = append(statuses, "reserve")
-	// }
-	// if strings.Contains(*value, "_moved") {
-	// 	statuses = append(statuses, "moved")
-	// }
-
-	// if len(statuses) > 0 {
-	// 	params.Filters = append(params.Filters, &models.Filter{
-	// 		Field:     "status",
-	// 		FieldType: "list",
-	// 		Values:    []*models.FilterValue{{CompareType: "in", Value: strings.Join(statuses, ",")}},
-	// 	})
-	// }
-
-	// *value = strings.NewReplacer("_reserve", "", "_moved", "", ",", "").Replace(*value)
-	// *field = "department"
 }
 
 func applyUserRestrictions(params *models.GetSiDTO) {

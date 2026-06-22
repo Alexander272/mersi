@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
+	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -63,7 +64,9 @@ func (r *DepartmentAccessRepo) Replace(ctx context.Context, dto *models.ReplaceD
 	}
 	defer func() {
 		if err != nil {
-			_ = tx.Rollback()
+			if rbErr := tx.Rollback(); rbErr != nil {
+				logger.Error("failed to rollback transaction", logger.StringAttr("error", rbErr.Error()))
+			}
 		}
 	}()
 

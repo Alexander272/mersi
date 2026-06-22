@@ -93,7 +93,7 @@ func NewServices(deps *Deps) *Services {
 	document := NewDocumentService(deps.Repo.Document)
 	verificationDoc := NewVerificationDocService(deps.Repo.VerificationDoc)
 	activityLog := NewActivityLogService(deps.Repo.ActivityLog)
-	instrument := NewInstrumentService(deps.Repo.Instrument, document, activityLog)
+	instrument := NewInstrumentService(deps.Repo.Instrument, document, activityLog, txManager)
 	verification := NewVerificationService(&VerificationDeps{
 		Repo:       deps.Repo.Verification,
 		TxManager:  txManager,

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/config"
+	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	httpV1 "github.com/Alexander272/mersi/backend/internal/transport/http/v1"
@@ -74,6 +75,7 @@ func (h *Handler) ErrorHandler(c *gin.Context, origErr any) {
 
 	// Передаем данные паники в SendError, чтобы избежать дублирования вызова error_bot
 	error_bot.Send(c, err.Error(), gin.H{"PANIC": true, "Stack trace": stackLines})
+	response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла непредвиденная ошибка: "+err.Error())
 	debug.PrintStack()
 }
 
@@ -83,10 +85,7 @@ func securityHeaders() gin.HandlerFunc {
 		c.Header("X-Frame-Options", "SAMEORIGIN")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "no-referrer-when-downgrade")
-		c.Header("Content-Security-Policy",
-			"default-src 'self' http: https: data: blob: 'unsafe-inline'")
-		c.Header("Strict-Transport-Security",
-			"max-age=31536000; includeSubDomains")
+		c.Header("Content-Security-Policy", "default-src 'self' http: https: data: blob: 'unsafe-inline'")
 		c.Next()
 	}
 }

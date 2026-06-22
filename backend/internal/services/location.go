@@ -127,6 +127,15 @@ func (s *LocationService) SelectByDepartments(ctx context.Context, dto *models.S
 }
 
 func (s *LocationService) Create(ctx context.Context, tx postgres.Tx, dto *models.LocationDTO) error {
+	if tx == nil {
+		return s.txManager.ExecuteInTx(ctx, func(newTx postgres.Tx) error {
+			return s.executeCreate(ctx, newTx, dto)
+		})
+	}
+	return s.executeCreate(ctx, tx, dto)
+}
+
+func (s *LocationService) executeCreate(ctx context.Context, tx postgres.Tx, dto *models.LocationDTO) error {
 	if dto.Status == constants.LocationStatusMoved && dto.DepartmentId != "" {
 		responsible, err := s.responsible.GetWithChannel(ctx, &models.GetResponsibleDTO{DepartmentId: dto.DepartmentId})
 		if err != nil {
