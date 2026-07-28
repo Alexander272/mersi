@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -110,16 +111,43 @@ func (h *Handler) getList(c *gin.Context) {
 }
 
 func (h *Handler) download(c *gin.Context) {
-	path := c.Query("path")
+	rawPath := c.Query("path")
+	if rawPath == "" {
+		response.NewErrorResponse(c, http.StatusBadRequest, "empty path", "Путь к файлу не задан")
+		return
+	}
 
-	fileStat, err := os.Stat(path)
+	cleaned := filepath.Clean(rawPath)
+	absPath, err := filepath.Abs(cleaned)
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Некорректный путь")
+		return
+	}
+
+	baseDir, err := filepath.Abs("files")
+	if err != nil {
+		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Ошибка сервера")
+		return
+	}
+
+	if !strings.HasPrefix(absPath, baseDir+string(os.PathSeparator)) && absPath != baseDir {
+		response.NewErrorResponse(c, http.StatusForbidden, "path traversal attempt", "Доступ запрещён")
+		return
+	}
+
+	fileStat, err := os.Stat(absPath)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
 			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), "Файл не найден")
 			return
 		}
 		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Файл не найден")
-		error_bot.Send(c, err.Error(), path)
+		error_bot.Send(c, err.Error(), rawPath)
+		return
+	}
+
+	if fileStat.IsDir() {
+		response.NewErrorResponse(c, http.StatusBadRequest, "path is directory", "Путь указывает на директорию")
 		return
 	}
 
@@ -127,7 +155,7 @@ func (h *Handler) download(c *gin.Context) {
 	c.Header("Content-Transfer-Encoding", "binary")
 	c.Header("Content-Length", fmt.Sprintf("%d", fileStat.Size()))
 	c.Header("Content-Disposition", "attachment; filename="+fileStat.Name())
-	c.File(path)
+	c.File(absPath)
 }
 
 func (h *Handler) upload(c *gin.Context) {
