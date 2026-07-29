@@ -78,10 +78,15 @@ func (h *DepartmentHandlers) GetById(c *gin.Context) {
 }
 
 func (h *DepartmentHandlers) GetBySSOId(c *gin.Context) {
-	var user models.User
 	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
+	if !exists {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
 	}
 
 	departments, err := h.service.GetBySSOId(c, user.ID)

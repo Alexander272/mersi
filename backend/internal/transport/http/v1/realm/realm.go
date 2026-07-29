@@ -82,7 +82,11 @@ func (h *Handlers) getByUser(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	dto := &models.GetRealmByUserDTO{UserID: user.ID}
 	data, err := h.service.GetByUser(c, dto)
@@ -104,7 +108,12 @@ func (h *Handlers) choose(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	dto.UserID = u.(models.User).ID
+	usr, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
+	dto.UserID = usr.ID
 
 	user, err := h.service.Choose(c, dto)
 	if err != nil {

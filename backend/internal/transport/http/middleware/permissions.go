@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"net/http"
-
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -20,10 +18,14 @@ func (m *Middleware) CheckPermissions(menuItem, method string) gin.HandlerFunc {
 		realm := c.GetHeader("realm")
 		u, exists := c.Get(constants.CtxUser)
 		if !exists {
-			response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "сессия не найдена")
+			response.SendError(c, models.ErrSessionEmpty)
 			return
 		}
-		user := u.(models.User)
+		user, ok := u.(models.User)
+		if !ok {
+			response.SendError(c, models.ErrInvalidUserType)
+			return
+		}
 
 		access, err := m.services.Permission.Enforce(user.ID, realm, menuItem, method)
 		if err != nil {
@@ -39,7 +41,7 @@ func (m *Middleware) CheckPermissions(menuItem, method string) gin.HandlerFunc {
 		)
 
 		if !access {
-			response.NewErrorResponse(c, http.StatusForbidden, "access denied", "нет доступа к данному разделу")
+			response.SendError(c, models.ErrForbidden)
 			return
 		}
 
@@ -52,11 +54,15 @@ func (m *Middleware) CheckPermissionsArray(perm []*Permission) gin.HandlerFunc {
 		realm := c.GetHeader("realm")
 		u, exists := c.Get(constants.CtxUser)
 		if !exists {
-			response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "сессия не найдена")
+			response.SendError(c, models.ErrSessionEmpty)
 			return
 		}
 
-		user := u.(models.User)
+		user, ok := u.(models.User)
+		if !ok {
+			response.SendError(c, models.ErrInvalidUserType)
+			return
+		}
 		access := false
 		for _, item := range perm {
 			a, err := m.services.Permission.Enforce(user.ID, realm, item.Section, item.Method)
@@ -79,7 +85,7 @@ func (m *Middleware) CheckPermissionsArray(perm []*Permission) gin.HandlerFunc {
 		}
 
 		if !access {
-			response.NewErrorResponse(c, http.StatusForbidden, "access denied", "нет доступа к данному разделу")
+			response.SendError(c, models.ErrForbidden)
 			return
 		}
 
@@ -95,7 +101,13 @@ func (m *Middleware) DepartmentAccess(c *gin.Context) {
 		c.Next()
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		c.Set(constants.CtxDepartmentAccess, []string{})
+		c.Set(constants.CtxHasWritePermission, false)
+		c.Next()
+		return
+	}
 
 	realm := c.GetHeader("realm")
 

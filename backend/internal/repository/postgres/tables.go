@@ -4,7 +4,6 @@ const (
 	RoleTable               = "public.roles"
 	RuleItemTable           = "public.rule_item"
 	RuleTable               = "public.rule"
-	UsersTable              = "public.users"
 	RealmTable              = "public.realms"
 	AccessTable             = "public.accesses"
 	SectionTable            = "public.sections"

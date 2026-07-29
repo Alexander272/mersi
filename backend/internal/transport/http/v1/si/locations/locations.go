@@ -191,10 +191,15 @@ func (h *Handler) receiving(c *gin.Context) {
 		return
 	}
 
-	var user models.User
 	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
+	if !exists {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
 	}
 	dto.UserId = user.ID
 	dto.HasConfirmed = true

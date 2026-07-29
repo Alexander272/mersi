@@ -67,10 +67,15 @@ func (h *Handler) getBySSO(c *gin.Context) {
 	// 	response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Id пользователя не задан")
 	// 	return
 	// }
-	var user models.User
 	u, exists := c.Get(constants.CtxUser)
-	if exists {
-		user = u.(models.User)
+	if !exists {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
 	}
 
 	data, err := h.service.GetBySSOId(c, user.ID)

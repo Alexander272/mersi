@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"net/http"
-
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -12,10 +10,14 @@ import (
 func GetActor(c *gin.Context) *models.Actor {
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return nil
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrInvalidUserType)
+		return nil
+	}
 
 	actor := &models.Actor{
 		ID:   user.ID,
@@ -27,9 +29,13 @@ func GetActor(c *gin.Context) *models.Actor {
 func GetUser(c *gin.Context) *models.User {
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return nil
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrInvalidUserType)
+		return nil
+	}
 	return &user
 }

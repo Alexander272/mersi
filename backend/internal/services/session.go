@@ -95,27 +95,32 @@ func (s *SessionService) DecodeAccessToken(ctx context.Context, token string) (*
 	user := &models.User{}
 	var role, username, userId string
 	c := *claims
-	access, ok := c["realm_access"]
-	if ok {
-		a := access.(map[string]interface{})["roles"]
-		roles := a.([]interface{})
-		for _, r := range roles {
-			//TODO может получать прификс из конфига
-			if strings.Contains(r.(string), serviceName) {
-				role = strings.Replace(r.(string), serviceName+"_", "", 1)
-				break
+
+	if ra, ok := c["realm_access"]; ok {
+		if realmAccess, ok := ra.(map[string]interface{}); ok {
+			if r, ok := realmAccess["roles"]; ok {
+				if roles, ok := r.([]interface{}); ok {
+					for _, rr := range roles {
+						if roleStr, ok := rr.(string); ok && strings.Contains(roleStr, serviceName) {
+							role = strings.Replace(roleStr, serviceName+"_", "", 1)
+							break
+						}
+					}
+				}
 			}
 		}
 	}
 
-	u, ok := c["preferred_username"]
-	if ok {
-		username = u.(string)
+	if u, ok := c["preferred_username"]; ok {
+		if s, ok := u.(string); ok {
+			username = s
+		}
 	}
 
-	uId, ok := c["sub"]
-	if ok {
-		userId = uId.(string)
+	if uId, ok := c["sub"]; ok {
+		if s, ok := uId.(string); ok {
+			userId = s
+		}
 	}
 
 	user.ID = userId

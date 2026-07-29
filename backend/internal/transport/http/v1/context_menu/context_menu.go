@@ -56,7 +56,11 @@ func (h *Handler) get(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	req := &models.GetContextMenuDTO{
 		SectionId: section,

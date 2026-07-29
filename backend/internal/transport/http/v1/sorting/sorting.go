@@ -48,7 +48,11 @@ func (h *Handler) get(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	req := &models.GetSortingDTO{
 		SectionId: section,
@@ -75,7 +79,11 @@ func (h *Handler) create(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 	dto.UserId = user.ID
 
 	if err := h.service.Create(c, dto); err != nil {
@@ -103,7 +111,11 @@ func (h *Handler) createSeveral(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	for i := range dto {
 		dto[i].UserId = user.ID
@@ -128,7 +140,11 @@ func (h *Handler) update(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 	dto.UserId = user.ID
 
 	if err := h.service.Update(c, dto); err != nil {
@@ -156,7 +172,11 @@ func (h *Handler) change(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	for i := range dto {
 		dto[i].UserId = user.ID
@@ -194,7 +214,11 @@ func (h *Handler) delete(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	dto := &models.DeleteSortingDTO{
 		Name:      name,

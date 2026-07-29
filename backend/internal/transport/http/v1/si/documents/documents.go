@@ -57,7 +57,11 @@ func (h *Handler) getTemp(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	req := &models.GetDocumentDTO{
 		Group:        group,
@@ -91,7 +95,11 @@ func (h *Handler) getList(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	req := &models.GetDocumentDTO{
 		Group:        group,
@@ -169,7 +177,11 @@ func (h *Handler) upload(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	files := form.File["files"]
 	if len(files) == 0 {
@@ -212,7 +224,11 @@ func (h *Handler) delete(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	req := &models.DeleteDocumentDTO{
 		Id:           id,

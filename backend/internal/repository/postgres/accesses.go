@@ -36,7 +36,7 @@ func (r *AccessesRepo) Get(ctx context.Context, req *models.GetAccessesDTO) ([]*
 		INNER JOIN %s AS u ON a.user_id=u.id 
 		INNER JOIN %s AS r ON r.id=a.role_id 
 		WHERE realm_id=$1 ORDER BY name, last_name, first_name`,
-		AccessTable, UsersTable, RoleTable,
+		AccessTable, UserTable, RoleTable,
 	)
 	tmp := []*pq_models.Accesses{}
 
@@ -84,7 +84,7 @@ func (r *AccessesRepo) GetByUser(ctx context.Context, req *models.GetAccessesByU
 		INNER JOIN %s AS u ON a.user_id=u.id 
 		INNER JOIN %s AS r ON r.id=a.role_id 
 		WHERE realm_id=$1 AND u.sso_id=$2 ORDER BY name, last_name, first_name`,
-		AccessTable, UsersTable, RoleTable,
+		AccessTable, UserTable, RoleTable,
 	)
 	tmp := &pq_models.Accesses{}
 

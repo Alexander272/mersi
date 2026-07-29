@@ -168,7 +168,7 @@ func (r *RoleRepo) GetByRealm(ctx context.Context, req *models.GetRoleByRealmDTO
 		INNER JOIN %s AS a ON a.role_id=r.id
 		LEFT JOIN LATERAL (SELECT sso_id from %s WHERE id=a.user_id) AS u ON true
 		WHERE sso_id=$1 %s ORDER BY level DESC, realm_id LIMIT 1`,
-		RoleTable, AccessTable, UsersTable, cond,
+		RoleTable, AccessTable, UserTable, cond,
 	)
 	tmp := &pq_models.RoleFull{}
 
@@ -196,7 +196,7 @@ func (r *RoleRepo) GetWithRealm(ctx context.Context, req *models.GetRoleByRealmD
 		INNER JOIN %s AS a ON a.role_id=r.id
 		-- LEFT JOIN LATERAL (SELECT u.sso_id from %s AS u WHERE id=a.user_id) AS u ON true
 		WHERE sso_id=$1 ORDER BY level DESC, realm_id`,
-		RoleTable, AccessTable, UsersTable,
+		RoleTable, AccessTable, UserTable,
 	)
 	data := []*models.RoleWithRealm{}
 

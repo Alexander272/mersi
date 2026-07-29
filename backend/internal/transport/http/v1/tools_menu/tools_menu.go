@@ -54,7 +54,11 @@ func (h *Handler) get(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	req := &models.GetToolsMenuDTO{
 		SectionId: section,
@@ -76,7 +80,11 @@ func (h *Handler) toggleFavorite(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	dto := &models.ChangeFavoriteDTO{
 		UserId: user.ID,

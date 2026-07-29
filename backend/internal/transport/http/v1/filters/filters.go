@@ -46,7 +46,11 @@ func (h *Handler) get(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	req := &models.GetSavedFiltersDTO{
 		SectionId: section,
@@ -79,7 +83,11 @@ func (h *Handler) create(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	for i := range dto {
 		dto[i].UserId = user.ID
@@ -112,7 +120,11 @@ func (h *Handler) change(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	for i := range dto.Filters {
 		dto.Filters[i].UserId = user.ID
@@ -144,7 +156,11 @@ func (h *Handler) delete(c *gin.Context) {
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		response.SendError(c, models.ErrSessionEmpty)
+		return
+	}
 
 	dto := &models.DeleteSavedFiltersDTO{
 		SectionId: section,

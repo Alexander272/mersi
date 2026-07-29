@@ -87,6 +87,9 @@ var (
 	// 404 Not Found
 	ErrEmployeeNotFound = NewDomainError(errors.New("employee not found"), http.StatusNotFound, "NF003", "Сотрудник не найден")
 
+	// 500 Internal Server Error
+	ErrInvalidUserType = NewDomainError(errors.New("invalid user type in context"), http.StatusInternalServerError, "S001", "Внутренняя ошибка сервера")
+
 	// 401 Unauthorized
 	ErrSessionEmpty = NewDomainError(errors.New("user session not found"), http.StatusUnauthorized, "AU001", "Сессия не найдена")
 )

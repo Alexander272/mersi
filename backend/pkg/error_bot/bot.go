@@ -68,8 +68,11 @@ func Send(c *gin.Context, e string, request interface{}) {
 		return
 	}
 
-	_, err := http.Post(url, "application/json", &buf)
+	resp, err := http.Post(url, "application/json", &buf)
 	if err != nil {
 		slog.Error("failed to send error to bot.", slog.String("error", err.Error()))
+	}
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
 	}
 }

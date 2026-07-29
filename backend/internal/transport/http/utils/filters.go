@@ -14,7 +14,10 @@ func GetFilterParams(c *gin.Context) *models.GetSiDTO {
 	if !exists {
 		return nil
 	}
-	user := u.(models.User)
+	user, ok := u.(models.User)
+	if !ok {
+		return nil
+	}
 
 	params := &models.GetSiDTO{
 		SectionId: "",
@@ -26,7 +29,9 @@ func GetFilterParams(c *gin.Context) *models.GetSiDTO {
 
 	hasWritePermission := false
 	if wp, exists := c.Get(constants.CtxHasWritePermission); exists {
-		hasWritePermission = wp.(bool)
+		if wp, ok := wp.(bool); ok {
+			hasWritePermission = wp
+		}
 	}
 
 	// 2. Обработка фильтров
@@ -71,7 +76,9 @@ func GetFilterParams(c *gin.Context) *models.GetSiDTO {
 	// 3. Ограничения для обычных пользователей
 	if !hasWritePermission {
 		if deptIDs, exists := c.Get(constants.CtxDepartmentAccess); exists {
-			params.DepartmentAccess = deptIDs.([]string)
+			if deptIDs, ok := deptIDs.([]string); ok {
+				params.DepartmentAccess = deptIDs
+			}
 		}
 		applyUserRestrictions(params)
 	}

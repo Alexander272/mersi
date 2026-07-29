@@ -18,6 +18,7 @@ import (
 	transport "github.com/Alexander272/mersi/backend/internal/transport/http"
 	"github.com/Alexander272/mersi/backend/pkg/auth"
 	"github.com/Alexander272/mersi/backend/pkg/database/postgres"
+	"github.com/Alexander272/mersi/backend/pkg/limiter"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/Alexander272/mersi/backend/pkg/mattermost"
 	adapter "github.com/Blank-Xu/sqlx-adapter"
@@ -120,6 +121,8 @@ func main() {
 	if err := services.Scheduler.Stop(); err != nil {
 		logger.Error("failed to stop scheduler.", logger.ErrAttr(err))
 	}
+
+	limiter.StopAll()
 
 	if err := srv.Stop(ctx); err != nil {
 		logger.Error("failed to stop server:", logger.ErrAttr(err))
