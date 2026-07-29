@@ -1,7 +1,7 @@
 package employees
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -9,7 +9,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -49,7 +48,7 @@ func (h *EmployeeHandlers) GetAll(c *gin.Context) {
 	realm := c.GetHeader("realm")
 	err := uuid.Validate(realm)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid id param")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 	filter["realm_id"] = realm
@@ -61,8 +60,7 @@ func (h *EmployeeHandlers) GetAll(c *gin.Context) {
 
 	employees, err := h.service.GetAll(c, &models.GetEmployeesDTO{Filters: filter})
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), filter)
+		response.SendError(c, err, filter)
 		return
 	}
 
@@ -72,15 +70,14 @@ func (h *EmployeeHandlers) GetAll(c *gin.Context) {
 func (h *EmployeeHandlers) GetUnique(c *gin.Context) {
 	realm := c.Query("realm")
 	if err := uuid.Validate(realm); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid realm param")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 	dto := &models.GetUniqueEmployeeDTO{Realm: realm}
 
 	employees, err := h.service.GetUnique(c, dto)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -107,18 +104,13 @@ func (h *EmployeeHandlers) GetUnique(c *gin.Context) {
 func (h *EmployeeHandlers) GetById(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Id пользователя не задан")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
 	data, err := h.service.GetById(c, id)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRows) {
-			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), "Сотрудник не найден")
-			return
-		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), id)
+		response.SendError(c, err, id)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -127,17 +119,12 @@ func (h *EmployeeHandlers) GetById(c *gin.Context) {
 func (h *EmployeeHandlers) Create(c *gin.Context) {
 	dto := &models.WriteEmployeeDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
-		if errors.Is(err, models.ErrAlreadyExists) {
-			response.NewErrorResponse(c, http.StatusConflict, err.Error(), "Сотрудник с таким именем уже существует в данном подразделении")
-			return
-		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -153,20 +140,19 @@ func (h *EmployeeHandlers) Create(c *gin.Context) {
 func (h *EmployeeHandlers) Update(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Id пользователя не задан")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
 	dto := &models.WriteEmployeeDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 	dto.Id = id
 
 	if err := h.service.Update(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -182,18 +168,12 @@ func (h *EmployeeHandlers) Update(c *gin.Context) {
 func (h *EmployeeHandlers) Delete(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Id пользователя не задан")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
 	if err := h.service.Delete(c, id); err != nil {
-		if errors.Is(err, models.ErrHasInstrument) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Нельзя удалить работника у которого числятся инструменты")
-			return
-		}
-
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), id)
+		response.SendError(c, err, id)
 		return
 	}
 	logger.Info("Работник удален", logger.StringAttr("id", id))

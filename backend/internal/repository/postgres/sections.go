@@ -129,8 +129,12 @@ func (r *SectionRepo) Update(ctx context.Context, dto *models.SectionDTO) error 
 		SectionTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -138,8 +142,12 @@ func (r *SectionRepo) Update(ctx context.Context, dto *models.SectionDTO) error 
 func (r *SectionRepo) Delete(ctx context.Context, dto *models.DeleteSectionDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, SectionTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

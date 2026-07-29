@@ -130,8 +130,12 @@ func (r *TransferToSaveRepo) Update(ctx context.Context, tx Tx, dto *models.Tran
 		TransferToSaveTable,
 	)
 
-	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.getExec(tx).NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -139,8 +143,12 @@ func (r *TransferToSaveRepo) Update(ctx context.Context, tx Tx, dto *models.Tran
 func (r *TransferToSaveRepo) Delete(ctx context.Context, tx Tx, dto *models.DeleteTransferToSaveDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, TransferToSaveTable)
 
-	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.getExec(tx).NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

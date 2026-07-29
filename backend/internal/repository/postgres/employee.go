@@ -155,9 +155,12 @@ func (r *EmployeeRepo) Create(ctx context.Context, employee *models.WriteEmploye
 func (r *EmployeeRepo) Update(ctx context.Context, employee *models.WriteEmployeeDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET name=$1, department_id=$2, notes=$3 WHERE id=$4`, EmployeeTable)
 
-	_, err := r.db.ExecContext(ctx, query, employee.Name, employee.DepartmentId, employee.Notes, employee.Id)
+	res, err := r.db.ExecContext(ctx, query, employee.Name, employee.DepartmentId, employee.Notes, employee.Id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -165,9 +168,12 @@ func (r *EmployeeRepo) Update(ctx context.Context, employee *models.WriteEmploye
 func (r *EmployeeRepo) Delete(ctx context.Context, id string) error {
 	query := fmt.Sprintf("DELETE FROM %s WHERE id=$1", EmployeeTable)
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

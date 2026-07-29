@@ -130,8 +130,12 @@ func (r *RepairRepo) Update(ctx context.Context, tx Tx, dto *models.RepairDTO) e
 		RepairTable,
 	)
 
-	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.getExec(tx).NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -139,8 +143,12 @@ func (r *RepairRepo) Update(ctx context.Context, tx Tx, dto *models.RepairDTO) e
 func (r *RepairRepo) Delete(ctx context.Context, tx Tx, dto *models.DeleteRepairDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, RepairTable)
 
-	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.getExec(tx).NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

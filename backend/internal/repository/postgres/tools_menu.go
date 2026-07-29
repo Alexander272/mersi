@@ -69,8 +69,12 @@ func (r *ToolsMenuRepo) Update(ctx context.Context, dto *models.ToolsMenuDTO) er
 		ToolsMenuTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -87,8 +91,12 @@ func (r *ToolsMenuRepo) Update(ctx context.Context, dto *models.ToolsMenuDTO) er
 func (r *ToolsMenuRepo) Delete(ctx context.Context, dto *models.DeleteToolsMenuDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, ToolsMenuTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

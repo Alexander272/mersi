@@ -12,7 +12,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -48,14 +47,14 @@ func Register(api *gin.RouterGroup, service services.Document, middleware *middl
 func (h *Handler) getTemp(c *gin.Context) {
 	group := c.Param("group")
 	if group == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Группа файлов не задана")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 	instrument := c.Query("instrument")
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
@@ -68,8 +67,7 @@ func (h *Handler) getTemp(c *gin.Context) {
 
 	data, err := h.service.GetTemp(c, req)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		response.SendError(c, err, req)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -78,19 +76,19 @@ func (h *Handler) getTemp(c *gin.Context) {
 func (h *Handler) getList(c *gin.Context) {
 	group := c.Param("group")
 	if group == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Группа файлов не задана")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
 	instrument := c.Query("instrument")
 	if err := uuid.Validate(instrument); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
@@ -103,8 +101,7 @@ func (h *Handler) getList(c *gin.Context) {
 
 	data, err := h.service.GetByInstrument(c, req)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		response.SendError(c, err, req)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -113,41 +110,40 @@ func (h *Handler) getList(c *gin.Context) {
 func (h *Handler) download(c *gin.Context) {
 	rawPath := c.Query("path")
 	if rawPath == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty path", "Путь к файлу не задан")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
 	cleaned := filepath.Clean(rawPath)
 	absPath, err := filepath.Abs(cleaned)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Некорректный путь")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 
 	baseDir, err := filepath.Abs("files")
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Ошибка сервера")
+		response.SendError(c, fmt.Errorf("failed to get base dir: %w", err))
 		return
 	}
 
 	if !strings.HasPrefix(absPath, baseDir+string(os.PathSeparator)) && absPath != baseDir {
-		response.NewErrorResponse(c, http.StatusForbidden, "path traversal attempt", "Доступ запрещён")
+		response.SendError(c, models.ErrForbidden)
 		return
 	}
 
 	fileStat, err := os.Stat(absPath)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
-			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), "Файл не найден")
+			response.SendError(c, models.ErrFileNotFound)
 			return
 		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Файл не найден")
-		error_bot.Send(c, err.Error(), rawPath)
+		response.SendError(c, err, rawPath)
 		return
 	}
 
 	if fileStat.IsDir() {
-		response.NewErrorResponse(c, http.StatusBadRequest, "path is directory", "Путь указывает на директорию")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
@@ -161,7 +157,7 @@ func (h *Handler) download(c *gin.Context) {
 func (h *Handler) upload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Не удалось получить файлы")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNoFileInRequest, err))
 		return
 	}
 
@@ -170,22 +166,21 @@ func (h *Handler) upload(c *gin.Context) {
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
 
 	files := form.File["files"]
 	if len(files) == 0 {
-		response.NewErrorResponse(c, http.StatusNoContent, "no content", "Нет файлов для загрузки")
+		response.SendError(c, fmt.Errorf("%w: no files", models.ErrNotValid))
 		return
 	}
 
 	dto := &models.DocumentsDTO{InstrumentId: instrumentId, Group: group, UserId: user.ID, Files: files}
 	res, err := h.service.Upload(c, dto)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -200,13 +195,13 @@ func (h *Handler) upload(c *gin.Context) {
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id документа не задан")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 	instrumentId := c.Query("instrumentId")
 	filename := c.Query("filename")
 	if filename == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Имя файла не задано")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 	group := c.Query("group")
@@ -214,7 +209,7 @@ func (h *Handler) delete(c *gin.Context) {
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
@@ -229,8 +224,7 @@ func (h *Handler) delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(c, req); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		response.SendError(c, err, req)
 		return
 	}
 

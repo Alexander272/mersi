@@ -81,7 +81,7 @@ func (s *PreservationService) Create(ctx context.Context, dto *models.Preservati
 			return err
 		}
 		if duplicate != nil {
-			return models.ErrAlreadyExists
+			return models.ErrPreservationAlreadyExists
 		}
 
 		if err := s.repo.Create(ctx, tx, dto); err != nil {

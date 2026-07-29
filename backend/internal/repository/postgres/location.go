@@ -16,14 +16,14 @@ import (
 )
 
 type LocationRepo struct {
-	db          *sqlx.DB
-	transaction Transaction
+	db *sqlx.DB
+	Transaction
 }
 
 func NewLocationRepo(db *sqlx.DB, transaction Transaction) *LocationRepo {
 	return &LocationRepo{
 		db:          db,
-		transaction: transaction,
+		Transaction: transaction,
 	}
 }
 
@@ -213,7 +213,7 @@ func (r *LocationRepo) CreateInTx(ctx context.Context, tx Tx, dto *models.Locati
 	}
 
 	args := []interface{}{dto.Id, dto.InstrumentId, dto.DateOfIssue, dto.DateOfReceiving, status, dto.NeedConfirm, personId, departmentId, dto.UserId}
-	_, err := tx.TX().ExecContext(ctx, query, args...)
+	_, err := r.getExec(tx).ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}
@@ -305,9 +305,12 @@ func (r *LocationRepo) Update(ctx context.Context, dto *models.LocationDTO) erro
 		LocationTable,
 	)
 
-	_, err := r.db.NamedExecContext(ctx, query, dto)
+	res, err := r.db.NamedExecContext(ctx, query, dto)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return models.ErrNoRows
 	}
 	return nil
 }
@@ -339,26 +342,32 @@ func (r *LocationRepo) SetDepartment(ctx context.Context, id string) error {
 
 func (r *LocationRepo) Receiving(ctx context.Context, dto *models.ReceivingDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET status=$1, date_of_receiving=$2, has_confirmed=$3 
-		WHERE ARRAY[instrument_id] <@ $4 AND date_of_receiving='0001-01-01'::DATE`,
+		WHERE ARRAY[instrument_id] <@ $4 AND date_of_receiving='1970-01-01'::DATE`,
 		LocationTable,
 	)
 
-	_, err := r.db.ExecContext(ctx, query, dto.Status, time.Now(), dto.HasConfirmed, pq.Array(dto.InstrumentIds))
+	res, err := r.db.ExecContext(ctx, query, dto.Status, time.Now(), dto.HasConfirmed, pq.Array(dto.InstrumentIds))
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return models.ErrNoRows
 	}
 	return nil
 }
 
 func (r *LocationRepo) ForcedReceipt(ctx context.Context, dto *models.ForcedReceiptDTO) error {
 	query := fmt.Sprintf(`UPDATE %s AS m SET date_of_receiving=$1, status='used' 
-		WHERE instrument_id=$2 AND date_of_receiving='0001-01-01'::DATE`,
+		WHERE instrument_id=$2 AND date_of_receiving='1970-01-01'::DATE`,
 		LocationTable,
 	)
 
-	_, err := r.db.ExecContext(ctx, query, time.Now(), dto.InstrumentId)
+	res, err := r.db.ExecContext(ctx, query, time.Now(), dto.InstrumentId)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return models.ErrNoRows
 	}
 	return nil
 }
@@ -366,8 +375,8 @@ func (r *LocationRepo) ForcedReceipt(ctx context.Context, dto *models.ForcedRece
 func (r *LocationRepo) ForcedReceiptAll(ctx context.Context) error {
 	query := fmt.Sprintf(`UPDATE %s AS m SET date_of_receiving=$1, status=(
 			SELECT CASE WHEN status='used' THEN 'reserve' ELSE 'used' END FROM %s
-			WHERE instrument_id=m.instrument_id AND date_of_receiving!='0001-01-01'::DATE ORDER BY date_of_issue DESC LIMIT 1
-		) WHERE date_of_receiving='0001-01-01'::DATE AND date_of_issue < $2`,
+			WHERE instrument_id=m.instrument_id AND date_of_receiving!='1970-01-01'::DATE ORDER BY date_of_issue DESC LIMIT 1
+		) WHERE date_of_receiving='1970-01-01'::DATE AND date_of_issue < $2`,
 		LocationTable, LocationTable,
 	)
 
@@ -386,14 +395,12 @@ func (r *LocationRepo) Delete(ctx context.Context, tx Tx, dto *models.DeleteLoca
 		LocationTable, LocationTable,
 	)
 
-	var err error
-	if tx != nil {
-		_, err = tx.TX().NamedExecContext(ctx, query, dto)
-	} else {
-		_, err = r.db.NamedExecContext(ctx, query, dto)
-	}
+	res, err := r.getExec(tx).NamedExecContext(ctx, query, dto)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return models.ErrNoRows
 	}
 	return nil
 }

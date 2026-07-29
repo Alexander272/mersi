@@ -173,6 +173,9 @@ func (s *SIService) ChangePosition(ctx context.Context, dto *models.ChangePositi
 
 func (s *SIService) Delete(ctx context.Context, dto *models.DeleteSiDTO) error {
 	if err := s.instrument.Delete(ctx, dto); err != nil {
+		if errors.Is(err, models.ErrNoRows) {
+			return models.ErrDeleteInstrumentAtHolder
+		}
 		return fmt.Errorf("failed to delete si. error: %w", err)
 	}
 	return nil

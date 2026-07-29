@@ -100,8 +100,12 @@ func (r *ColumnRepo) Update(ctx context.Context, dto *models.ColumnsDTO) error {
 		dto.ParentID = uuid.Nil.String()
 	}
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -168,8 +172,12 @@ func (r *ColumnRepo) UpdatePositions(ctx context.Context, dto []*models.UpdateCo
 func (r *ColumnRepo) Delete(ctx context.Context, dto *models.DeleteColumnDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, ColumnsTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

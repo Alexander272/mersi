@@ -28,6 +28,7 @@ type Services struct {
 	VerificationDoc
 	Verification
 	Location
+	Receiving
 	SI
 	ContextMenu
 	ToolsMenu
@@ -95,11 +96,11 @@ func NewServices(deps *Deps) *Services {
 	activityLog := NewActivityLogService(deps.Repo.ActivityLog)
 	instrument := NewInstrumentService(deps.Repo.Instrument, document, activityLog, txManager)
 	verification := NewVerificationService(&VerificationDeps{
-		Repo:       deps.Repo.Verification,
-		TxManager:  txManager,
-		VerDocs:    verificationDoc,
-		Instrument: instrument,
-		Docs:       document,
+		Repo:        deps.Repo.Verification,
+		TxManager:   txManager,
+		VerDocs:     verificationDoc,
+		Instrument:  instrument,
+		Docs:        document,
 		ActivityLog: activityLog,
 	})
 
@@ -120,13 +121,19 @@ func NewServices(deps *Deps) *Services {
 
 	responsible := NewResponsibleService(deps.Repo.Responsible)
 
-	//TODO надо бы подумать как избавиться от этой кольцевой зависимости
+	location := NewLocationService(&LocationDeps{
+		Repo:        deps.Repo.Location,
+		TxManager:   txManager,
+		Responsible: responsible,
+		ActivityLog: activityLog,
+	})
+
 	si := NewSiService(&SiDeps{
 		Repo:         deps.Repo.SI,
 		TxManager:    txManager,
 		Instrument:   instrument,
 		Verification: verification,
-		Location:     NewLocationService(&LocationDeps{Repo: deps.Repo.Location, TxManager: txManager, Responsible: responsible, ActivityLog: activityLog}),
+		Location:     location,
 	})
 
 	file := NewFileService()
@@ -138,13 +145,15 @@ func NewServices(deps *Deps) *Services {
 		Most:    most,
 		Conf:    deps.CheckUsedConf,
 	})
-	location := NewLocationService(&LocationDeps{
+
+	receiving := NewReceivingService(&ReceivingDeps{
 		Repo:         deps.Repo.Location,
-		TxManager:    txManager,
+		Location:     location,
 		Responsible:  responsible,
 		Notification: notification,
 		Most:         most,
 		ActivityLog:  activityLog,
+		TxManager:    txManager,
 	})
 	department := NewDepartmentService(deps.Repo.Department, location)
 	employee := NewEmployeeService(deps.Repo.Employee, location)
@@ -169,7 +178,7 @@ func NewServices(deps *Deps) *Services {
 	scheduler := NewSchedulerService(&SchedulerDeps{
 		Notification: notification,
 		User:         user,
-		Location:     location,
+		Receiving:    receiving,
 		Documents:    document,
 	})
 
@@ -211,6 +220,7 @@ func NewServices(deps *Deps) *Services {
 		Channel:              channel,
 		Responsible:          responsible,
 		Location:             location,
+		Receiving:            receiving,
 
 		File:         file,
 		Notification: notification,

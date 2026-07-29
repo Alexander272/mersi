@@ -82,7 +82,7 @@ func (s *DepartmentService) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	if len(locs) > 0 {
-		return models.ErrHasInstrument
+		return models.ErrDeleteDepartmentHasInstrument
 	}
 
 	// при удалении подразделения надо записать его название в таблицу с перемещениями (чтобы оно сохранилось в истории)

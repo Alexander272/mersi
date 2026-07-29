@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -8,7 +9,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -42,8 +42,7 @@ func Register(api *gin.RouterGroup, service services.Channel, middleware *middle
 func (h *Handler) getAll(c *gin.Context) {
 	data, err := h.service.GetAll(c)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), nil)
+		response.SendError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -52,13 +51,12 @@ func (h *Handler) getAll(c *gin.Context) {
 func (h *Handler) create(c *gin.Context) {
 	dto := &models.Channel{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	logger.Info("Канал создан", logger.AnyAttr("dto", dto))
@@ -69,19 +67,18 @@ func (h *Handler) create(c *gin.Context) {
 func (h *Handler) update(c *gin.Context) {
 	dto := &models.Channel{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 	id := c.Param("id")
 	if id == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Id канала не задан")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 	dto.ID = id
 
 	if err := h.service.Update(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	logger.Info("Канал обновлен", logger.AnyAttr("dto", dto))
@@ -92,13 +89,12 @@ func (h *Handler) update(c *gin.Context) {
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Id канала не задан")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
 	if err := h.service.Delete(c, id); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), id)
+		response.SendError(c, err, id)
 		return
 	}
 	logger.Info("Канал удален", logger.StringAttr("id", id))

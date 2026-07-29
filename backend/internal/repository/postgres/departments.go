@@ -100,9 +100,12 @@ func (r *DepartmentRepo) Update(ctx context.Context, dto *models.DepartmentDTO) 
 		channelId = nil
 	}
 
-	_, err := r.db.ExecContext(ctx, query, dto.Name, leaderId, channelId, dto.Id)
+	res, err := r.db.ExecContext(ctx, query, dto.Name, leaderId, channelId, dto.Id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -110,9 +113,12 @@ func (r *DepartmentRepo) Update(ctx context.Context, dto *models.DepartmentDTO) 
 func (r *DepartmentRepo) Delete(ctx context.Context, id string) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, DepartmentTable)
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

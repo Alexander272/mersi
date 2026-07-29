@@ -59,7 +59,7 @@ func (s *EmployeeService) GetBySSOId(ctx context.Context, id string) (*models.Em
 	employee, err := s.repo.GetBySSOId(ctx, id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRows) {
-			return nil, err
+			return nil, models.ErrEmployeeNotFound
 		}
 		return nil, fmt.Errorf("failed to get employee by sso id. error: %w", err)
 	}
@@ -92,7 +92,7 @@ func (s *EmployeeService) GetById(ctx context.Context, id string) (*models.Emplo
 	employee, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRows) {
-			return nil, err
+			return nil, models.ErrEmployeeNotFound
 		}
 		return nil, fmt.Errorf("failed to get employee by id. error: %w", err)
 	}
@@ -114,7 +114,7 @@ func (s *EmployeeService) Create(ctx context.Context, employee *models.WriteEmpl
 	}
 
 	if candidate != nil {
-		return models.ErrAlreadyExists
+		return models.ErrEmployeeAlreadyExists
 	}
 
 	if err := s.repo.Create(ctx, employee); err != nil {
@@ -137,7 +137,7 @@ func (s *EmployeeService) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	if len(locs) > 0 {
-		return models.ErrHasInstrument
+		return models.ErrDeleteEmployeeHasInstrument
 	}
 
 	// при удалении сотрудника надо записать его фио в таблицу с перемещениями (чтобы оно сохранилось в истории)

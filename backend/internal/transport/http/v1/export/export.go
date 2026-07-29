@@ -2,9 +2,7 @@ package export
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -13,7 +11,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/utils"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/gin-gonic/gin"
 	"github.com/goodsign/monday"
 	"github.com/google/uuid"
@@ -44,7 +41,7 @@ func (h *Handler) export(c *gin.Context) {
 	section := c.Query("section")
 	err := uuid.Validate(section)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Сессия не найдена")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
@@ -57,8 +54,7 @@ func (h *Handler) export(c *gin.Context) {
 
 	buffer, err := h.service.Export(c, params)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), params)
+		response.SendError(c, err, params)
 		return
 	}
 
@@ -68,7 +64,7 @@ func (h *Handler) export(c *gin.Context) {
 func (h *Handler) makeScheduler(c *gin.Context) {
 	req, err := h.parsePeriod(c)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Неверно заданы параметры периода или области")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 	h.enrichPeriodWithDeptAccess(c, req)
@@ -85,7 +81,7 @@ func (h *Handler) makeScheduler(c *gin.Context) {
 func (h *Handler) makeAccountingLog(c *gin.Context) {
 	section := c.Query("section")
 	if err := uuid.Validate(section); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Сессия не найдена")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
@@ -119,14 +115,8 @@ func (h *Handler) enrichPeriodWithDeptAccess(c *gin.Context, req *models.Period)
 	}
 }
 
-// Вспомогательный метод для обработки ошибок сервиса (чтобы не дублировать error_bot)
 func (h *Handler) handleServiceError(c *gin.Context, err error, req interface{}) {
-	if errors.Is(err, models.ErrNoRows) {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Нет данных для выгрузки")
-		return
-	}
-	response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла внутренняя ошибка")
-	error_bot.Send(c, err.Error(), req)
+	response.SendError(c, err, req)
 }
 
 func (h *Handler) parsePeriod(c *gin.Context) (*models.Period, error) {

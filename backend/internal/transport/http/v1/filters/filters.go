@@ -1,6 +1,7 @@
 package filters
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -8,7 +9,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -38,12 +38,12 @@ func Register(api *gin.RouterGroup, service services.Filters, middleware *middle
 func (h *Handler) get(c *gin.Context) {
 	section := c.Query("section")
 	if err := uuid.Validate(section); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
@@ -55,8 +55,7 @@ func (h *Handler) get(c *gin.Context) {
 
 	data, err := h.service.Get(c, req)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		response.SendError(c, err, req)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
@@ -65,19 +64,19 @@ func (h *Handler) get(c *gin.Context) {
 func (h *Handler) create(c *gin.Context) {
 	section := c.Query("section")
 	if err := uuid.Validate(section); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 
 	dto := []*models.SavedFilterDTO{}
 	if err := c.BindJSON(&dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
@@ -88,8 +87,7 @@ func (h *Handler) create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Фильтры успешно сохранены"})
@@ -98,20 +96,20 @@ func (h *Handler) create(c *gin.Context) {
 func (h *Handler) change(c *gin.Context) {
 	// section := c.Query("section")
 	// if err := uuid.Validate(section); err != nil {
-	// 	response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+	// 	response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 	// 	return
 	// }
 
 	dto := &models.ChangeFillersDTO{}
 	// dto := []*models.SavedFilterDTO{}
 	if err := c.BindJSON(&dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
@@ -123,14 +121,12 @@ func (h *Handler) change(c *gin.Context) {
 
 	if len(dto.Filters) == 0 {
 		if err := h.service.Delete(c, &models.DeleteSavedFiltersDTO{UserId: user.ID, SectionId: dto.SectionId}); err != nil {
-			response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-			error_bot.Send(c, err.Error(), dto)
+			response.SendError(c, err, dto)
 			return
 		}
 	} else {
 		if err := h.service.Change(c, dto.Filters); err != nil {
-			response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-			error_bot.Send(c, err.Error(), dto)
+			response.SendError(c, err, dto)
 			return
 		}
 	}
@@ -140,12 +136,12 @@ func (h *Handler) change(c *gin.Context) {
 func (h *Handler) delete(c *gin.Context) {
 	section := c.Query("section")
 	if err := uuid.Validate(section); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
@@ -156,8 +152,7 @@ func (h *Handler) delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Фильтры сброшены"})

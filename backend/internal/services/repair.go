@@ -65,7 +65,7 @@ func (s *RepairService) Create(ctx context.Context, dto *models.RepairDTO) error
 			return err
 		}
 		if candidate != nil {
-			return models.ErrAlreadyExists
+			return models.ErrRepairAlreadyExists
 		}
 
 		if err := s.repo.Create(ctx, tx, dto); err != nil {

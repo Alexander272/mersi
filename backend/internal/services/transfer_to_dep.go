@@ -72,7 +72,7 @@ func (s *TransferToDepService) Create(ctx context.Context, dto *models.TransferT
 			return err
 		}
 		if candidate != nil {
-			return models.ErrAlreadyExists
+			return models.ErrTransferToDepAlreadyExists
 		}
 
 		if err := s.repo.Create(ctx, tx, dto); err != nil {

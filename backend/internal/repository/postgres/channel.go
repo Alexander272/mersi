@@ -50,9 +50,12 @@ func (r *ChannelRepo) Create(ctx context.Context, channel *models.Channel) error
 func (r *ChannelRepo) Update(ctx context.Context, channel *models.Channel) error {
 	query := fmt.Sprintf(`UPDATE %s SET name=:name, description=:description, most_channel_id=:most_channel_id WHERE id=:id`, ChannelTable)
 
-	_, err := r.db.NamedExecContext(ctx, query, channel)
+	res, err := r.db.NamedExecContext(ctx, query, channel)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -60,9 +63,12 @@ func (r *ChannelRepo) Update(ctx context.Context, channel *models.Channel) error
 func (r *ChannelRepo) Delete(ctx context.Context, id string) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, ChannelTable)
 
-	_, err := r.db.Exec(query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

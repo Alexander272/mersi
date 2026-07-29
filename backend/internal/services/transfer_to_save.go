@@ -80,7 +80,7 @@ func (s *TransferToSaveService) Create(ctx context.Context, dto *models.Transfer
 			return err
 		}
 		if duplicate != nil {
-			return models.ErrAlreadyExists
+			return models.ErrTransferToSaveAlreadyExists
 		}
 
 		if err := s.repo.Create(ctx, tx, dto); err != nil {

@@ -1,7 +1,6 @@
 package locations
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,24 +11,25 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/utils"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type Handler struct {
-	service services.Location
+	location     services.Location
+	receivingSvc services.Receiving
 }
 
-func NewHandler(service services.Location) *Handler {
+func NewHandler(location services.Location, receiving services.Receiving) *Handler {
 	return &Handler{
-		service: service,
+		location:     location,
+		receivingSvc: receiving,
 	}
 }
 
-func Register(api *gin.RouterGroup, service services.Location, ware *middleware.Middleware) {
-	handler := NewHandler(service)
+func Register(api *gin.RouterGroup, location services.Location, receiving services.Receiving, ware *middleware.Middleware) {
+	handler := NewHandler(location, receiving)
 
 	perm := []*middleware.Permission{
 		{Section: constants.Location, Method: constants.Write},
@@ -78,15 +78,14 @@ func Register(api *gin.RouterGroup, service services.Location, ware *middleware.
 func (h *Handler) get(c *gin.Context) {
 	instrument := c.Query("instrument")
 	if err := uuid.Validate(instrument); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 	req := &models.GetLocationDTO{InstrumentId: instrument}
 
-	data, err := h.service.Get(c, req)
+	data, err := h.location.Get(c, req)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		response.SendError(c, err, req)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
@@ -95,19 +94,14 @@ func (h *Handler) get(c *gin.Context) {
 func (h *Handler) getLast(c *gin.Context) {
 	instrument := c.Query("instrument")
 	if err := uuid.Validate(instrument); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 	req := &models.GetLocationDTO{InstrumentId: instrument}
 
-	data, err := h.service.GetLast(c, req)
+	data, err := h.location.GetLast(c, req)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRows) {
-			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), "Данные не найдены")
-			return
-		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		response.SendError(c, err, req)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -116,15 +110,14 @@ func (h *Handler) getLast(c *gin.Context) {
 func (h *Handler) getSeveralLast(c *gin.Context) {
 	instruments := c.Query("instruments")
 	if instruments == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "instruments is empty", "Отправлены некорректные данные")
+		response.SendError(c, models.ErrNotValid)
 		return
 	}
 	req := &models.GetSeveralLocationsDTO{InstrumentIds: strings.Split(instruments, ",")}
 
-	data, err := h.service.GetSeveralLast(c, req)
+	data, err := h.location.GetSeveralLast(c, req)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		response.SendError(c, err, req)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -133,7 +126,7 @@ func (h *Handler) getSeveralLast(c *gin.Context) {
 func (h *Handler) create(c *gin.Context) {
 	dto := &models.LocationDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
@@ -144,18 +137,8 @@ func (h *Handler) create(c *gin.Context) {
 	dto.Actor = actor
 	dto.UserId = actor.ID
 
-	if err := h.service.Create(c, nil, dto); err != nil {
-		if errors.Is(err, models.ErrNoChannel) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Канал для получения уведомлений не указан")
-			return
-		}
-		if errors.Is(err, models.ErrNoResponsible) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Ответственный не указан")
-			return
-		}
-
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+	if err := h.location.Create(c, nil, dto); err != nil {
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -172,7 +155,7 @@ func (h *Handler) create(c *gin.Context) {
 func (h *Handler) createSeveral(c *gin.Context) {
 	dto := []*models.LocationDTO{}
 	if err := c.BindJSON(&dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
@@ -185,18 +168,9 @@ func (h *Handler) createSeveral(c *gin.Context) {
 		dto[i].UserId = actor.ID
 	}
 
-	full, err := h.service.CreateSeveral(c, dto)
+	full, err := h.location.CreateSeveral(c, dto)
 	if err != nil {
-		if errors.Is(err, models.ErrNoResponsible) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Вы не являетесь ответственным")
-			return
-		}
-		if errors.Is(err, models.ErrNoInstrument) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Вы не можете переместить инструмент")
-			return
-		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -213,7 +187,7 @@ func (h *Handler) createSeveral(c *gin.Context) {
 func (h *Handler) receiving(c *gin.Context) {
 	dto := &models.ReceivingDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
@@ -225,17 +199,8 @@ func (h *Handler) receiving(c *gin.Context) {
 	dto.UserId = user.ID
 	dto.HasConfirmed = true
 
-	if err := h.service.ReceivingFromApp(c, dto); err != nil {
-		if errors.Is(err, models.ErrNoResponsible) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Вы не являетесь ответственным")
-			return
-		}
-		if errors.Is(err, models.ErrNoInstrument) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Вы не можете подтвердить получение инструментов")
-			return
-		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+	if err := h.receivingSvc.ReceivingFromApp(c, dto); err != nil {
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -252,18 +217,25 @@ func (h *Handler) receiving(c *gin.Context) {
 func (h *Handler) forcedReceiving(c *gin.Context) {
 	dto := &models.ForcedReceiptDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
-	if err := h.service.ForcedReceipt(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+	actor := utils.GetActor(c)
+	if actor == nil {
+		return
+	}
+	dto.Actor = actor
+
+	if err := h.receivingSvc.ForcedReceipt(c, dto); err != nil {
+		response.SendError(c, err, dto)
 		return
 	}
 
 	logger.Info("Получены инструменты (принудительно)",
 		logger.StringAttr("instrument_id", dto.InstrumentId),
+		logger.StringAttr("user_id", actor.ID),
+		logger.StringAttr("username", actor.Name),
 	)
 
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о месте нахождения успешно обновлены"})
@@ -272,13 +244,12 @@ func (h *Handler) forcedReceiving(c *gin.Context) {
 func (h *Handler) receivingDialog(c *gin.Context) {
 	dto := &models.DialogResponse{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
-	if err := h.service.ReceivingFromChannel(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+	if err := h.receivingSvc.ReceivingFromChannel(c, dto); err != nil {
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -293,13 +264,12 @@ func (h *Handler) receivingDialog(c *gin.Context) {
 func (h *Handler) receivingDialogOpen(c *gin.Context) {
 	dto := &models.PostAction{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
-	if err := h.service.ReceivingDialogOpen(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+	if err := h.receivingSvc.ReceivingDialogOpen(c, dto); err != nil {
+		response.SendError(c, err, dto)
 		return
 	}
 	logger.Info("Открытие диалога", logger.StringAttr("userId", dto.UserId))
@@ -310,13 +280,13 @@ func (h *Handler) receivingDialogOpen(c *gin.Context) {
 func (h *Handler) update(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 
 	dto := &models.LocationDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 	dto.Id = id
@@ -328,9 +298,8 @@ func (h *Handler) update(c *gin.Context) {
 	dto.Actor = actor
 	dto.UserId = actor.ID
 
-	if err := h.service.Update(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+	if err := h.location.Update(c, dto); err != nil {
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -347,7 +316,7 @@ func (h *Handler) update(c *gin.Context) {
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 
@@ -358,9 +327,8 @@ func (h *Handler) delete(c *gin.Context) {
 	}
 	dto.Actor = actor
 
-	if err := h.service.Delete(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+	if err := h.location.Delete(c, dto); err != nil {
+		response.SendError(c, err, dto)
 		return
 	}
 

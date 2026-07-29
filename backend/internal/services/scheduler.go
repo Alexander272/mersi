@@ -17,14 +17,14 @@ type SchedulerService struct {
 	cron         gocron.Scheduler
 	notification Notification
 	user         User
-	location     Location
+	receiving    Receiving
 	documents    Document
 }
 
 type SchedulerDeps struct {
 	Notification Notification
 	User         User
-	Location     Location
+	Receiving    Receiving
 	Documents    Document
 }
 
@@ -38,7 +38,7 @@ func NewSchedulerService(deps *SchedulerDeps) *SchedulerService {
 		cron:         cron,
 		notification: deps.Notification,
 		user:         deps.User,
-		location:     deps.Location,
+		receiving:    deps.Receiving,
 		documents:    deps.Documents,
 	}
 }
@@ -89,7 +89,7 @@ func (s *SchedulerService) job() {
 	logger.Info("job was started")
 
 	// принудительное получение инструмента, который не принимают больше 20 дней
-	if err := s.location.ForcedReceiptAll(context.Background()); err != nil {
+	if err := s.receiving.ForcedReceiptAll(context.Background()); err != nil {
 		logger.Error("location forced receipt error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
 		return

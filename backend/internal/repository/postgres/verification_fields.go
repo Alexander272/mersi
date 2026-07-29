@@ -78,8 +78,12 @@ func (r *VerificationFieldRepo) Update(ctx context.Context, dto *models.Verifica
 		VerificationFieldsTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -112,8 +116,12 @@ func (r *VerificationFieldRepo) UpdateSeveral(ctx context.Context, dto []*models
 func (r *VerificationFieldRepo) Delete(ctx context.Context, dto *models.DeleteVerFieldDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, VerificationFieldsTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

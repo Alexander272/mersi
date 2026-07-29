@@ -75,8 +75,12 @@ func (r *SortingRepo) CreateSeveral(ctx context.Context, dto []*models.SortingDT
 func (r *SortingRepo) Update(ctx context.Context, dto *models.SortingDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET order_type=:order_type WHERE name=:name AND sso_id=:sso_id AND section_id=:section_id`, SortingTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -84,8 +88,12 @@ func (r *SortingRepo) Update(ctx context.Context, dto *models.SortingDTO) error 
 func (r *SortingRepo) Delete(ctx context.Context, dto *models.DeleteSortingDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE name=:name AND sso_id=:sso_id AND section_id=:section_id`, SortingTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

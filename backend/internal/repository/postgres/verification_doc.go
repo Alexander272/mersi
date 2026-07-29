@@ -99,8 +99,12 @@ func (r *VerificationDocRepo) CreateSeveral(ctx context.Context, tx Tx, dto []*m
 func (r *VerificationDocRepo) Update(ctx context.Context, dto *models.VerificationDocDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET name=:name, updated_at=now() WHERE id=:id`, VerificationDocsTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -132,8 +136,12 @@ func (r *VerificationDocRepo) UpdateSeveral(ctx context.Context, tx Tx, dto []*m
 func (r *VerificationDocRepo) Delete(ctx context.Context, dto *models.DeleteVerificationDocDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, VerificationDocsTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

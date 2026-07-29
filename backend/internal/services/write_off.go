@@ -72,7 +72,7 @@ func (s *WriteOffService) Create(ctx context.Context, dto *models.WriteOffDTO) e
 			return err
 		}
 		if candidate != nil {
-			return models.ErrAlreadyExists
+			return models.ErrWriteOffAlreadyExists
 		}
 
 		if err := s.repo.Create(ctx, tx, dto); err != nil {

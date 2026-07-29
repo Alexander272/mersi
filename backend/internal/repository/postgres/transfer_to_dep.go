@@ -135,8 +135,12 @@ func (r *TransferToDepRepo) Update(ctx context.Context, tx Tx, dto *models.Trans
 		dto.DocId = uuid.Nil.String()
 	}
 
-	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.getExec(tx).NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -144,8 +148,12 @@ func (r *TransferToDepRepo) Update(ctx context.Context, tx Tx, dto *models.Trans
 func (r *TransferToDepRepo) Delete(ctx context.Context, tx Tx, dto *models.DeleteTransferToDepDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, TransferToDepTable)
 
-	if _, err := r.getExec(tx).NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.getExec(tx).NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

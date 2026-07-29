@@ -55,9 +55,12 @@ func (r *RuleItemRepo) Create(ctx context.Context, menu *models.RuleItemDTO) err
 func (r *RuleItemRepo) Update(ctx context.Context, menu *models.RuleItemDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET name=$1, method=$2, description=$3, is_show=$4 WHERE id=$5`, RuleItemTable)
 
-	_, err := r.db.ExecContext(ctx, query, menu.Name, menu.Method, menu.Description, menu.IsShow, menu.Id)
+	res, err := r.db.ExecContext(ctx, query, menu.Name, menu.Method, menu.Description, menu.IsShow, menu.Id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -65,9 +68,12 @@ func (r *RuleItemRepo) Update(ctx context.Context, menu *models.RuleItemDTO) err
 func (r *RuleItemRepo) Delete(ctx context.Context, id string) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, RuleItemTable)
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

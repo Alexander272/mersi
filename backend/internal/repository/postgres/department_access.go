@@ -140,9 +140,12 @@ func (r *DepartmentAccessRepo) CreateSeveral(ctx context.Context, dto []*models.
 func (r *DepartmentAccessRepo) Update(ctx context.Context, dto *models.DepartmentAccessDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET department_id=:department_id, sso_id=:sso_id WHERE id=:id`, DepartmentAccessTable)
 
-	_, err := r.db.NamedExecContext(ctx, query, dto)
+	res, err := r.db.NamedExecContext(ctx, query, dto)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -190,8 +193,12 @@ func (r *DepartmentAccessRepo) UpdateSeveral(ctx context.Context, dto []*models.
 func (r *DepartmentAccessRepo) Delete(ctx context.Context, dto *models.DeleteDepartmentAccessDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, DepartmentAccessTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

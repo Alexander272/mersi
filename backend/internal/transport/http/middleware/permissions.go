@@ -27,7 +27,7 @@ func (m *Middleware) CheckPermissions(menuItem, method string) gin.HandlerFunc {
 
 		access, err := m.services.Permission.Enforce(user.ID, realm, menuItem, method)
 		if err != nil {
-			response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+			response.SendError(c, err)
 			return
 		}
 		logger.Debug("permissions",
@@ -61,7 +61,7 @@ func (m *Middleware) CheckPermissionsArray(perm []*Permission) gin.HandlerFunc {
 		for _, item := range perm {
 			a, err := m.services.Permission.Enforce(user.ID, realm, item.Section, item.Method)
 			if err != nil {
-				response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
+				response.SendError(c, err)
 				return
 			}
 			logger.Debug("permissions",

@@ -93,8 +93,12 @@ func (r *ContextRepo) Update(ctx context.Context, dto *models.ContextMenuDTO) er
 		ContextTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -127,8 +131,12 @@ func (r *ContextRepo) UpdateSeveral(ctx context.Context, dto []*models.ContextMe
 func (r *ContextRepo) Delete(ctx context.Context, dto *models.DeleteContextMenuDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, ContextTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

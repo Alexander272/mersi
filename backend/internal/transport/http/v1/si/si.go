@@ -1,7 +1,7 @@
 package si
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -15,7 +15,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/instruments"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/locations"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/verifications"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -52,28 +51,27 @@ func Register(api *gin.RouterGroup, services *services.Services, middleware *mid
 	instruments.Register(si, services.Instrument, middleware)
 	documents.Register(si, services.Document, middleware)
 	verifications.Register(si, services, middleware)
-	locations.Register(api, services.Location, middleware)
+	locations.Register(api, services.Location, services.Receiving, middleware)
 }
 
 func (h *Handler) get(c *gin.Context) {
 	section := c.Query("section")
 	err := uuid.Validate(section)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 
 	params := utils.GetFilterParams(c)
 	if params == nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Отправлены некорректные данные")
+		response.SendError(c, models.ErrNotValid)
 		return
 	}
 	params.SectionId = section
 
 	data, err := h.service.Get(c, params)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), params)
+		response.SendError(c, err, params)
 		return
 	}
 	total := 0
@@ -87,15 +85,14 @@ func (h *Handler) get(c *gin.Context) {
 func (h *Handler) getById(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 	req := &models.GetSiByIdDTO{Id: id}
 
 	data, err := h.service.GetById(c, req)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), req)
+		response.SendError(c, err, req)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -105,7 +102,7 @@ func (h *Handler) getSent(c *gin.Context) {
 	section := c.Query("section")
 	err := uuid.Validate(section)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 
@@ -162,8 +159,7 @@ func (h *Handler) getSent(c *gin.Context) {
 
 	data, err := h.service.GetSent(c, params)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), params)
+		response.SendError(c, err, params)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -172,7 +168,7 @@ func (h *Handler) getSent(c *gin.Context) {
 func (h *Handler) create(c *gin.Context) {
 	dto := &models.SiDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
@@ -194,12 +190,7 @@ func (h *Handler) create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
-		if errors.Is(err, models.ErrAlreadyExists) {
-			response.NewErrorResponse(c, http.StatusConflict, err.Error(), "Поверка с такой датой уже существует")
-			return
-		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -216,7 +207,7 @@ func (h *Handler) create(c *gin.Context) {
 func (h *Handler) update(c *gin.Context) {
 	dto := &models.SiDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
@@ -235,8 +226,7 @@ func (h *Handler) update(c *gin.Context) {
 	}
 
 	if err := h.service.Update(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -252,13 +242,12 @@ func (h *Handler) update(c *gin.Context) {
 func (h *Handler) changePosition(c *gin.Context) {
 	dto := &models.ChangePositionDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
 	if err := h.service.ChangePosition(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Номер позиции изменен"})
@@ -267,7 +256,7 @@ func (h *Handler) changePosition(c *gin.Context) {
 func (h *Handler) delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Id не валиден")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 	dto := &models.DeleteSiDTO{Id: id}
@@ -279,12 +268,7 @@ func (h *Handler) delete(c *gin.Context) {
 	dto.Actor = actor
 
 	if err := h.service.Delete(c, dto); err != nil {
-		if errors.Is(err, models.ErrNoRows) {
-			response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Не удалось удалить инструмент. Нельзя удалить инструмент находящийся у сотрудника.")
-			return
-		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 

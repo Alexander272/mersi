@@ -172,9 +172,12 @@ func (r *UserRepo) CreateSeveral(ctx context.Context, tx Tx, dto []*models.UserD
 func (r *UserRepo) Update(ctx context.Context, dto *models.UserData) error {
 	query := fmt.Sprintf(`UPDATE %s SET username=$1, email=$2, sso_id=$3, first_name=$4, last_name=$5 WHERE id=$6`, UserTable)
 
-	_, err := r.db.ExecContext(ctx, query, dto.Username, dto.Email, dto.SSO_ID, dto.FirstName, dto.LastName, dto.ID)
+	res, err := r.db.ExecContext(ctx, query, dto.Username, dto.Email, dto.SSO_ID, dto.FirstName, dto.LastName, dto.ID)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -235,9 +238,12 @@ func (r *UserRepo) UpdateSeveral(ctx context.Context, tx Tx, dto []*models.UserD
 func (r *UserRepo) Delete(ctx context.Context, id string) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, UserTable)
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

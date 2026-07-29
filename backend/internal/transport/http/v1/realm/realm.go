@@ -1,7 +1,7 @@
 package realm
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/config"
@@ -10,7 +10,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -55,8 +54,7 @@ func (h *Handlers) get(c *gin.Context) {
 	dto := &models.GetRealmsDTO{All: all == "true"}
 	data, err := h.service.Get(c, dto)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
@@ -65,19 +63,14 @@ func (h *Handlers) get(c *gin.Context) {
 func (h *Handlers) getById(c *gin.Context) {
 	id := c.Param("id")
 	if err := uuid.Validate(id); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "invalid id param")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 
 	dto := &models.GetRealmByIdDTO{ID: id}
 	data, err := h.service.GetById(c, dto)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRows) {
-			response.NewErrorResponse(c, http.StatusNotFound, err.Error(), err.Error())
-			return
-		}
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -86,7 +79,7 @@ func (h *Handlers) getById(c *gin.Context) {
 func (h *Handlers) getByUser(c *gin.Context) {
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	user := u.(models.User)
@@ -94,8 +87,7 @@ func (h *Handlers) getByUser(c *gin.Context) {
 	dto := &models.GetRealmByUserDTO{UserID: user.ID}
 	data, err := h.service.GetByUser(c, dto)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data})
@@ -104,20 +96,19 @@ func (h *Handlers) getByUser(c *gin.Context) {
 func (h *Handlers) choose(c *gin.Context) {
 	dto := &models.ChooseRealmDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {
-		response.NewErrorResponse(c, http.StatusUnauthorized, "empty user", "Сессия не найдена")
+		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
 	dto.UserID = u.(models.User).ID
 
 	user, err := h.service.Choose(c, dto)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -127,13 +118,12 @@ func (h *Handlers) choose(c *gin.Context) {
 func (h *Handlers) create(c *gin.Context) {
 	dto := &models.RealmDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusCreated, response.IdResponse{Id: dto.ID, Message: "Область создана"})
@@ -143,20 +133,19 @@ func (h *Handlers) update(c *gin.Context) {
 	id := c.Param("id")
 	err := uuid.Validate(id)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid id param")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 
 	dto := &models.RealmDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 	dto.ID = id
 
 	if err := h.service.Update(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusOK, response.IdResponse{Message: "Область обновлена"})
@@ -166,14 +155,13 @@ func (h *Handlers) delete(c *gin.Context) {
 	id := c.Param("id")
 	err := uuid.Validate(id)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "invalid id param")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrInvalidInput, err))
 		return
 	}
 
 	dto := &models.DeleteRealmDTO{ID: id}
 	if err := h.service.Delete(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 	c.JSON(http.StatusNoContent, response.IdResponse{})

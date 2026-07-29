@@ -8,7 +8,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,8 +33,7 @@ func Register(api *gin.RouterGroup, service services.RuleItem, middleware *middl
 func (h *Handler) get(c *gin.Context) {
 	data, err := h.service.GetAll(c, &models.GetRuleItemsDTO{OnlyShow: true})
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), nil)
+		response.SendError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})

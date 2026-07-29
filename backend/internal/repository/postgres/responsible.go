@@ -137,9 +137,12 @@ func (r *ResponsibleRepo) CreateSeveral(ctx context.Context, dto []*models.Respo
 func (r *ResponsibleRepo) Update(ctx context.Context, dto *models.ResponsibleDTO) error {
 	query := fmt.Sprintf(`UPDATE %s SET department_id=$1, sso_id=$2 WHERE id=$3`, ResponsibleTable)
 
-	_, err := r.db.ExecContext(ctx, query, dto.DepartmentId, dto.UserId, dto.Id)
+	res, err := r.db.ExecContext(ctx, query, dto.DepartmentId, dto.UserId, dto.Id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -167,9 +170,12 @@ func (r *ResponsibleRepo) UpdateSeveral(ctx context.Context, dto []*models.Respo
 func (r *ResponsibleRepo) Delete(ctx context.Context, id string) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, ResponsibleTable)
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

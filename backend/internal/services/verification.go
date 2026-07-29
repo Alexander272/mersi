@@ -106,7 +106,7 @@ func (s *VerificationService) executeCreate(ctx context.Context, tx postgres.Tx,
 		return err
 	}
 	if candidate != nil {
-		return models.ErrAlreadyExists
+		return models.ErrVerificationAlreadyExists
 	}
 
 	if err := s.repo.CreateInTx(ctx, tx, dto); err != nil {

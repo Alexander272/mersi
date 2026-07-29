@@ -66,6 +66,7 @@ type ReceivingDTO struct {
 
 type ForcedReceiptDTO struct {
 	InstrumentId string `json:"instrumentId" binding:"required"`
+	Actor        *Actor
 }
 
 type SelectByDepsDTO struct {

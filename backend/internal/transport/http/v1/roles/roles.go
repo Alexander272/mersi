@@ -1,6 +1,7 @@
 package roles
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
@@ -8,7 +9,6 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
-	"github.com/Alexander272/mersi/backend/pkg/error_bot"
 	"github.com/gin-gonic/gin"
 )
 
@@ -42,8 +42,7 @@ func Register(api *gin.RouterGroup, service services.Role, middleware *middlewar
 func (h *RoleHandlers) getAll(c *gin.Context) {
 	roles, err := h.service.GetAll(c, &models.GetRolesDTO{})
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), nil)
+		response.SendError(c, err)
 		return
 	}
 
@@ -55,8 +54,7 @@ func (h *RoleHandlers) get(c *gin.Context) {
 
 	role, err := h.service.Get(c, roleName)
 	if err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), roleName)
+		response.SendError(c, err, roleName)
 		return
 	}
 
@@ -66,13 +64,12 @@ func (h *RoleHandlers) get(c *gin.Context) {
 func (h *RoleHandlers) create(c *gin.Context) {
 	dto := &models.RoleDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 
 	if err := h.service.Create(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -82,20 +79,19 @@ func (h *RoleHandlers) create(c *gin.Context) {
 func (h *RoleHandlers) update(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Id роли не задан")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
 	dto := &models.RoleDTO{}
 	if err := c.BindJSON(dto); err != nil {
-		response.NewErrorResponse(c, http.StatusBadRequest, err.Error(), "Отправлены некорректные данные")
+		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
 		return
 	}
 	dto.ID = id
 
 	if err := h.service.Update(c, dto); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), dto)
+		response.SendError(c, err, dto)
 		return
 	}
 
@@ -105,13 +101,12 @@ func (h *RoleHandlers) update(c *gin.Context) {
 func (h *RoleHandlers) delete(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		response.NewErrorResponse(c, http.StatusBadRequest, "empty param", "Id роли не задан")
+		response.SendError(c, models.ErrInvalidInput)
 		return
 	}
 
 	if err := h.service.Delete(c, id); err != nil {
-		response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
-		error_bot.Send(c, err.Error(), id)
+		response.SendError(c, err, id)
 		return
 	}
 

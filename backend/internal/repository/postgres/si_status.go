@@ -76,8 +76,12 @@ func (r *StatusRepo) Update(ctx context.Context, dto *models.SiStatusDTO) error 
 		SiStatusTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -110,8 +114,12 @@ func (r *StatusRepo) UpdateSeveral(ctx context.Context, dto []*models.SiStatusDT
 func (r *StatusRepo) Delete(ctx context.Context, dto *models.DeleteSiStatusDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, SiStatusTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

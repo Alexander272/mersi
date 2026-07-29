@@ -90,8 +90,12 @@ func (r *CreateFormRepo) Update(ctx context.Context, dto *models.CreateFormField
 		WHERE id=:id`, CreatingFormTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -125,8 +129,12 @@ func (r *CreateFormRepo) UpdateSeveral(ctx context.Context, dto []*models.Create
 func (r *CreateFormRepo) Delete(ctx context.Context, dto *models.DeleteCreateFormFieldDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, CreatingFormTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }

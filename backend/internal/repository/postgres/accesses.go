@@ -133,8 +133,12 @@ func (r *AccessesRepo) Update(ctx context.Context, dto *models.AccessesDTO) erro
 		AccessTable,
 	)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
@@ -142,8 +146,12 @@ func (r *AccessesRepo) Update(ctx context.Context, dto *models.AccessesDTO) erro
 func (r *AccessesRepo) Delete(ctx context.Context, dto *models.DeleteAccessesDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id=:id`, AccessTable)
 
-	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
+	res, err := r.db.NamedExecContext(ctx, query, dto)
+	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
+	}
+	if err := checkRowsAffected(res); err != nil {
+		return err
 	}
 	return nil
 }
