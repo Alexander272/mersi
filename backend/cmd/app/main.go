@@ -20,7 +20,7 @@ import (
 	"github.com/Alexander272/mersi/backend/pkg/database/postgres"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/Alexander272/mersi/backend/pkg/mattermost"
-	adapter "github.com/Blank-Xu/sqlx-adapter"
+	redisdb "github.com/Alexander272/mersi/backend/pkg/database/redis"
 	_ "github.com/lib/pq"
 	"github.com/subosito/gotenv"
 )
@@ -52,6 +52,16 @@ func main() {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 	}
 
+	redisClient, err := redisdb.NewRedisClient(redisdb.Config{
+		Host:     conf.Redis.Host,
+		Port:     conf.Redis.Port,
+		Password: conf.Redis.Password,
+		DB:       conf.Redis.DB,
+	})
+	if err != nil {
+		log.Fatalf("failed to initialize redis: %s", err.Error())
+	}
+
 	keycloak := auth.NewKeycloakClient(auth.Deps{
 		Url:       conf.Keycloak.Url,
 		ClientId:  conf.Keycloak.ClientId,
@@ -76,20 +86,14 @@ func main() {
 		log.Fatalf("failed to ping most. error: %s", err.Error())
 	}
 
-	adapter, err := adapter.NewAdapter(db, "casbin_policies")
-	if err != nil {
-		log.Fatalf("failed to create adapter. error: %s", err.Error())
-	}
-
 	//* Services, Repos & API Handlers
-	repo := repository.NewRepository(db)
+	repo := repository.NewRepository(db, redisClient)
 	services := services.NewServices(&services.Deps{
 		Repo:          repo,
 		Keycloak:      keycloak,
 		MostClient:    mostClient,
 		CheckUsedConf: conf.Notification.CheckUsed,
-		Adapter:       adapter,
-		// BotUrl:   conf.Bot.Url,
+		Conf:          conf,
 	})
 
 	handlers := transport.NewHandler(services, keycloak)

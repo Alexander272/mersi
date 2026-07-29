@@ -2,6 +2,8 @@ package repository
 
 import (
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres"
+	redisrepo "github.com/Alexander272/mersi/backend/internal/repository/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -17,6 +19,13 @@ type Rule interface {
 }
 type Role interface {
 	postgres.Role
+}
+
+type Permissions interface {
+	postgres.Permissions
+}
+type RoleHierarchy interface {
+	postgres.RoleHierarchy
 }
 
 type Realm interface {
@@ -113,12 +122,19 @@ type Users interface {
 	postgres.User
 }
 
+type SessionCache interface {
+	redisrepo.SessionCache
+}
+
 type Repository struct {
 	Transaction
 
 	RuleItem
 	Rule
 	Role
+
+	Permissions
+	RoleHierarchy
 
 	Realm
 	Accesses
@@ -151,9 +167,11 @@ type Repository struct {
 	Channel
 	Responsible
 	Users
+
+	SessionCache
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB, redisClient *redis.Client) *Repository {
 	transactions := postgres.NewTransactionRepo(db)
 
 	return &Repository{
@@ -161,7 +179,10 @@ func NewRepository(db *sqlx.DB) *Repository {
 
 		RuleItem: postgres.NewRuleItemRepo(db),
 		Rule:     postgres.NewRuleRepo(db),
-		Role:     postgres.NewRoleRepo(db),
+		Role:     postgres.NewRoleRepo(db, transactions),
+
+		Permissions:   postgres.NewPermissionRepo(db, transactions),
+		RoleHierarchy: postgres.NewRoleHierarchyRepo(db, transactions),
 
 		Realm:                postgres.NewRealmRepo(db),
 		Accesses:             postgres.NewAccessesRepo(db),
@@ -194,5 +215,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 		Channel:              postgres.NewChannelRepo(db),
 		Responsible:          postgres.NewResponsibleRepo(db),
 		Users:                postgres.NewUserRepo(db, transactions),
+
+		SessionCache: redisrepo.NewSessionCacheRepo(redisClient),
 	}
 }

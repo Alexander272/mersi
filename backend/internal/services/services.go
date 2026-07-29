@@ -2,20 +2,22 @@ package services
 
 import (
 	"github.com/Alexander272/mersi/backend/internal/config"
+	"github.com/Alexander272/mersi/backend/internal/events"
 	"github.com/Alexander272/mersi/backend/internal/repository"
 	"github.com/Alexander272/mersi/backend/internal/services/most"
 	"github.com/Alexander272/mersi/backend/pkg/auth"
 	"github.com/Alexander272/mersi/backend/pkg/mattermost"
-	sqlxadapter "github.com/Blank-Xu/sqlx-adapter"
 )
 
 type Services struct {
 	RuleItem
 	Rule
 	Role
-	User
+	Users
 	Session
-	Permission
+	AccessPolices
+	RoleHierarchy
+	SessionCacher
 
 	Realm
 	Accesses
@@ -60,30 +62,49 @@ type Deps struct {
 	MostClient    *mattermost.Client
 	BotName       string
 	CheckUsedConf config.UsedConfig
-	Adapter       *sqlxadapter.Adapter
-	// BotUrl   string
+	Conf          *config.Config
 }
 
 func NewServices(deps *Deps) *Services {
 	txManager := NewTransactionManager(deps.Repo.Transaction)
+	updatePolicyEvent := &events.PolicyEventManager{}
 
-	role := NewRoleService(deps.Repo.Role)
+	roleHierarchy := NewRoleHierarchyService(deps.Repo.RoleHierarchy)
+	rolePerms := NewRolePermissionService(deps.Repo.Permissions)
+
+	role := NewRoleService(&RoleDeps{
+		Repo:        deps.Repo.Role,
+		Hierarchy:   roleHierarchy,
+		Permissions: rolePerms,
+		EventBus:    updatePolicyEvent,
+		TM:          txManager,
+	})
+
 	ruleItem := NewRuleItemService(deps.Repo.RuleItem)
 	rule := NewRuleService(deps.Repo.Rule, ruleItem)
 
-	user := NewUserService(&UsersDeps{Repo: deps.Repo.Users, TxManager: txManager, Keycloak: deps.Keycloak, Role: role})
-	session := NewSessionService(deps.Keycloak, user)
+	user := NewUserService(&UsersDeps{
+		Repo:      deps.Repo.Users,
+		TxManager: txManager,
+		Keycloak:  deps.Keycloak,
+		Role:      role,
+	})
+
 	realm := NewRealmService(deps.Repo.Realm, user)
+
 	accesses := NewAccessesService(deps.Repo.Accesses)
 
-	permission := NewPermissionService(&PermissionDeps{
-		ConfPath: "configs/privacy.conf",
-		Adapter:  deps.Adapter,
-		Rule:     rule,
-		Role:     role,
-		Realm:    realm,
-		Accesses: accesses,
+	cacheSvc := NewSessionCacheService(deps.Repo.SessionCache)
+
+	adapter := NewAdapter(&AdapterDeps{Permissions: deps.Repo.Permissions, Users: user, RoleHierarchy: roleHierarchy})
+	policies := NewAccessPoliciesService(&PoliciesDeps{
+		Conf:     &deps.Conf.Casbin,
+		Adapter:  adapter,
+		EventBus: updatePolicyEvent,
+		Cache:    cacheSvc,
 	})
+
+	session := NewSessionService(deps.Keycloak, policies, user, cacheSvc)
 
 	section := NewSectionService(deps.Repo.Section)
 	columns := NewColumnsService(deps.Repo.Columns)
@@ -113,14 +134,12 @@ func NewServices(deps *Deps) *Services {
 	transferToDep := NewTransferToDepService(deps.Repo.TransferToDepartment, txManager, instrument, document, activityLog)
 	writeOff := NewWriteOffService(deps.Repo.WriteOff, txManager, instrument, document, activityLog)
 	historyType := NewHistoryTypeService(deps.Repo.HistoryType)
-	// activityLog := NewActivityLogService(deps.Repo.ActivityLog)
 
 	filters := NewFilterService(deps.Repo.Filters)
 	sorting := NewSortingService(deps.Repo.Sorting)
 
 	responsible := NewResponsibleService(deps.Repo.Responsible)
 
-	//TODO надо бы подумать как избавиться от этой кольцевой зависимости
 	si := NewSiService(&SiDeps{
 		Repo:         deps.Repo.SI,
 		TxManager:    txManager,
@@ -178,9 +197,11 @@ func NewServices(deps *Deps) *Services {
 		RuleItem: ruleItem,
 		Rule:     rule,
 
-		User:       user,
-		Session:    session,
-		Permission: permission,
+		Users:          user,
+		Session:       session,
+		AccessPolices: policies,
+		RoleHierarchy: roleHierarchy,
+		SessionCacher:  cacheSvc,
 
 		Realm:                realm,
 		Accesses:             accesses,

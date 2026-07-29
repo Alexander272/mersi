@@ -10,10 +10,10 @@ import (
 
 type RealmService struct {
 	repo repository.Realm
-	user User
+	user Users
 }
 
-func NewRealmService(repo repository.Realm, user User) *RealmService {
+func NewRealmService(repo repository.Realm, user Users) *RealmService {
 	return &RealmService{
 		repo: repo,
 		user: user,

@@ -3,6 +3,7 @@ package sorting
 import (
 	"net/http"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -26,7 +27,7 @@ func NewHandler(service services.Sorting) *Handler {
 func Register(api *gin.RouterGroup, service services.Sorting, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	sorting := api.Group("sorting", middleware.CheckPermissions(constants.SI, constants.Read))
+	sorting := api.Group("sorting", middleware.CheckPermissions(access.Reg.R(access.ResourceSi).Read()))
 	{
 		sorting.GET("", handler.get)
 		sorting.POST("", handler.create)

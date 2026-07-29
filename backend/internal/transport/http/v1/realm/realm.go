@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Alexander272/mersi/backend/internal/config"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -33,14 +34,14 @@ func Register(api *gin.RouterGroup, service services.Realm, auth config.AuthConf
 	realm := api.Group("/realms")
 	{
 		realm.GET("/user", handlers.getByUser)
-		read := realm.Group("", middleware.CheckPermissions(constants.Realms, constants.Read))
+		read := realm.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceRealms).Read()))
 		{
 			read.GET("", handlers.get)
 			read.GET("/:id", handlers.getById)
 			read.POST("/choose", handlers.choose)
 		}
 
-		write := realm.Group("", middleware.CheckPermissions(constants.Realms, constants.Write))
+		write := realm.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceRealms).Write()))
 		{
 			write.POST("", handlers.create)
 			write.PUT("/:id", handlers.update)

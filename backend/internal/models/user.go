@@ -1,11 +1,10 @@
 package models
 
 type User struct {
-	ID          string   `json:"id" db:"id"`
-	Name        string   `json:"name" db:"name"`
-	Role        string   `json:"role"`
-	Permissions []string `json:"permissions"`
-	// Filters []*SIFilter `json:"filters"`
+	ID          string              `json:"id" db:"id"`
+	Name        string              `json:"name" db:"name"`
+	Role        string              `json:"role"`
+	Permissions map[string][]string `json:"permissions"`
 
 	Roles []*RoleWithRealm `json:"-"`
 
@@ -42,10 +41,8 @@ type GetByAccessDTO struct {
 	Role    string `json:"role"`
 }
 
-// type KeycloakUser struct {
-// 	Id        string `json:"id"`
-// 	Username  string `json:"username"`
-// 	FirstName string `json:"firstName"`
-// 	LastName  string `json:"lastName"`
-// 	Email     string `json:"email"`
-// }
+type UserRolePolicy struct {
+	SSO_ID    string `db:"sso_id"`
+	RoleSlug  string `db:"role_slug"`
+	RealmId   string `db:"realm_id"`
+}

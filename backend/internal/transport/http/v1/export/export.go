@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -32,7 +33,7 @@ func NewHandler(service services.Export) *Handler {
 func Register(api *gin.RouterGroup, service services.Export, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	export := api.Group("export", middleware.DepartmentAccess, middleware.CheckPermissions(constants.SI, constants.Read))
+	export := api.Group("export", middleware.DepartmentAccess, middleware.CheckPermissions(access.Reg.R(access.ResourceSi).Read()))
 	{
 		export.GET("", handler.export)
 		export.GET("/schedule", handler.makeScheduler)

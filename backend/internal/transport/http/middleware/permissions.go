@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -15,7 +16,7 @@ type Permission struct {
 	Method  string
 }
 
-func (m *Middleware) CheckPermissions(menuItem, method string) gin.HandlerFunc {
+func (m *Middleware) CheckPermissions(perm access.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		realm := c.GetHeader("realm")
 		u, exists := c.Get(constants.CtxUser)
@@ -25,7 +26,7 @@ func (m *Middleware) CheckPermissions(menuItem, method string) gin.HandlerFunc {
 		}
 		user := u.(models.User)
 
-		access, err := m.services.Permission.Enforce(user.ID, realm, menuItem, method)
+		accessOk, err := m.services.AccessPolices.Enforce(user.ID, realm, string(perm.Resource), string(perm.Action))
 		if err != nil {
 			response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 			return
@@ -33,12 +34,12 @@ func (m *Middleware) CheckPermissions(menuItem, method string) gin.HandlerFunc {
 		logger.Debug("permissions",
 			logger.StringAttr("user", user.ID),
 			logger.StringAttr("realm", realm),
-			logger.StringAttr("menu", menuItem),
-			logger.StringAttr("method", method),
-			logger.BoolAttr("access", access),
+			logger.StringAttr("menu", string(perm.Resource)),
+			logger.StringAttr("method", string(perm.Action)),
+			logger.BoolAttr("access", accessOk),
 		)
 
-		if !access {
+		if !accessOk {
 			response.NewErrorResponse(c, http.StatusForbidden, "access denied", "нет доступа к данному разделу")
 			return
 		}
@@ -57,9 +58,9 @@ func (m *Middleware) CheckPermissionsArray(perm []*Permission) gin.HandlerFunc {
 		}
 
 		user := u.(models.User)
-		access := false
+		accessOk := false
 		for _, item := range perm {
-			a, err := m.services.Permission.Enforce(user.ID, realm, item.Section, item.Method)
+			a, err := m.services.AccessPolices.Enforce(user.ID, realm, item.Section, item.Method)
 			if err != nil {
 				response.NewErrorResponse(c, http.StatusInternalServerError, err.Error(), "Произошла ошибка: "+err.Error())
 				return
@@ -73,12 +74,12 @@ func (m *Middleware) CheckPermissionsArray(perm []*Permission) gin.HandlerFunc {
 			)
 
 			if a {
-				access = true
+				accessOk = true
 				break
 			}
 		}
 
-		if !access {
+		if !accessOk {
 			response.NewErrorResponse(c, http.StatusForbidden, "access denied", "нет доступа к данному разделу")
 			return
 		}
@@ -99,8 +100,8 @@ func (m *Middleware) DepartmentAccess(c *gin.Context) {
 
 	realm := c.GetHeader("realm")
 
-	access, err := m.services.Permission.Enforce(user.ID, realm, constants.SI, constants.Write)
-	if err == nil && access {
+	accessOk, err := m.services.AccessPolices.Enforce(user.ID, realm, string(access.ResourceSi), string(access.Write))
+	if err == nil && accessOk {
 		c.Set(constants.CtxHasWritePermission, true)
 	} else {
 		c.Set(constants.CtxHasWritePermission, false)

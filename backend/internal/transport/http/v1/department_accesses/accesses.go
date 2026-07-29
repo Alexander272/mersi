@@ -3,7 +3,7 @@ package department_accesses
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -26,12 +26,12 @@ func NewHandler(service services.DepartmentAccess) *Handler {
 func Register(api *gin.RouterGroup, service services.DepartmentAccess, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	accesses := api.Group("/department-accesses", middleware.CheckPermissions(constants.Department, constants.Read))
+	accesses := api.Group("/department-accesses", middleware.CheckPermissions(access.Reg.R(access.ResourceDepartment).Read()))
 	{
 		accesses.GET(":id", handler.get)
 		accesses.GET("/user/:id", handler.getByUser)
 
-		write := accesses.Group("", middleware.CheckPermissions(constants.Department, constants.Write))
+		write := accesses.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceDepartment).Write()))
 		{
 			write.POST("/replace", handler.replace)
 			write.POST("", handler.create)

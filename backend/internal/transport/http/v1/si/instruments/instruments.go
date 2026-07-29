@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -29,12 +30,12 @@ func NewHandler(service services.Instrument) *Handler {
 func Register(api *gin.RouterGroup, service services.Instrument, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	instruments := api.Group("/instruments", middleware.CheckPermissions(constants.SI, constants.Read))
+	instruments := api.Group("/instruments", middleware.CheckPermissions(access.Reg.R(access.ResourceSi).Read()))
 	{
 		instruments.GET("/:id", handler.get)
 		instruments.GET("/unique/:field", handler.getUnique)
 
-		write := instruments.Group("", middleware.CheckPermissions(constants.SI, constants.Write))
+		write := instruments.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceSi).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

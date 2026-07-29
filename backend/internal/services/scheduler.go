@@ -16,14 +16,14 @@ import (
 type SchedulerService struct {
 	cron         gocron.Scheduler
 	notification Notification
-	user         User
+	user         Users
 	location     Location
 	documents    Document
 }
 
 type SchedulerDeps struct {
 	Notification Notification
-	User         User
+	User         Users
 	Location     Location
 	Documents    Document
 }

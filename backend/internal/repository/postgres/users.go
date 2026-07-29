@@ -30,6 +30,7 @@ type User interface {
 	GetByRealm(ctx context.Context, req *models.GetByRealmDTO) ([]*models.UserData, error)
 	GetById(ctx context.Context, id string) (*models.UserData, error)
 	GetBySSOId(ctx context.Context, id string) (*models.UserData, error)
+	LoadPolicy(ctx context.Context) ([]*models.UserRolePolicy, error)
 	Create(ctx context.Context, dto *models.UserData) error
 	CreateSeveral(ctx context.Context, tx Tx, dto []*models.UserData) error
 	Update(ctx context.Context, dto *models.UserData) error
@@ -107,6 +108,35 @@ func (r *UserRepo) GetBySSOId(ctx context.Context, id string) (*models.UserData,
 		}
 		return nil, fmt.Errorf("failed to execute query. error: %w", err)
 	}
+	return data, nil
+}
+
+func (r *UserRepo) LoadPolicy(ctx context.Context) ([]*models.UserRolePolicy, error) {
+	query := fmt.Sprintf(`SELECT u.sso_id, r.name AS role_slug, a.realm_id
+		FROM %s a
+		JOIN %s u ON u.id = a.user_id
+		JOIN %s r ON r.id = a.role_id`,
+		AccessTable, UserTable, RoleTable,
+	)
+
+	data := make([]*models.UserRolePolicy, 0, 50)
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		item := &models.UserRolePolicy{}
+		if err := rows.Scan(&item.SSO_ID, &item.RoleSlug, &item.RealmId); err != nil {
+			return nil, fmt.Errorf("scan row error: %w", err)
+		}
+		data = append(data, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
 	return data, nil
 }
 

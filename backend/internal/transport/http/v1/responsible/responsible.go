@@ -3,6 +3,7 @@ package responsible
 import (
 	"net/http"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -26,12 +27,12 @@ func NewHandler(service services.Responsible) *Handler {
 func Register(api *gin.RouterGroup, service services.Responsible, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	responsible := api.Group("/responsible", middleware.CheckPermissions(constants.Users, constants.Read))
+	responsible := api.Group("/responsible", middleware.CheckPermissions(access.Reg.R(access.ResourceUsers).Read()))
 	{
 		responsible.GET("", handler.getAll)
 		responsible.GET("/sso", handler.getBySSO)
 
-		write := responsible.Group("", middleware.CheckPermissions(constants.Users, constants.Write))
+		write := responsible.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceUsers).Write()))
 		{
 			write.POST("/change", handler.change)
 			write.POST("", handler.create)

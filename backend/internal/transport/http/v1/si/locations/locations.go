@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -32,19 +33,19 @@ func Register(api *gin.RouterGroup, service services.Location, ware *middleware.
 	handler := NewHandler(service)
 
 	perm := []*middleware.Permission{
-		{Section: constants.Location, Method: constants.Write},
-		{Section: constants.Reserve, Method: constants.Write},
+		{Section: string(access.ResourceLocation), Method: constants.Write},
+		{Section: string(access.ResourceReserve), Method: constants.Write},
 	}
 
 	locations := api.Group("si/locations")
 	{
-		secure := locations.Group("", ware.VerifyToken, ware.CheckPermissions(constants.Location, constants.Read))
+		secure := locations.Group("", ware.VerifyToken, ware.CheckPermissions(access.Reg.R(access.ResourceLocation).Read()))
 		{
 			secure.GET("", handler.get)
 			secure.GET("/last", handler.getLast)
 			secure.GET("/last/several", handler.getSeveralLast)
 
-			write := secure.Group("", ware.CheckPermissions(constants.Location, constants.Write))
+			write := secure.Group("", ware.CheckPermissions(access.Reg.R(access.ResourceLocation).Write()))
 			{
 				write.POST("", handler.create)
 				write.PUT("/:id", handler.update)
@@ -62,11 +63,11 @@ func Register(api *gin.RouterGroup, service services.Location, ware *middleware.
 			receiving.POST("/dialogs", handler.receivingDialog)
 			receiving.POST("/dialogs/open", handler.receivingDialogOpen)
 
-			secure := receiving.Group("", ware.VerifyToken, ware.CheckPermissions(constants.Location, constants.Read))
+			secure := receiving.Group("", ware.VerifyToken, ware.CheckPermissions(access.Reg.R(access.ResourceLocation).Read()))
 			{
 				secure.POST("", handler.receiving)
 
-				write := secure.Group("", ware.CheckPermissions(constants.Location, constants.Write))
+			write := secure.Group("", ware.CheckPermissions(access.Reg.R(access.ResourceLocation).Write()))
 				{
 					write.POST("/forced", handler.forcedReceiving)
 				}

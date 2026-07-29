@@ -3,7 +3,7 @@ package permissions
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/middleware"
@@ -12,19 +12,19 @@ import (
 )
 
 type Handler struct {
-	service services.Permission
+	service services.AccessPolices
 }
 
-func NewHandler(service services.Permission) *Handler {
+func NewHandler(service services.AccessPolices) *Handler {
 	return &Handler{
 		service: service,
 	}
 }
 
-func Register(api *gin.RouterGroup, service services.Permission, middleware *middleware.Middleware) {
+func Register(api *gin.RouterGroup, service services.AccessPolices, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	permissions := api.Group("permissions", middleware.CheckPermissions(constants.Realms, constants.Write))
+	permissions := api.Group("permissions", middleware.CheckPermissions(access.Reg.R(access.ResourceRealms).Write()))
 	{
 		permissions.POST("/reload", handler.reload)
 	}

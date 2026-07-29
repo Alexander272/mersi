@@ -3,6 +3,7 @@ package filters
 import (
 	"net/http"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -26,7 +27,7 @@ func NewHandler(service services.Filters) *Handler {
 func Register(api *gin.RouterGroup, service services.Filters, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	filters := api.Group("filters", middleware.CheckPermissions(constants.SI, constants.Read))
+	filters := api.Group("filters", middleware.CheckPermissions(access.Reg.R(access.ResourceSi).Read()))
 	{
 		filters.GET("", handler.get)
 		filters.POST("", handler.create)

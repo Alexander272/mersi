@@ -34,4 +34,8 @@ const (
 	UserTable               = "public.users"
 	ResponsibleTable        = "public.responsible"
 	SiStatusTable           = "public.si_status"
+
+	PermissionsTable       = "public.permissions"
+	RolePermissionsTable   = "public.role_permissions"
+	RoleHierarchyTable     = "public.role_hierarchy"
 )

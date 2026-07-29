@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -15,21 +15,21 @@ import (
 )
 
 type Handler struct {
-	service services.User
+	service services.Users
 }
 
-func NewHandler(service services.User) *Handler {
+func NewHandler(service services.Users) *Handler {
 	return &Handler{
 		service: service,
 	}
 }
 
-func Register(api *gin.RouterGroup, service services.User, middleware *middleware.Middleware) {
+func Register(api *gin.RouterGroup, service services.Users, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
 	users := api.Group("/users")
 	{
-		read := users.Group("", middleware.CheckPermissions(constants.Users, constants.Read))
+		read := users.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceUsers).Read()))
 		{
 			read.GET("", handler.getAll)
 			read.GET("/access", handler.getByAccess)
@@ -38,7 +38,7 @@ func Register(api *gin.RouterGroup, service services.User, middleware *middlewar
 			read.GET("/sso/:id", handler.getBySSOId)
 		}
 
-		write := users.Group("", middleware.CheckPermissions(constants.Users, constants.Write))
+		write := users.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceUsers).Write()))
 		{
 			write.POST("/sync", handler.sync)
 			write.POST("", handler.create)

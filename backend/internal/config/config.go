@@ -12,7 +12,7 @@ type (
 		Environment string `yaml:"environment" env:"APP_ENV" env-default:"dev"`
 		LogLevel    string `yaml:"log_level" env-default:"info"`
 		LogSource   bool   `yaml:"log_source" env-default:"false"`
-		// Redis        RedisConfig
+		Redis       RedisConfig
 		Postgres     PostgresConfig
 		Auth         AuthConfig
 		Keycloak     KeycloakConfig
@@ -21,6 +21,7 @@ type (
 		Notification NotificationConfig
 		Scheduler    SchedulerConfig
 		Bot          BotConfig
+		Casbin       CasbinConfig
 	}
 
 	HttpConfig struct {
@@ -37,6 +38,17 @@ type (
 	// 	DB       int    `yaml:"db" env:"REDIS_DB"`
 	// 	Password string `env:"REDIS_PASSWORD"`
 	// }
+
+	RedisConfig struct {
+		Host     string `yaml:"host" env:"REDIS_HOST"`
+		Port     string `yaml:"port" env:"REDIS_PORT"`
+		DB       int    `yaml:"db" env:"REDIS_DB"`
+		Password string `env:"REDIS_PASSWORD"`
+	}
+
+	CasbinConfig struct {
+		Path string `yaml:"path" env-default:"configs/privacy.conf"`
+	}
 
 	PostgresConfig struct {
 		Host     string `yaml:"host" env:"POSTGRES_HOST"`

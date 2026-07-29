@@ -3,7 +3,7 @@ package channel
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -26,11 +26,11 @@ func NewHandler(service services.Channel) *Handler {
 func Register(api *gin.RouterGroup, service services.Channel, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	channels := api.Group("/channels", middleware.CheckPermissions(constants.Channel, constants.Read))
+	channels := api.Group("/channels", middleware.CheckPermissions(access.Reg.R(access.ResourceChannel).Read()))
 	{
 		channels.GET("", handler.getAll)
 
-		write := channels.Group("", middleware.CheckPermissions(constants.Channel, constants.Write))
+		write := channels.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceChannel).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

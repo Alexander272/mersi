@@ -3,6 +3,7 @@ package context_menu
 import (
 	"net/http"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -26,11 +27,11 @@ func NewHandler(service services.ContextMenu) *Handler {
 func Register(api *gin.RouterGroup, service services.ContextMenu, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	context := api.Group("context-menu", middleware.CheckPermissions(constants.ContextMenu, constants.Read))
+	context := api.Group("context-menu", middleware.CheckPermissions(access.Reg.R(access.ResourceContextMenu).Read()))
 	{
 		context.GET("", handler.get)
 
-		write := context.Group("", middleware.CheckPermissions(constants.ContextMenu, constants.Write))
+		write := context.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceContextMenu).Write()))
 		{
 			write.POST("", handler.create)
 			write.POST("/several", handler.createSeveral)

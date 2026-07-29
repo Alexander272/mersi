@@ -8,17 +8,22 @@ import (
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/pkg/auth"
+	"github.com/Alexander272/mersi/backend/pkg/logger"
 )
 
 type SessionService struct {
 	keycloak *auth.KeycloakClient
-	user     User
+	policies AccessPolices
+	user     Users
+	cache    SessionCacher
 }
 
-func NewSessionService(keycloak *auth.KeycloakClient, user User) *SessionService {
+func NewSessionService(keycloak *auth.KeycloakClient, policies AccessPolices, user Users, cache SessionCacher) *SessionService {
 	return &SessionService{
 		keycloak: keycloak,
+		policies: policies,
 		user:     user,
+		cache:    cache,
 	}
 }
 
@@ -35,21 +40,21 @@ func (s *SessionService) SignIn(ctx context.Context, u *models.SignIn) (*models.
 		return nil, fmt.Errorf("failed to login to keycloak. error: %w", err)
 	}
 
-	decodedUser, err := s.DecodeAccessToken(ctx, res.AccessToken)
+	user, err := s.DecodeAccessToken(ctx, res.AccessToken)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.user.GetRoles(ctx, &models.GetUserInfoDTO{UserID: decodedUser.ID, Realm: u.Realm})
+	userWithPerms, err := s.user.GetRoles(ctx, &models.GetUserInfoDTO{UserID: user.ID, Realm: u.Realm})
 	if err != nil {
 		return nil, err
 	}
 
-	user.Name = decodedUser.Name
-	user.AccessToken = res.AccessToken
-	user.RefreshToken = res.RefreshToken
+	userWithPerms.Name = user.Name
+	userWithPerms.AccessToken = res.AccessToken
+	userWithPerms.RefreshToken = res.RefreshToken
 
-	return user, nil
+	return userWithPerms, nil
 }
 
 func (s *SessionService) SignOut(ctx context.Context, refreshToken string) error {
@@ -71,20 +76,19 @@ func (s *SessionService) Refresh(ctx context.Context, req *models.RefreshDTO) (*
 		return nil, err
 	}
 
-	user, err := s.user.GetRoles(ctx, &models.GetUserInfoDTO{UserID: decodedUser.ID, Realm: req.Realm})
+	userWithPerms, err := s.user.GetRoles(ctx, &models.GetUserInfoDTO{UserID: decodedUser.ID, Realm: req.Realm})
 	if err != nil {
 		return nil, err
 	}
 
-	user.Name = decodedUser.Name
-	user.AccessToken = res.AccessToken
-	user.RefreshToken = res.RefreshToken
+	userWithPerms.Name = decodedUser.Name
+	userWithPerms.AccessToken = res.AccessToken
+	userWithPerms.RefreshToken = res.RefreshToken
 
-	return user, nil
+	return userWithPerms, nil
 }
 
 func (s *SessionService) DecodeAccessToken(ctx context.Context, token string) (*models.User, error) {
-	//TODO расшифровку токена тоже лучше делать здесь, а в keycloak
 	_, claims, err := s.keycloak.Client.DecodeAccessToken(ctx, token, s.keycloak.Realm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode access token. error: %w", err)
@@ -93,16 +97,14 @@ func (s *SessionService) DecodeAccessToken(ctx context.Context, token string) (*
 	serviceName := os.Getenv("SERVICE_ID")
 
 	user := &models.User{}
-	var role, username, userId string
+	var username, userId string
 	c := *claims
 	access, ok := c["realm_access"]
 	if ok {
 		a := access.(map[string]interface{})["roles"]
 		roles := a.([]interface{})
 		for _, r := range roles {
-			//TODO может получать прификс из конфига
 			if strings.Contains(r.(string), serviceName) {
-				role = strings.Replace(r.(string), serviceName+"_", "", 1)
 				break
 			}
 		}
@@ -119,8 +121,18 @@ func (s *SessionService) DecodeAccessToken(ctx context.Context, token string) (*
 	}
 
 	user.ID = userId
-	user.Role = role
 	user.Name = username
+
+	if perms := s.cache.Get(ctx, userId); perms != nil {
+		user.Permissions = perms
+		logger.Debug("permissions loaded from cache", logger.StringAttr("userId", userId))
+	} else {
+		permissions, err := s.user.GetPermissions(ctx, userId)
+		if err == nil {
+			user.Permissions = permissions
+			s.cache.Set(ctx, userId, permissions)
+		}
+	}
 
 	return user, nil
 }

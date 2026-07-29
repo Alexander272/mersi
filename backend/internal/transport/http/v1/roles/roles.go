@@ -3,7 +3,7 @@ package roles
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -25,11 +25,11 @@ func NewRoleHandlers(service services.Role) *RoleHandlers {
 func Register(api *gin.RouterGroup, service services.Role, middleware *middleware.Middleware) {
 	handlers := NewRoleHandlers(service)
 
-	roles := api.Group("/roles", middleware.CheckPermissions(constants.Roles, constants.Read))
+	roles := api.Group("/roles", middleware.CheckPermissions(access.Reg.R(access.ResourceRoles).Read()))
 	{
 		roles.GET("", handlers.getAll)
 
-		write := roles.Group("", middleware.CheckPermissions(constants.Roles, constants.Write))
+		write := roles.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceRoles).Write()))
 		{
 			write.GET("/:name", handlers.get)
 			write.POST("", handlers.create)

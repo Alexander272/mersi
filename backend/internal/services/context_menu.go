@@ -47,7 +47,7 @@ func (s *ContextService) Get(ctx context.Context, req *models.GetContextMenuDTO)
 		return nil, err
 	}
 
-	role, err := s.role.Get(ctx, access.Role.Name)
+	rules, err := s.role.GetRules(ctx, access.Role.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *ContextService) Get(ctx context.Context, req *models.GetContextMenuDTO)
 	res := []*models.ContextMenu{}
 	filterMap := make(map[string]bool)
 
-	for _, v := range role.Rules {
+	for _, v := range rules {
 		filterMap[v] = true
 	}
 

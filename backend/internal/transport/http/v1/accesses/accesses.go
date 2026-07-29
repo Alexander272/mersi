@@ -3,7 +3,7 @@ package accesses
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -26,10 +26,10 @@ func NewHandler(service services.Accesses) *Handler {
 func Register(api *gin.RouterGroup, service services.Accesses, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	accesses := api.Group("/accesses", middleware.CheckPermissions(constants.Realms, constants.Read))
+	accesses := api.Group("/accesses", middleware.CheckPermissions(access.Reg.R(access.ResourceRealms).Read()))
 	{
 		accesses.GET("", handler.get)
-		write := accesses.Group("", middleware.CheckPermissions(constants.Realms, constants.Write))
+		write := accesses.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceRealms).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

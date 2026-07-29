@@ -3,7 +3,7 @@ package create
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -26,12 +26,12 @@ func NewHandler(service services.CreateForm) *Handler {
 func Register(api *gin.RouterGroup, service services.CreateForm, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	create := api.Group("create", middleware.CheckPermissions(constants.CreatingForm, constants.Read))
+	create := api.Group("create", middleware.CheckPermissions(access.Reg.R(access.ResourceCreatingForm).Read()))
 	{
 		create.GET("", handler.get)
 		create.GET("/bool-fields", handler.getBooleanFields)
 
-		write := create.Group("", middleware.CheckPermissions(constants.CreatingForm, constants.Write))
+		write := create.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceCreatingForm).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

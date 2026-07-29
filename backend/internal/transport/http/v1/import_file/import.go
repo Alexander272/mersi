@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -28,7 +29,7 @@ func NewHandler(service services.ImportFile) *Handler {
 func Register(api *gin.RouterGroup, service services.ImportFile, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	importFile := api.Group("import", middleware.CheckPermissions(constants.SI, constants.Read))
+	importFile := api.Group("import", middleware.CheckPermissions(access.Reg.R(access.ResourceSi).Read()))
 	{
 		importFile.POST("", handler.load)
 	}

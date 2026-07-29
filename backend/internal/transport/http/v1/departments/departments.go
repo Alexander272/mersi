@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -28,13 +29,13 @@ func NewDepartmentHandlers(service services.Department) *DepartmentHandlers {
 func Register(api *gin.RouterGroup, service services.Department, middleware *middleware.Middleware) {
 	handlers := NewDepartmentHandlers(service)
 
-	departments := api.Group("/departments", middleware.CheckPermissions(constants.Department, constants.Read))
+	departments := api.Group("/departments", middleware.CheckPermissions(access.Reg.R(access.ResourceDepartment).Read()))
 	{
 		departments.GET("", handlers.GetAll)
 		departments.GET("/:id", handlers.GetById)
 		departments.GET("/sso", handlers.GetBySSOId)
 
-		write := departments.Group("", middleware.CheckPermissions(constants.Department, constants.Write))
+		write := departments.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceDepartment).Write()))
 		{
 			write.POST("", handlers.Create)
 			write.PUT("/:id", handlers.Update)

@@ -3,7 +3,7 @@ package fields
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -26,11 +26,11 @@ func NewHandler(service services.VerificationFields) *Handler {
 func Register(api *gin.RouterGroup, service services.VerificationFields, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	fields := api.Group("fields", middleware.CheckPermissions(constants.VerificationFields, constants.Read))
+	fields := api.Group("fields", middleware.CheckPermissions(access.Reg.R(access.ResourceVerificationFields).Read()))
 	{
 		fields.GET("", handler.get)
 
-		write := fields.Group("", middleware.CheckPermissions(constants.VerificationFields, constants.Write))
+		write := fields.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceVerificationFields).Write()))
 		{
 			write.POST("", handler.create)
 			write.POST("/several", handler.createSeveral)

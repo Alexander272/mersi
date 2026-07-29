@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -31,13 +32,13 @@ func NewHandler(service services.Document) *Handler {
 func Register(api *gin.RouterGroup, service services.Document, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	docs := api.Group("documents", middleware.CheckPermissions(constants.Documents, constants.Read))
+	docs := api.Group("documents", middleware.CheckPermissions(access.Reg.R(access.ResourceDocuments).Read()))
 	{
 		docs.GET("", handler.download)
 		docs.GET("/temp/:group", handler.getTemp)
 		docs.GET("/list/:group", handler.getList)
 
-		write := docs.Group("", middleware.CheckPermissions(constants.Documents, constants.Write))
+		write := docs.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceDocuments).Write()))
 		{
 			write.POST("", handler.upload)
 			write.DELETE("/:id", handler.delete)

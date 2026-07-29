@@ -47,6 +47,14 @@ func Register(api *gin.RouterGroup, deps Deps) {
 	}
 }
 
+func flattenPermissions(perms map[string][]string) []string {
+	result := make([]string, 0)
+	for _, v := range perms {
+		result = append(result, v...)
+	}
+	return result
+}
+
 func (h *AuthHandler) SignIn(c *gin.Context) {
 	dto := &models.SignIn{}
 	if err := c.BindJSON(dto); err != nil {
@@ -94,7 +102,7 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(constants.AuthCookie, user.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
-	c.SetCookie(constants.IdentityCookie, strings.Join(user.Permissions, ","), int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
+	c.SetCookie(constants.IdentityCookie, strings.Join(flattenPermissions(user.Permissions), ","), int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
 	c.JSON(http.StatusOK, response.DataResponse{Data: user})
 }
 
@@ -162,15 +170,8 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		domain = c.Request.Host
 	}
 
-	// logger.Info("Пользователь успешно обновил сессию",
-	// 	logger.StringAttr("section", "auth"),
-	// 	logger.StringAttr("ip", c.ClientIP()),
-	// 	logger.StringAttr("user", user.Name),
-	// 	logger.StringAttr("user_id", user.Id),
-	// )
-
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(constants.AuthCookie, user.RefreshToken, int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
-	c.SetCookie(constants.IdentityCookie, strings.Join(user.Permissions, ","), int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
+	c.SetCookie(constants.IdentityCookie, strings.Join(flattenPermissions(user.Permissions), ","), int(h.auth.RefreshTokenTTL.Seconds()), "/", domain, h.auth.Secure, true)
 	c.JSON(http.StatusOK, response.DataResponse{Data: user})
 }

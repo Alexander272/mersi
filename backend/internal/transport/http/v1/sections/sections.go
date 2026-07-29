@@ -3,7 +3,7 @@ package sections
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -26,12 +26,12 @@ func NewHandler(service services.Section) *Handler {
 func Register(api *gin.RouterGroup, service services.Section, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	sections := api.Group("/sections", middleware.CheckPermissions(constants.Sections, constants.Read))
+	sections := api.Group("/sections", middleware.CheckPermissions(access.Reg.R(access.ResourceSections).Read()))
 	{
 		sections.GET("", handler.Get)
 		sections.GET("/grouped", handler.GetGrouped)
 
-		write := sections.Group("", middleware.CheckPermissions(constants.Sections, constants.Write))
+		write := sections.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceSections).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

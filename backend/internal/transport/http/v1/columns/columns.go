@@ -3,7 +3,7 @@ package columns
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -27,11 +27,11 @@ func NewHandler(service services.Columns) *Handler {
 func Register(api *gin.RouterGroup, service services.Columns, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	columns := api.Group("/columns", middleware.CheckPermissions(constants.Columns, constants.Read))
+	columns := api.Group("/columns", middleware.CheckPermissions(access.Reg.R(access.ResourceColumns).Read()))
 	{
 		columns.GET("", handler.get)
 
-		write := columns.Group("", middleware.CheckPermissions(constants.Columns, constants.Write))
+		write := columns.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceColumns).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

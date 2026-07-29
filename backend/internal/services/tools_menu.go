@@ -47,7 +47,7 @@ func (s *ToolsMenuService) Get(ctx context.Context, req *models.GetToolsMenuDTO)
 		return nil, err
 	}
 
-	role, err := s.roles.Get(ctx, access.Role.Name)
+	rules, err := s.roles.GetRules(ctx, access.Role.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *ToolsMenuService) Get(ctx context.Context, req *models.GetToolsMenuDTO)
 	res := []*models.ToolsMenu{}
 	filterMap := make(map[string]bool)
 
-	for _, v := range role.Rules {
+	for _, v := range rules {
 		filterMap[v] = true
 	}
 

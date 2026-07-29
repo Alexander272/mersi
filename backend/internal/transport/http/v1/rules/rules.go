@@ -3,7 +3,7 @@ package rules
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -25,7 +25,7 @@ func NewHandler(service services.RuleItem) *Handler {
 func Register(api *gin.RouterGroup, service services.RuleItem, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	rules := api.Group("rules", middleware.CheckPermissions(constants.Roles, constants.Write))
+	rules := api.Group("rules", middleware.CheckPermissions(access.Reg.R(access.ResourceRoles).Write()))
 	{
 		rules.GET("", handler.get)
 	}

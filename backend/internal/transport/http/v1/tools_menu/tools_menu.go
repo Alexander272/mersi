@@ -3,6 +3,7 @@ package tools_menu
 import (
 	"net/http"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -26,12 +27,12 @@ func NewHandler(service services.ToolsMenu) *Handler {
 func Register(api *gin.RouterGroup, service services.ToolsMenu, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	tools := api.Group("tools-menu", middleware.CheckPermissions(constants.ToolsMenu, constants.Read))
+	tools := api.Group("tools-menu", middleware.CheckPermissions(access.Reg.R(access.ResourceToolsMenu).Read()))
 	{
 		tools.GET("", handler.get)
 		tools.POST("/favorite", handler.toggleFavorite)
 
-		write := tools.Group("", middleware.CheckPermissions(constants.ToolsMenu, constants.Write))
+		write := tools.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceToolsMenu).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

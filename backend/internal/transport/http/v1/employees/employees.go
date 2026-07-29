@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -28,13 +28,13 @@ func NewEmployeeHandlers(service services.Employee) *EmployeeHandlers {
 func Register(api *gin.RouterGroup, service services.Employee, middleware *middleware.Middleware) {
 	handlers := NewEmployeeHandlers(service)
 
-	employees := api.Group("/employees", middleware.CheckPermissions(constants.Employee, constants.Read))
+	employees := api.Group("/employees", middleware.CheckPermissions(access.Reg.R(access.ResourceEmployee).Read()))
 	{
 		employees.GET("", handlers.GetAll)
 		employees.GET("/unique", handlers.GetUnique)
 		employees.GET("/:id", handlers.GetById)
 
-		write := employees.Group("", middleware.CheckPermissions(constants.Employee, constants.Write))
+		write := employees.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceEmployee).Write()))
 		{
 			write.POST("", handlers.Create)
 			write.PUT("/:id", handlers.Update)

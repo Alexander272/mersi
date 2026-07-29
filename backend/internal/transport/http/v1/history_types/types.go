@@ -3,7 +3,7 @@ package history_types
 import (
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -24,11 +24,11 @@ func NewHandler(service services.HistoryType) *Handler {
 func Register(api *gin.RouterGroup, service services.HistoryType, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	types := api.Group("history-types", middleware.CheckPermissions(constants.HistoryTypes, constants.Read))
+	types := api.Group("history-types", middleware.CheckPermissions(access.Reg.R(access.ResourceHistoryTypes).Read()))
 	{
 		types.GET("", handler.get)
 
-		write := types.Group("", middleware.CheckPermissions(constants.HistoryTypes, constants.Write))
+		write := types.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceHistoryTypes).Write()))
 		{
 			write.POST("", handler.create)
 			write.POST("/several", handler.createSeveral)

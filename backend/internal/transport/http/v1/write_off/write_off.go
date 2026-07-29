@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/Alexander272/mersi/backend/internal/constants"
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
 	"github.com/Alexander272/mersi/backend/internal/services"
@@ -29,11 +29,11 @@ func NewHandler(service services.WriteOff) *Handler {
 func Register(api *gin.RouterGroup, service services.WriteOff, middleware *middleware.Middleware) {
 	handler := NewHandler(service)
 
-	writeOff := api.Group("write-off", middleware.CheckPermissions(constants.WriteOff, constants.Read))
+	writeOff := api.Group("write-off", middleware.CheckPermissions(access.Reg.R(access.ResourceWriteOff).Read()))
 	{
 		writeOff.GET("", handler.get)
 
-		write := writeOff.Group("", middleware.CheckPermissions(constants.WriteOff, constants.Write))
+		write := writeOff.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceWriteOff).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)

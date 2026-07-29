@@ -1,18 +1,74 @@
 package models
 
-import "github.com/lib/pq"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 type Role struct {
+	ID          string `json:"id" db:"id"`
+	Slug        string `json:"slug" db:"slug"`
+	Name        string `json:"name" db:"name"`
+	Description string `json:"description" db:"description"`
+	Level       int    `json:"level" db:"level"`
+	IsActive    bool   `json:"isActive" db:"is_active"`
+	IsSystem    bool   `json:"isSystem" db:"is_system"`
+	IsEditable  bool   `json:"isEditable" db:"is_editable"`
+	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt   time.Time `json:"updatedAt" db:"updated_at"`
+}
+
+type RoleShort struct {
+	ID   string `json:"id" db:"id"`
+	Slug string `json:"slug" db:"slug"`
+	Name string `json:"name" db:"name"`
+}
+
+type GetRoleDTO struct {
+	ID   string `json:"id" db:"id"`
+	Slug string `json:"slug" db:"slug"`
+}
+
+type RoleDTO struct {
+	ID          string   `json:"id" db:"id"`
+	Slug        string   `json:"slug" db:"slug" binding:"required"`
+	Name        string   `json:"name" db:"name" binding:"required"`
+	Description string   `json:"description" db:"description"`
+	Level       int      `json:"level" db:"level"`
+	IsSystem    bool     `json:"isSystem" db:"is_system"`
+	Permissions []string `json:"permissions" db:"permissions"`
+	Inherits    []string `json:"inherits" db:"inherits"`
+}
+
+type DeleteRoleDTO struct {
+	ID string `json:"id" db:"id"`
+}
+
+type RolePermissionDTO struct {
+	RoleId       string `json:"roleId" db:"role_id"`
+	PermissionId string `json:"permissionId" db:"permission_id"`
+}
+
+type RoleWithPerms struct {
+	Role
+	Inherits []string                  `json:"inherits"`
+	Perms    []*RolePermissionsGrouped `json:"perms"`
+}
+
+// Legacy types kept for backward compatibility during migration
+
+type RoleLegacy struct {
 	ID    string   `json:"id" db:"id"`
 	Name  string   `json:"name" db:"name"`
 	Rules []string `json:"rules"`
 }
+
 type RoleWithRuleDTO struct {
 	ID      string         `json:"id" db:"id"`
 	Name    string         `json:"name" db:"name"`
 	Extends pq.StringArray `db:"extends"`
 	Rules   pq.StringArray `db:"rules"`
-	// Menu    string         `db:"menu"`
 }
 
 type RoleFull struct {
@@ -22,6 +78,7 @@ type RoleFull struct {
 	Extends     []string `json:"extends" db:"extends"`
 	Description string   `json:"description" db:"description"`
 }
+
 type RoleFullDTO struct {
 	ID          string         `json:"id" db:"id"`
 	Name        string         `json:"name" db:"name"`
@@ -47,10 +104,9 @@ type GetRoleByRealmDTO struct {
 	UserID  string `json:"userId"`
 }
 
-type RoleDTO struct {
-	ID          string   `json:"id" db:"id"`
-	Name        string   `json:"name" db:"name" binding:"required"`
-	Level       int      `json:"level" db:"level" binding:"required"`
-	Extends     []string `json:"extends" db:"extends"`
-	Description string   `json:"description" db:"description"`
+type RoleWithStats struct {
+	Role
+	Children   []string          `json:"children"`
+	UserCount  int               `json:"userCount"`
+	PermsCount PermsWithCount    `json:"permsCount"`
 }

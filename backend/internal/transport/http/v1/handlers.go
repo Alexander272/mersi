@@ -84,11 +84,11 @@ func (h *Handler) Init(group *gin.RouterGroup) {
 	employees.Register(secure, h.services.Employee, h.middleware)
 	channel.Register(secure, h.services.Channel, h.middleware)
 	responsible.Register(secure, h.services.Responsible, h.middleware)
-	user.Register(secure, h.services.User, h.middleware)
+	user.Register(secure, h.services.Users, h.middleware)
 	roles.Register(secure, h.services.Role, h.middleware)
 	export.Register(secure, h.services.Export, h.middleware)
 	import_file.Register(secure, h.services.ImportFile, h.middleware)
 	status.Register(secure, h.services.SiStatus, h.middleware)
 	rules.Register(secure, h.services.RuleItem, h.middleware)
-	permissions.Register(secure, h.services.Permission, h.middleware)
+	permissions.Register(secure, h.services.AccessPolices, h.middleware)
 }

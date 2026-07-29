@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository"
@@ -36,13 +35,15 @@ func NewUserService(deps *UsersDeps) *UserService {
 	}
 }
 
-type User interface {
+type Users interface {
 	GetAll(ctx context.Context) ([]*models.UserData, error)
 	GetByAccess(ctx context.Context, req *models.GetByAccessDTO) ([]*models.UserData, error)
 	GetByRealm(ctx context.Context, req *models.GetByRealmDTO) ([]*models.UserData, error)
 	GetById(ctx context.Context, id string) (*models.UserData, error)
 	GetBySSOId(ctx context.Context, id string) (*models.UserData, error)
 	GetRoles(ctx context.Context, req *models.GetUserInfoDTO) (*models.User, error)
+	GetPermissions(ctx context.Context, userId string) (map[string][]string, error)
+	LoadPolicy(ctx context.Context) ([]*models.UserRolePolicy, error)
 	Sync(ctx context.Context) error
 	Create(ctx context.Context, dto *models.UserData) error
 	CreateSeveral(ctx context.Context, tx postgres.Tx, dto []*models.UserData) error
@@ -112,23 +113,6 @@ func (s *UserService) GetRoles(ctx context.Context, req *models.GetUserInfoDTO) 
 		}
 	}
 
-	// get menu
-	rule, err := s.role.Get(ctx, user.Role)
-	if err != nil {
-		return nil, err
-	}
-
-	// get default filters
-	// filters, err := s.filter.Get(ctx, &models.GetFilterDTO{SSOId: user.Id, RealmId: req.Realm})
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	sort.Slice(rule.Rules, func(i, j int) bool {
-		return rule.Rules[i] < rule.Rules[j]
-	})
-
-	user.Permissions = rule.Rules
 	return user, nil
 }
 
@@ -315,4 +299,29 @@ func (s *UserService) DeleteSeveral(ctx context.Context, tx postgres.Tx, ids []s
 		return fmt.Errorf("failed to delete few users. error: %w", err)
 	}
 	return nil
+}
+
+func (s *UserService) LoadPolicy(ctx context.Context) ([]*models.UserRolePolicy, error) {
+	data, err := s.repo.LoadPolicy(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load user policy: %w", err)
+	}
+	return data, nil
+}
+
+func (s *UserService) GetPermissions(ctx context.Context, userId string) (map[string][]string, error) {
+	roles, err := s.role.GetWithRealm(ctx, &models.GetRoleByRealmDTO{UserID: userId})
+	if err != nil {
+		return nil, err
+	}
+
+	permissions := make(map[string][]string)
+	for _, r := range roles {
+		rules, err := s.role.GetRules(ctx, r.Name)
+		if err != nil {
+			continue
+		}
+		permissions[r.RealmId] = rules
+	}
+	return permissions, nil
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Alexander272/mersi/backend/internal/access"
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/models/response"
@@ -34,13 +35,13 @@ func NewHandler(service services.SI) *Handler {
 func Register(api *gin.RouterGroup, services *services.Services, middleware *middleware.Middleware) {
 	handler := NewHandler(services.SI)
 
-	si := api.Group("si", middleware.VerifyToken, middleware.DepartmentAccess, middleware.CheckPermissions(constants.SI, constants.Read))
+	si := api.Group("si", middleware.VerifyToken, middleware.DepartmentAccess, middleware.CheckPermissions(access.Reg.R(access.ResourceSi).Read()))
 	{
 		si.GET("", handler.get)
 		si.GET("/:id", handler.getById)
 		si.GET("/sent", handler.getSent)
 
-		write := si.Group("", middleware.CheckPermissions(constants.SI, constants.Write))
+		write := si.Group("", middleware.CheckPermissions(access.Reg.R(access.ResourceSi).Write()))
 		{
 			write.POST("", handler.create)
 			write.PUT("/:id", handler.update)
