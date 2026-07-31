@@ -102,15 +102,18 @@ func (h *Handler) makeAccountingLog(c *gin.Context) {
 func (h *Handler) enrichPeriodWithDeptAccess(c *gin.Context, req *models.Period) {
 	hasWritePermission := true
 	if wp, exists := c.Get(constants.CtxHasWritePermission); exists {
-		hasWritePermission = wp.(bool)
+		if wp, ok := wp.(bool); ok {
+			hasWritePermission = wp
+		}
 	}
 	if hasWritePermission {
 		return
 	}
 	if deptIDs, exists := c.Get(constants.CtxDepartmentAccess); exists {
-		ids := deptIDs.([]string)
-		if len(ids) > 0 {
-			req.DepartmentAccess = ids
+		if ids, ok := deptIDs.([]string); ok {
+			if len(ids) > 0 {
+				req.DepartmentAccess = ids
+			}
 		}
 	}
 }

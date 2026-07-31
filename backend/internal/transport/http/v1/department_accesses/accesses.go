@@ -57,7 +57,21 @@ func (h *Handler) get(c *gin.Context) {
 	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
 }
 
-func (h *Handler) getByUser(c *gin.Context) {}
+func (h *Handler) getByUser(c *gin.Context) {
+	id := c.Param("id")
+	if err := uuid.Validate(id); err != nil {
+		response.SendError(c, models.ErrInvalidInput)
+		return
+	}
+	dto := &models.GetDepartmentAccessDTO{UserId: id}
+
+	data, err := h.service.GetByUserId(c, dto)
+	if err != nil {
+		response.SendError(c, err, dto)
+		return
+	}
+	c.JSON(http.StatusOK, response.DataResponse{Data: data, Total: len(data)})
+}
 
 func (h *Handler) replace(c *gin.Context) {
 	dto := &models.ReplaceDepartmentAccessDTO{}

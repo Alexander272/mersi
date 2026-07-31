@@ -42,12 +42,16 @@ func main() {
 
 	//* Dependencies
 	db, err := postgres.NewPostgresDB(postgres.Config{
-		Host:     conf.Postgres.Host,
-		Port:     conf.Postgres.Port,
-		Username: conf.Postgres.Username,
-		Password: conf.Postgres.Password,
-		DBName:   conf.Postgres.DbName,
-		SSLMode:  conf.Postgres.SSLMode,
+		Host:            conf.Postgres.Host,
+		Port:            conf.Postgres.Port,
+		Username:        conf.Postgres.Username,
+		Password:        conf.Postgres.Password,
+		DBName:          conf.Postgres.DbName,
+		SSLMode:         conf.Postgres.SSLMode,
+		MaxOpenConns:    conf.Postgres.MaxOpenConns,
+		MaxIdleConns:    conf.Postgres.MaxIdleConns,
+		ConnMaxLifetime: conf.Postgres.ConnMaxLifetime,
+		ConnMaxIdleTime: conf.Postgres.ConnMaxIdleTime,
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
@@ -122,6 +126,7 @@ func main() {
 		logger.Error("failed to stop scheduler.", logger.ErrAttr(err))
 	}
 
+	services.ActivityLog.Wait()
 	limiter.StopAll()
 
 	if err := srv.Stop(ctx); err != nil {

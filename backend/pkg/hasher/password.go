@@ -1,10 +1,9 @@
 package hasher
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
-	"math/rand"
-	"time"
 )
 
 // PasswordHasher provides hashing logic to securely store passwords.
@@ -41,10 +40,7 @@ func (h *SHA256Hasher) Hash(password, salt string) (string, error) {
 func (h *SHA256Hasher) GenerateSalt() (string, error) {
 	b := make([]byte, h.saltSize)
 
-	s := rand.NewSource(time.Now().Unix())
-	r := rand.New(s)
-
-	if _, err := r.Read(b); err != nil {
+	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
 

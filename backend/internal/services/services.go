@@ -142,7 +142,7 @@ func NewServices(deps *Deps) *Services {
 		SI:      si,
 		File:    file,
 		Section: section,
-		Most:    most,
+		Most:    most.Post,
 		Conf:    deps.CheckUsedConf,
 	})
 
@@ -151,7 +151,7 @@ func NewServices(deps *Deps) *Services {
 		Location:     location,
 		Responsible:  responsible,
 		Notification: notification,
-		Most:         most,
+		Most:         most.Dialog,
 		ActivityLog:  activityLog,
 		TxManager:    txManager,
 	})

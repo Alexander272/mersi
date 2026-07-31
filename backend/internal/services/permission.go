@@ -6,8 +6,8 @@ import (
 	"log"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
-	sqlxadapter "github.com/Blank-Xu/sqlx-adapter"
 	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/persist"
 )
 
 type PermissionService struct {
@@ -21,7 +21,7 @@ type PermissionService struct {
 
 type PermissionDeps struct {
 	ConfPath string
-	Adapter  *sqlxadapter.Adapter
+	Adapter  persist.Adapter
 	Rule     Rule
 	Role     Role
 	Realm    Realm
@@ -29,9 +29,9 @@ type PermissionDeps struct {
 }
 
 type Permission interface {
-	Register(confPath string, adapter *sqlxadapter.Adapter) error
+	Register(confPath string, adapter persist.Adapter) error
 	Enforce(params ...interface{}) (bool, error)
-	ReloadPolicies() error
+	ReloadPolicies(ctx context.Context) error
 }
 
 func NewPermissionService(deps *PermissionDeps) *PermissionService {
@@ -48,7 +48,7 @@ func NewPermissionService(deps *PermissionDeps) *PermissionService {
 	return permission
 }
 
-func (s *PermissionService) Register(path string, adapter *sqlxadapter.Adapter) error {
+func (s *PermissionService) Register(path string, adapter persist.Adapter) error {
 	//? можно попробовать наследовать конкретных пользователь от роли (пример: g, alice, user, domain1 -
 	// вместо alice будет id пользователя, вместо user будет его роль, а вместо domain1 будет id realm)
 	// только похоже мне придется роли дублировать для каждого realm что не очень хорошо
@@ -83,7 +83,7 @@ func (s *PermissionService) Register(path string, adapter *sqlxadapter.Adapter) 
 		return fmt.Errorf("failed to create enforcer. error: %w", err)
 	}
 
-	if err := s.ReloadPolicies(); err != nil {
+	if err := s.ReloadPolicies(context.Background()); err != nil {
 		return fmt.Errorf("failed to prepare policies. error: %w", err)
 	}
 
@@ -98,25 +98,25 @@ func (s *PermissionService) Enforce(params ...interface{}) (bool, error) {
 	return s.enforcer.Enforce(params...)
 }
 
-func (s *PermissionService) ReloadPolicies() error {
+func (s *PermissionService) ReloadPolicies(ctx context.Context) error {
 	s.enforcer.ClearPolicy()
 	if err := s.enforcer.SavePolicy(); err != nil {
 		return fmt.Errorf("failed to save policy. err: %w", err)
 	}
 
-	rules, err := s.rule.GetAll(context.Background())
+	rules, err := s.rule.GetAll(ctx)
 	if err != nil {
 		return err
 	}
-	realms, err := s.realm.Get(context.Background(), &models.GetRealmsDTO{})
+	realms, err := s.realm.Get(ctx, &models.GetRealmsDTO{})
 	if err != nil {
 		return err
 	}
-	roles, err := s.role.GetAllWithNames(context.Background(), &models.GetRolesDTO{})
+	roles, err := s.role.GetAllWithNames(ctx, &models.GetRolesDTO{})
 	if err != nil {
 		return err
 	}
-	accesses, err := s.accesses.GetOriginal(context.Background())
+	accesses, err := s.accesses.GetOriginal(ctx)
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/documents"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/instruments"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/locations"
+	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/receiving"
 	"github.com/Alexander272/mersi/backend/internal/transport/http/v1/si/verifications"
 	"github.com/Alexander272/mersi/backend/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -51,7 +52,8 @@ func Register(api *gin.RouterGroup, services *services.Services, middleware *mid
 	instruments.Register(si, services.Instrument, middleware)
 	documents.Register(si, services.Document, middleware)
 	verifications.Register(si, services, middleware)
-	locations.Register(api, services.Location, services.Receiving, middleware)
+	locations.Register(api, services.Location, middleware)
+	receiving.Register(api, services.Receiving, middleware)
 }
 
 func (h *Handler) get(c *gin.Context) {
@@ -136,23 +138,24 @@ func (h *Handler) getSent(c *gin.Context) {
 
 	hasWritePermission := true
 	if wp, exists := c.Get(constants.CtxHasWritePermission); exists {
-		hasWritePermission = wp.(bool)
+		if wp, ok := wp.(bool); ok {
+			hasWritePermission = wp
+		}
 	}
 	if !hasWritePermission {
-			if deptIDs, exists := c.Get(constants.CtxDepartmentAccess); exists {
-				ids := deptIDs.([]string)
-				if len(ids) > 0 {
-					params.DepartmentAccess = ids
-					params.Filters = append(params.Filters, &models.Filter{
-						Field: "department", FieldType: "list",
-						Values: []*models.FilterValue{{
-							CompareType: "in",
-							Value:       strings.Join(ids, ","),
-						}},
-					})
-				}
+		if deptIDs, exists := c.Get(constants.CtxDepartmentAccess); exists {
+			if ids, ok := deptIDs.([]string); ok && len(ids) > 0 {
+				params.DepartmentAccess = ids
+				params.Filters = append(params.Filters, &models.Filter{
+					Field: "department", FieldType: "list",
+					Values: []*models.FilterValue{{
+						CompareType: "in",
+						Value:       strings.Join(ids, ","),
+					}},
+				})
 			}
-			params.Filters = append(params.Filters, &models.Filter{
+		}
+		params.Filters = append(params.Filters, &models.Filter{
 				Field: "status", Values: []*models.FilterValue{{CompareType: "nlike", Value: "reserve"}},
 			})
 	}

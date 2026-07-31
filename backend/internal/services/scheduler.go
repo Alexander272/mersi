@@ -15,6 +15,8 @@ import (
 
 type SchedulerService struct {
 	cron         gocron.Scheduler
+	ctx          context.Context
+	cancel       context.CancelFunc
 	notification Notification
 	user         User
 	receiving    Receiving
@@ -34,8 +36,12 @@ func NewSchedulerService(deps *SchedulerDeps) *SchedulerService {
 		log.Fatalf("failed to create new scheduler. error: %s", err.Error())
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &SchedulerService{
 		cron:         cron,
+		ctx:          ctx,
+		cancel:       cancel,
 		notification: deps.Notification,
 		user:         deps.User,
 		receiving:    deps.Receiving,
@@ -89,38 +95,38 @@ func (s *SchedulerService) job() {
 	logger.Info("job was started")
 
 	// принудительное получение инструмента, который не принимают больше 20 дней
-	if err := s.receiving.ForcedReceiptAll(context.Background()); err != nil {
+	if err := s.receiving.ForcedReceiptAll(s.ctx); err != nil {
 		logger.Error("location forced receipt error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
 		return
 	}
 
 	// проверка необходимости сдать использующиеся инструменты на поверку
-	if err := s.notification.CheckUsed(); err != nil {
+	if err := s.notification.CheckUsed(s.ctx); err != nil {
 		logger.Error("notification check used error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
 	}
 
 	// проверка отправленных инструментов и рассылка уведомлений для подтверждения получения
-	if err := s.notification.CheckSent(); err != nil {
+	if err := s.notification.CheckSent(s.ctx); err != nil {
 		logger.Error("notification check sent error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
 	}
 
 	// проверка инструментов на необходимость поверки
-	if err := s.notification.CheckVerification(); err != nil {
+	if err := s.notification.CheckVerification(s.ctx); err != nil {
 		logger.Error("notification check verification error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
 	}
 
 	// Синхронизация пользователей с keycloak
-	if err := s.user.Sync(context.Background()); err != nil {
+	if err := s.user.Sync(s.ctx); err != nil {
 		logger.Error("user sync error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
 	}
 
 	// Удаление пустых папок
-	if err := s.documents.RemoveEmptyFolders(context.Background()); err != nil {
+	if err := s.documents.RemoveEmptyFolders(s.ctx); err != nil {
 		logger.Error("delete empty folders error:", logger.ErrAttr(err))
 		error_bot.Send(nil, err.Error(), nil)
 	}

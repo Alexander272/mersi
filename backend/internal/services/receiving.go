@@ -18,7 +18,7 @@ type ReceivingService struct {
 	repo         repository.Location
 	responsible  Responsible
 	notification Notification
-	most         *most.MostService
+	most         most.Dialog
 	activityLog  ActivityLog
 	txManager    TransactionManager
 }
@@ -28,7 +28,7 @@ type ReceivingDeps struct {
 	Repo         repository.Location
 	Responsible  Responsible
 	Notification Notification
-	Most         *most.MostService
+	Most         most.Dialog
 	ActivityLog  ActivityLog
 	TxManager    TransactionManager
 }

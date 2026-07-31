@@ -66,13 +66,17 @@ func (s *PostService) Create(ctx context.Context, dto *models.CreatePostDTO) err
 		dataType := post.GetProp("data_type")
 
 		if dataId != nil {
-			req := &models.GetPost{
-				ChannelId: post.ChannelId,
-				DataType:  dataType.(string),
-				DataId:    dataId.(string),
-			}
-			if err := s.findDuplicate(req); err != nil {
-				return fmt.Errorf("failed to find duplicate. error: %w", err)
+			dataIdStr, dOk := dataId.(string)
+			dataTypeStr, tOk := dataType.(string)
+			if dOk && tOk {
+				req := &models.GetPost{
+					ChannelId: post.ChannelId,
+					DataType:  dataTypeStr,
+					DataId:    dataIdStr,
+				}
+				if err := s.findDuplicate(req); err != nil {
+					return fmt.Errorf("failed to find duplicate. error: %w", err)
+				}
 			}
 		}
 	}
@@ -149,9 +153,13 @@ func (s *PostService) findDuplicate(req *models.GetPost) error {
 				continue
 			}
 
-			tmp := p.GetProp("data_id").(string)
+			dataIdVal, ok := p.GetProp("data_id").(string)
+			if !ok {
+				continue
+			}
+			tmp := dataIdVal
 			data := models.NewUniverse(strings.Split(tmp, ","))
-			ok := false
+			ok = false
 			if len(data) > len(dataIds) {
 				ok = data.ContainSet(strings.Split(req.DataId, ","))
 			} else {

@@ -30,7 +30,7 @@ func Register(api *gin.RouterGroup, service services.Permission, middleware *mid
 }
 
 func (h *Handler) reload(c *gin.Context) {
-	if err := h.service.ReloadPolicies(); err != nil {
+	if err := h.service.ReloadPolicies(c.Request.Context()); err != nil {
 		response.SendError(c, err)
 		return
 	}

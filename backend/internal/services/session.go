@@ -8,6 +8,7 @@ import (
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/pkg/auth"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type SessionService struct {
@@ -84,17 +85,18 @@ func (s *SessionService) Refresh(ctx context.Context, req *models.RefreshDTO) (*
 }
 
 func (s *SessionService) DecodeAccessToken(ctx context.Context, token string) (*models.User, error) {
-	//TODO расшифровку токена тоже лучше делать здесь, а в keycloak
 	_, claims, err := s.keycloak.Client.DecodeAccessToken(ctx, token, s.keycloak.Realm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode access token. error: %w", err)
 	}
 
-	serviceName := os.Getenv("SERVICE_ID")
+	return claimsToUser(*claims, os.Getenv("SERVICE_ID"))
+}
 
+func claimsToUser(claims jwt.MapClaims, serviceName string) (*models.User, error) {
 	user := &models.User{}
 	var role, username, userId string
-	c := *claims
+	c := claims
 
 	if ra, ok := c["realm_access"]; ok {
 		if realmAccess, ok := ra.(map[string]interface{}); ok {

@@ -17,19 +17,15 @@ import (
 )
 
 type Handler struct {
-	location     services.Location
-	receivingSvc services.Receiving
+	location services.Location
 }
 
-func NewHandler(location services.Location, receiving services.Receiving) *Handler {
-	return &Handler{
-		location:     location,
-		receivingSvc: receiving,
-	}
+func NewHandler(location services.Location) *Handler {
+	return &Handler{location: location}
 }
 
-func Register(api *gin.RouterGroup, location services.Location, receiving services.Receiving, ware *middleware.Middleware) {
-	handler := NewHandler(location, receiving)
+func Register(api *gin.RouterGroup, location services.Location, ware *middleware.Middleware) {
+	handler := NewHandler(location)
 
 	perm := []*middleware.Permission{
 		{Section: constants.Location, Method: constants.Write},
@@ -54,22 +50,6 @@ func Register(api *gin.RouterGroup, location services.Location, receiving servic
 			{
 				writeRes.POST("/several", handler.createSeveral)
 				writeRes.DELETE("/:id", handler.delete)
-			}
-		}
-
-		receiving := locations.Group("receiving")
-		{
-			receiving.POST("/dialogs", handler.receivingDialog)
-			receiving.POST("/dialogs/open", handler.receivingDialogOpen)
-
-			secure := receiving.Group("", ware.VerifyToken, ware.CheckPermissions(constants.Location, constants.Read))
-			{
-				secure.POST("", handler.receiving)
-
-				write := secure.Group("", ware.CheckPermissions(constants.Location, constants.Write))
-				{
-					write.POST("/forced", handler.forcedReceiving)
-				}
 			}
 		}
 	}
@@ -182,104 +162,6 @@ func (h *Handler) createSeveral(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, response.IdResponse{Message: message})
-}
-
-func (h *Handler) receiving(c *gin.Context) {
-	dto := &models.ReceivingDTO{}
-	if err := c.BindJSON(dto); err != nil {
-		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
-		return
-	}
-
-	u, exists := c.Get(constants.CtxUser)
-	if !exists {
-		response.SendError(c, models.ErrSessionEmpty)
-		return
-	}
-	user, ok := u.(models.User)
-	if !ok {
-		response.SendError(c, models.ErrSessionEmpty)
-		return
-	}
-	dto.UserId = user.ID
-	dto.HasConfirmed = true
-
-	if err := h.receivingSvc.ReceivingFromApp(c, dto); err != nil {
-		response.SendError(c, err, dto)
-		return
-	}
-
-	logger.Info("Получены инструменты",
-		logger.StringAttr("user_id", user.ID),
-		logger.StringAttr("user", user.Name),
-		logger.StringAttr("status", dto.Status),
-		logger.AnyAttr("instruments", dto.InstrumentIds),
-	)
-
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о месте нахождения успешно обновлены"})
-}
-
-func (h *Handler) forcedReceiving(c *gin.Context) {
-	dto := &models.ForcedReceiptDTO{}
-	if err := c.BindJSON(dto); err != nil {
-		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
-		return
-	}
-
-	actor := utils.GetActor(c)
-	if actor == nil {
-		return
-	}
-	dto.Actor = actor
-
-	if err := h.receivingSvc.ForcedReceipt(c, dto); err != nil {
-		response.SendError(c, err, dto)
-		return
-	}
-
-	logger.Info("Получены инструменты (принудительно)",
-		logger.StringAttr("instrument_id", dto.InstrumentId),
-		logger.StringAttr("user_id", actor.ID),
-		logger.StringAttr("username", actor.Name),
-	)
-
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о месте нахождения успешно обновлены"})
-}
-
-func (h *Handler) receivingDialog(c *gin.Context) {
-	dto := &models.DialogResponse{}
-	if err := c.BindJSON(dto); err != nil {
-		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
-		return
-	}
-
-	if err := h.receivingSvc.ReceivingFromChannel(c, dto); err != nil {
-		response.SendError(c, err, dto)
-		return
-	}
-
-	logger.Info("Получены инструменты",
-		logger.StringAttr("user_id", dto.UserID),
-		logger.StringAttr("instrument_ids", fmt.Sprint(dto.Submission)),
-	)
-
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Данные о месте нахождения успешно обновлены"})
-}
-
-func (h *Handler) receivingDialogOpen(c *gin.Context) {
-	dto := &models.PostAction{}
-	if err := c.BindJSON(dto); err != nil {
-		response.SendError(c, fmt.Errorf("%w: %v", models.ErrNotValid, err))
-		return
-	}
-
-	if err := h.receivingSvc.ReceivingDialogOpen(c, dto); err != nil {
-		response.SendError(c, err, dto)
-		return
-	}
-	logger.Info("Открытие диалога", logger.StringAttr("userId", dto.UserId))
-
-	c.JSON(http.StatusOK, response.IdResponse{Message: "Сообщение отправлено"})
 }
 
 func (h *Handler) update(c *gin.Context) {

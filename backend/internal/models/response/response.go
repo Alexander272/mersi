@@ -3,7 +3,6 @@ package response
 import (
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/pkg/error_bot"
@@ -28,18 +27,6 @@ type ErrorResponse struct {
 
 type StatusResponse struct {
 	Status string `json:"status"`
-}
-
-func NewErrorResponse(c *gin.Context, statusCode int, err, message string) {
-	code := "U001"
-	if strings.Contains(err, "execute query") {
-		code = "MD001"
-	} else if strings.Contains(err, "EOF") {
-		code = "E001"
-	}
-
-	logger.Error("response failed", logger.StringAttr("Url", c.Request.URL.String()), logger.StringAttr("ClientIp", c.ClientIP()), logger.StringAttr("error", err))
-	c.AbortWithStatusJSON(statusCode, ErrorResponse{Message: message, Code: code})
 }
 
 func SendError(c *gin.Context, err error, request ...any) {

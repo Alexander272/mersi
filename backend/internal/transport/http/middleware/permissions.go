@@ -112,6 +112,9 @@ func (m *Middleware) DepartmentAccess(c *gin.Context) {
 	realm := c.GetHeader("realm")
 
 	access, err := m.services.Permission.Enforce(user.ID, realm, constants.SI, constants.Write)
+	if err != nil {
+		logger.Error("failed to check write permission", logger.ErrAttr(err))
+	}
 	if err == nil && access {
 		c.Set(constants.CtxHasWritePermission, true)
 	} else {

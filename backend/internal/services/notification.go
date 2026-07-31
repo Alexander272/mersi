@@ -21,16 +21,17 @@ type NotificationService struct {
 	si        SI
 	file      File
 	section   Section
-	most      *most.MostService
+	most      most.Post
 	conf      config.UsedConfig
 	iteration int
+	now       func() time.Time
 }
 
 type NotificationDeps struct {
 	SI      SI
 	File    File
 	Section Section
-	Most    *most.MostService
+	Most    most.Post
 	Conf    config.UsedConfig
 }
 
@@ -42,20 +43,21 @@ func NewNotificationService(deps *NotificationDeps) *NotificationService {
 		most:      deps.Most,
 		conf:      deps.Conf,
 		iteration: 0,
+		now:       time.Now,
 	}
 }
 
 type Notification interface {
-	CheckSent() error
-	CheckUsed() error
-	CheckVerification() error
+	CheckSent(ctx context.Context) error
+	CheckUsed(ctx context.Context) error
+	CheckVerification(ctx context.Context) error
 	CheckReceiving(ctx context.Context, dto *models.DialogResponse) error
 }
 
-func (s *NotificationService) CheckSent() error {
+func (s *NotificationService) CheckSent(ctx context.Context) error {
 	logger.Info("Check sent")
 
-	data, err := s.si.GetSent(context.Background(), &models.GetSiDTO{})
+	data, err := s.si.GetSent(ctx, &models.GetSiDTO{})
 	if err != nil {
 		return err
 	}
@@ -65,18 +67,18 @@ func (s *NotificationService) CheckSent() error {
 			continue
 		}
 
-		if err := s.sendInstruments(d); err != nil {
+		if err := s.sendInstruments(ctx, d); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *NotificationService) CheckUsed() error {
+func (s *NotificationService) CheckUsed(ctx context.Context) error {
 	logger.Info("Check used")
 	index := s.iteration % len(s.conf.Times)
 
-	now := time.Now()
+	now := s.now()
 	monthEnd := time.Date(now.Year(), now.Month()+1, 0, now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), now.Location())
 	if s.iteration >= len(s.conf.Times) {
 		monthEnd = time.Date(now.Year(), now.Month()+2, 0, now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), now.Location())
@@ -103,7 +105,7 @@ func (s *NotificationService) CheckUsed() error {
 		IsActive:        models.NewOptional(true),
 		HasReturnNotice: models.NewOptional(true),
 	}
-	sections, err := s.section.GetAll(context.Background(), params)
+	sections, err := s.section.GetAll(ctx, params)
 	if err != nil {
 		return err
 	}
@@ -111,7 +113,7 @@ func (s *NotificationService) CheckUsed() error {
 	for _, section := range sections {
 		period.SectionId = section.ID
 
-		data, err := s.si.GetUsed(context.Background(), period)
+		data, err := s.si.GetUsed(ctx, period)
 		if err != nil {
 			return err
 		}
@@ -138,7 +140,7 @@ func (s *NotificationService) CheckUsed() error {
 				{Key: "service", Value: "sia"},
 			}
 
-			if err := s.most.Post.Create(context.Background(), post); err != nil {
+			if err := s.most.Create(ctx, post); err != nil {
 				return err
 			}
 		}
@@ -152,11 +154,11 @@ func (s *NotificationService) CheckUsed() error {
 	return nil
 }
 
-func (s *NotificationService) CheckVerification() error {
+func (s *NotificationService) CheckVerification(ctx context.Context) error {
 	logger.Info("Check verification")
 
 	params := &models.GetAllSectionsDTO{IsActive: models.NewOptional(true)}
-	sections, err := s.section.GetAll(context.Background(), params)
+	sections, err := s.section.GetAll(ctx, params)
 	if err != nil {
 		return err
 	}
@@ -165,7 +167,7 @@ func (s *NotificationService) CheckVerification() error {
 	// хотя можно получать все section и делать запросы в цикле, если полученный день совпадает с текущим
 	// можно еще разрешить отрицательные значения, чтобы можно было считать от конца месяца
 
-	now := time.Now()
+	now := s.now()
 	for _, item := range sections {
 		if item.VerificationDay < 0 {
 			if time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day()-item.VerificationDay != now.Day() {
@@ -185,7 +187,7 @@ func (s *NotificationService) CheckVerification() error {
 			ChannelIsOption: false,
 		}
 
-		data, err := s.si.GetVerification(context.Background(), dto)
+		data, err := s.si.GetVerification(ctx, dto)
 		if err != nil {
 			return err
 		}
@@ -193,12 +195,12 @@ func (s *NotificationService) CheckVerification() error {
 		for _, d := range data {
 			switch d.BidType {
 			case "ointo_si":
-				if err := s.sendFile(d); err != nil {
+				if err := s.sendFile(ctx, d); err != nil {
 					return err
 				}
 
 			default:
-				if err := s.sendVerificationTable(d); err != nil {
+				if err := s.sendVerificationTable(ctx, d); err != nil {
 					return err
 				}
 			}
@@ -208,8 +210,8 @@ func (s *NotificationService) CheckVerification() error {
 	return nil
 }
 
-func (s *NotificationService) sendFile(dto *models.SiVerification) error {
-	doc, err := s.file.MakeDocSchedule(context.Background(), dto.SI)
+func (s *NotificationService) sendFile(ctx context.Context, dto *models.SiVerification) error {
+	doc, err := s.file.MakeDocSchedule(ctx, dto.SI)
 	if err != nil {
 		return err
 	}
@@ -222,7 +224,7 @@ func (s *NotificationService) sendFile(dto *models.SiVerification) error {
 		ChannelId: dto.NotificationChannel,
 		Filename:  "Поверка.docx",
 	}
-	fileId, err := s.most.Post.Upload(context.Background(), uploadDTO)
+	fileId, err := s.most.Upload(ctx, uploadDTO)
 	if err != nil {
 		return err
 	}
@@ -233,14 +235,14 @@ func (s *NotificationService) sendFile(dto *models.SiVerification) error {
 		Message:   "#### В следующем месяце подходит срок поверки у следующих инструментов",
 		FileIds:   []string{fileId},
 	}
-	if err := s.most.Post.Create(context.Background(), post); err != nil {
+	if err := s.most.Create(ctx, post); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *NotificationService) sendVerificationTable(dto *models.SiVerification) error {
+func (s *NotificationService) sendVerificationTable(ctx context.Context, dto *models.SiVerification) error {
 	tableHeader := "| Наименование СИ | Вид (тип, марка) СИ | зав.№ | Дата следующей поверки |"
 	title := "В следующем месяце подходит срок поверки у следующих инструментов"
 
@@ -264,7 +266,7 @@ func (s *NotificationService) sendVerificationTable(dto *models.SiVerification) 
 		ChannelId: dto.NotificationChannel,
 		Message:   fmt.Sprintf("#### %s\n%s", title, strings.Join(table, "\n")),
 	}
-	if err := s.most.Post.Create(context.Background(), post); err != nil {
+	if err := s.most.Create(ctx, post); err != nil {
 		return err
 	}
 
@@ -307,20 +309,20 @@ func (s *NotificationService) CheckReceiving(ctx context.Context, dto *models.Di
 
 	instrumentsDTO.SI = accept
 	instrumentsDTO.Place = accept[0].Place
-	if err := s.updateInstruments(instrumentsDTO); err != nil {
+	if err := s.updateInstruments(ctx, instrumentsDTO); err != nil {
 		return err
 	}
 
 	if len(missing) > 0 {
 		instrumentsDTO.SI = missing
-		if err := s.sendInstruments(instrumentsDTO); err != nil {
+		if err := s.sendInstruments(ctx, instrumentsDTO); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *NotificationService) sendInstruments(dto *models.SiReceiving) error {
+func (s *NotificationService) sendInstruments(ctx context.Context, dto *models.SiReceiving) error {
 	post := &models.CreatePostDTO{
 		ChannelId: dto.Channel,
 		IsPinned:  true,
@@ -398,13 +400,13 @@ func (s *NotificationService) sendInstruments(dto *models.SiReceiving) error {
 	post.Actions = []*model.PostAction{action}
 	// }
 
-	if err := s.most.Post.Create(context.Background(), post); err != nil {
+	if err := s.most.Create(ctx, post); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *NotificationService) updateInstruments(dto *models.SiReceiving) error {
+func (s *NotificationService) updateInstruments(ctx context.Context, dto *models.SiReceiving) error {
 	post := &models.UpdatePostDTO{
 		PostId:   dto.PostId,
 		IsPinned: false,
@@ -436,7 +438,7 @@ func (s *NotificationService) updateInstruments(dto *models.SiReceiving) error {
 		{Key: "service", Value: "sia"},
 	}
 
-	if err := s.most.Post.Update(context.Background(), post); err != nil {
+	if err := s.most.Update(ctx, post); err != nil {
 		return err
 	}
 	return nil

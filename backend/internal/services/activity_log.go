@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/goccy/go-json"
 
@@ -14,6 +15,7 @@ import (
 
 type ActivityLogService struct {
 	repo repository.ActivityLog
+	wg   sync.WaitGroup
 }
 
 func NewActivityLogService(repo repository.ActivityLog) *ActivityLogService {
@@ -26,11 +28,14 @@ type ActivityLog interface {
 	GetByRecord(ctx context.Context, dto *models.GetActivityLogDTO) ([]*models.ActivityLog, error)
 	GetAll(ctx context.Context, dto *models.ActivityLogFilter) ([]*models.ActivityLog, error)
 	LogActivity(ctx context.Context, dto *models.CreateActivityLogDTO)
+	Wait()
 }
 
 func (s *ActivityLogService) Create(ctx context.Context, dto *models.CreateActivityLogDTO) {
+	s.wg.Add(1)
 	go func() {
-		if err := s.repo.Create(context.Background(), dto); err != nil {
+		defer s.wg.Done()
+		if err := s.repo.Create(ctx, dto); err != nil {
 			logger.Error("failed to create activity log async", logger.ErrAttr(err))
 			error_bot.Send(nil, fmt.Sprintf("failed to create activity log async: %v", err), dto)
 		}
@@ -38,12 +43,18 @@ func (s *ActivityLogService) Create(ctx context.Context, dto *models.CreateActiv
 }
 
 func (s *ActivityLogService) CreateSeveral(ctx context.Context, dto []*models.CreateActivityLogDTO) {
+	s.wg.Add(1)
 	go func() {
-		if err := s.repo.CreateSeveral(context.Background(), dto); err != nil {
+		defer s.wg.Done()
+		if err := s.repo.CreateSeveral(ctx, dto); err != nil {
 			logger.Error("failed to create several activity log async", logger.ErrAttr(err))
 			error_bot.Send(nil, fmt.Sprintf("failed to create several activity log async: %v", err), dto)
 		}
 	}()
+}
+
+func (s *ActivityLogService) Wait() {
+	s.wg.Wait()
 }
 
 func (s *ActivityLogService) GetByRecord(ctx context.Context, dto *models.GetActivityLogDTO) ([]*models.ActivityLog, error) {

@@ -157,7 +157,9 @@ func (s *DocumentService) Upload(ctx context.Context, dto *models.DocumentsDTO) 
 }
 func (s *DocumentService) cleanupFiles(paths []string) {
 	for _, p := range paths {
-		_ = os.RemoveAll(filepath.Dir(p)) // Удаляем папку с ID документа
+		if err := os.RemoveAll(filepath.Dir(p)); err != nil {
+			logger.Error("failed to cleanup document files", logger.ErrAttr(err))
+		}
 	}
 }
 

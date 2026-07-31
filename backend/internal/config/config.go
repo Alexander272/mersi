@@ -13,14 +13,15 @@ type (
 		LogLevel    string `yaml:"log_level" env-default:"info"`
 		LogSource   bool   `yaml:"log_source" env-default:"false"`
 		// Redis        RedisConfig
-		Postgres     PostgresConfig
-		Auth         AuthConfig
-		Keycloak     KeycloakConfig
-		Http         HttpConfig
-		Limiter      LimiterConfig
-		Notification NotificationConfig
-		Scheduler    SchedulerConfig
-		Bot          BotConfig
+		Postgres      PostgresConfig
+		Auth          AuthConfig
+		Keycloak      KeycloakConfig
+		Http          HttpConfig
+		ApiLimiter    LimiterConfig `yaml:"api_limiter"`
+		StaticLimiter LimiterConfig `yaml:"static_limiter"`
+		Notification  NotificationConfig
+		Scheduler     SchedulerConfig
+		Bot           BotConfig
 	}
 
 	HttpConfig struct {
@@ -29,6 +30,7 @@ type (
 		ReadTimeout        time.Duration `yaml:"read_timeout" env:"READ_TIMEOUT" env-default:"10s"`
 		WriteTimeout       time.Duration `yaml:"write_timeout" env:"WRITE_TIMEOUT" env-default:"10s"`
 		MaxHeaderMegabytes int           `yaml:"max_header_bytes" env-default:"1"`
+		TrustedProxies     []string      `yaml:"trusted_proxies"`
 	}
 
 	// RedisConfig struct {
@@ -39,12 +41,16 @@ type (
 	// }
 
 	PostgresConfig struct {
-		Host     string `yaml:"host" env:"POSTGRES_HOST"`
-		Port     string `yaml:"port" env:"POSTGRES_PORT"`
-		Username string `yaml:"username" env:"POSTGRES_NAME"`
-		Password string `env:"POSTGRES_PASSWORD"`
-		DbName   string `yaml:"db_name" env:"POSTGRES_DB"`
-		SSLMode  string `yaml:"ssl_mode" env:"POSTGRES_SSL"`
+		Host            string        `yaml:"host" env:"POSTGRES_HOST"`
+		Port            string        `yaml:"port" env:"POSTGRES_PORT"`
+		Username        string        `yaml:"username" env:"POSTGRES_NAME"`
+		Password        string        `env:"POSTGRES_PASSWORD"`
+		DbName          string        `yaml:"db_name" env:"POSTGRES_DB"`
+		SSLMode         string        `yaml:"ssl_mode" env:"POSTGRES_SSL"`
+		MaxOpenConns    int           `yaml:"max_open_conns" env:"POSTGRES_MAX_OPEN_CONNS" env-default:"25"`
+		MaxIdleConns    int           `yaml:"max_idle_conns" env:"POSTGRES_MAX_IDLE_CONNS" env-default:"10"`
+		ConnMaxLifetime time.Duration `yaml:"conn_max_lifetime" env:"POSTGRES_CONN_MAX_LIFETIME" env-default:"5m"`
+		ConnMaxIdleTime time.Duration `yaml:"conn_max_idle_time" env:"POSTGRES_CONN_MAX_IDLE_TIME" env-default:"5m"`
 	}
 
 	AuthConfig struct {

@@ -7,3 +7,5 @@ npx vite-bundle-visualizer
 
 export DOCKER_API_VERSION=1.44
 unset DOCKER_API_VERSION
+
+go test -tags integration -count=1 ./...
