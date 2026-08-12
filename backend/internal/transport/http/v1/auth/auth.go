@@ -133,10 +133,15 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	}
 
 	realm := c.GetHeader("realm")
-	err = uuid.Validate(realm)
-	if err != nil {
-		response.SendError(c, models.ErrSessionEmpty)
-		return
+	if realm == "" {
+		realm = c.Query("realm")
+	}
+	if realm != "" {
+		err = uuid.Validate(realm)
+		if err != nil {
+			response.SendError(c, models.ErrInvalidInput)
+			return
+		}
 	}
 
 	req := &models.RefreshDTO{

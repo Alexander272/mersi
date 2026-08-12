@@ -524,11 +524,27 @@ func (f *fakeRealmSvc) Get(ctx context.Context, dto *models.GetRealmsDTO) ([]*mo
 type fakeRoleSvc struct {
 	Role
 	getAllWithNamesFn func(ctx context.Context, dto *models.GetRolesDTO) ([]*models.RoleFull, error)
+	getWithRealmFn    func(ctx context.Context, dto *models.GetRoleByRealmDTO) ([]*models.RoleWithRealm, error)
+	getFn             func(ctx context.Context, name string) (*models.Role, error)
 }
 
 func (f *fakeRoleSvc) GetAllWithNames(ctx context.Context, dto *models.GetRolesDTO) ([]*models.RoleFull, error) {
 	if f.getAllWithNamesFn != nil {
 		return f.getAllWithNamesFn(ctx, dto)
+	}
+	return nil, nil
+}
+
+func (f *fakeRoleSvc) GetWithRealm(ctx context.Context, dto *models.GetRoleByRealmDTO) ([]*models.RoleWithRealm, error) {
+	if f.getWithRealmFn != nil {
+		return f.getWithRealmFn(ctx, dto)
+	}
+	return nil, nil
+}
+
+func (f *fakeRoleSvc) Get(ctx context.Context, name string) (*models.Role, error) {
+	if f.getFn != nil {
+		return f.getFn(ctx, name)
 	}
 	return nil, nil
 }

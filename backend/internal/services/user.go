@@ -100,6 +100,9 @@ func (s *UserService) GetRoles(ctx context.Context, req *models.GetUserInfoDTO) 
 	user := &models.User{ID: req.UserID}
 
 	user.Roles = roles
+	if len(roles) == 0 {
+		return nil, models.ErrForbidden
+	}
 	if req.Realm == "" {
 		user.Role = roles[0].Name
 		req.Realm = roles[0].RealmId

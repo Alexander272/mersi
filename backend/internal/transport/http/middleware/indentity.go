@@ -14,12 +14,6 @@ func (m *Middleware) VerifyToken(c *gin.Context) {
 
 	user, err := m.services.Session.DecodeAccessToken(c, token)
 	if err != nil {
-		domain := m.auth.Domain
-		if !strings.Contains(c.Request.Host, domain) {
-			domain = c.Request.Host
-		}
-
-		c.SetCookie(constants.AuthCookie, "", -1, "/", domain, m.auth.Secure, true)
 		response.SendError(c, models.ErrSessionEmpty)
 		return
 	}
