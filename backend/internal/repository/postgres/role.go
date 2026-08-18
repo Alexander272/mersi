@@ -210,7 +210,7 @@ func (r *RoleRepo) Create(ctx context.Context, role *models.RoleDTO) error {
 	query := fmt.Sprintf(`INSERT INTO %s(id, name, level, extends, description) VALUES ($1, $2, $3, $4, $5)`, RoleTable)
 	id := uuid.New()
 
-	_, err := r.db.ExecContext(ctx, query, id, role.Name, role.Level, pq.Array(role.Extends))
+	_, err := r.db.ExecContext(ctx, query, id, role.Name, role.Level, pq.Array(role.Extends), role.Description)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}

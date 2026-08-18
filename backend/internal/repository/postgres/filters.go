@@ -69,12 +69,8 @@ func (r *FilterRepo) Create(ctx context.Context, dto []*models.SavedFilterDTO) e
 func (r *FilterRepo) Delete(ctx context.Context, dto *models.DeleteSavedFiltersDTO) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE sso_id=:sso_id AND section_id=:section_id`, FiltersTable)
 
-	res, err := r.db.NamedExecContext(ctx, query, dto)
-	if err != nil {
+	if _, err := r.db.NamedExecContext(ctx, query, dto); err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
-	}
-	if err := checkRowsAffected(res); err != nil {
-		return err
 	}
 	return nil
 }

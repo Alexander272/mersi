@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
 	"github.com/Alexander272/mersi/backend/internal/repository/postgres/pq_models"
 	"github.com/google/uuid"
@@ -288,16 +289,16 @@ func (r *InstrumentRepo) Delete(ctx context.Context, id string) error {
 	// 	) = 'reserve'`,
 	// 	InstrumentsTable, LocationTable,
 	// )
-	query := fmt.Sprintf(`UPDATE %s AS i SET status='deleted', deleted=now()
+	query := fmt.Sprintf(`UPDATE %s AS i SET status=$2, deleted=now()
 		FROM (SELECT i.id, l.status FROM %s AS i
 			LEFT JOIN LATERAL (SELECT status FROM %s WHERE instrument_id=i.id ORDER BY date_of_issue DESC, created_at DESC LIMIT 1) AS l ON TRUE
 			WHERE i.id=$1
 		) AS s
-		WHERE i.id=$1 AND (s.status IS NULL OR s.status='reserve')`,
+		WHERE i.id=$1 AND (s.status IS NULL OR s.status=$3)`,
 		InstrumentsTable, InstrumentsTable, LocationTable,
 	)
 
-	res, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id, models.InstrumentDeleted, constants.Reserve)
 	if err != nil {
 		return fmt.Errorf("failed to execute query. error: %w", err)
 	}

@@ -169,9 +169,9 @@ func (r *DepartmentAccessRepo) UpdateSeveral(ctx context.Context, dto []*models.
 	query := fmt.Sprintf(`UPDATE %s AS t 
 		SET department_id = s.department_id, sso_id = s.sso_id 
 		FROM (
-			SELECT UNNEST($1::uuid[]) as id, 
-				   UNNEST($2::uuid[]) as department_id, 
-				   UNNEST($3::text[]) as sso_id, 
+		SELECT UNNEST($1::uuid[]) as id, 
+			   UNNEST($2::uuid[]) as department_id, 
+			   UNNEST($3::text[]) as sso_id
 		) AS s 
 		WHERE t.id = s.id`,
 		DepartmentAccessTable,

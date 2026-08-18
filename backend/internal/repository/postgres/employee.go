@@ -89,10 +89,10 @@ func (r *EmployeeRepo) GetByDepartment(ctx context.Context, departmentId string)
 }
 
 func (r *EmployeeRepo) GetByName(ctx context.Context, req *models.GetEmployeeByNameDTO) (*models.Employee, error) {
-	query := fmt.Sprintf(`SELECT id, name, most_id FROM %s WHERE name=$1 AND department_id=2`, EmployeeTable)
+	query := fmt.Sprintf(`SELECT id, name, most_id FROM %s WHERE name=$1 AND department_id=$2`, EmployeeTable)
 	data := &models.Employee{}
 
-	if err := r.db.GetContext(ctx, data, query, req.Name); err != nil {
+	if err := r.db.GetContext(ctx, data, query, req.Name, req.DepartmentId); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRows
 		}
