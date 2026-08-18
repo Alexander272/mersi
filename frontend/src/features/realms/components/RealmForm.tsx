@@ -50,6 +50,7 @@ const defaultValues: Form = {
 	hasCommissioningCert: false,
 	hasPreservations: false,
 	hasTransfer: false,
+	verificationSubtractDay: false,
 }
 
 export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
@@ -78,7 +79,7 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 	const saveHandler = handleSubmit(async form => {
 		if (!Object.keys(dirtyFields).length) return
 
-		const newData = { ...form, id: realm != 'new' ? realm : (data?.data.id || '') }
+		const newData = { ...form, id: realm != 'new' ? realm : data?.data.id || '' }
 		try {
 			if (realm == 'new') {
 				const payload = await create(newData).unwrap()
@@ -217,6 +218,16 @@ export const RealmForm: FC<Props> = ({ realm, setRealm }) => {
 						<FormControlLabel
 							control={<Switch checked={field.value} {...field} />}
 							label={`Уведомления о необходимости возврата ${field.value ? 'включены' : 'выключены'}`}
+						/>
+					)}
+				/>
+				<Controller
+					control={control}
+					name={'verificationSubtractDay'}
+					render={({ field }) => (
+						<FormControlLabel
+							control={<Switch checked={field.value} {...field} />}
+							label={`${field.value ? 'В' : 'Не в'}ычитать 1 день при расчёте`}
 						/>
 					)}
 				/>

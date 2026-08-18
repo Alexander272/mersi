@@ -2,12 +2,13 @@ import { FC, useEffect, useMemo, useState } from 'react'
 import { Button, Divider, Stack, Tooltip, useTheme } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
 import type { IVerificationDTO } from '../../modules/verification/types/verification'
 import { NullDate } from '@/constants/defaultValues'
+import { isEmptyDate, calcNextVerificationDate } from '@/utils/format'
+import { getRealm } from '@/features/realms/realmSlice'
 import { PermRules } from '@/constants/permissions'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useCheckPermission } from '@/features/user/hooks/check'
@@ -41,6 +42,7 @@ export const EditForm: FC<Props> = ({ id }) => {
 	])
 
 	const section = useAppSelector(getSection)
+	const realm = useAppSelector(getRealm)
 	const dispatch = useAppDispatch()
 
 	const { data, isFetching } = useGetCreateFormStepsQuery(
@@ -127,13 +129,15 @@ export const EditForm: FC<Props> = ({ id }) => {
 			form.verification.registerLink = form.verification.registerLink?.trim()
 
 			if (
+				isEmptyDate(form.verification.nextVerificationDate) &&
 				form.verification.verificationDate &&
-				form.verification.verificationDate != '' &&
 				form.instrument.interVerificationInterval
 			) {
-				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate)
-					.add(+form.instrument.interVerificationInterval, 'month')
-					.toISOString()
+				form.verification.nextVerificationDate = calcNextVerificationDate(
+					form.verification.verificationDate,
+					+form.instrument.interVerificationInterval,
+					realm?.verificationSubtractDay,
+				)
 			}
 
 			if (form.verification.notVerified) {

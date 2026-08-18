@@ -6,10 +6,12 @@ import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { IVerificationDTO } from '../../types/verification'
-import { useAppDispatch } from '@/hooks/redux'
+import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
 import { useCreateVerificationMutation, useGetLastVerificationQuery } from '../../verificationApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
+import { getRealm } from '@/features/realms/realmSlice'
+import { calcNextVerificationDate } from '@/utils/format'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { LeftArrowIcon } from '@/components/Icons/LeftArrowIcon'
 import { Inputs } from './Inputs'
@@ -31,6 +33,7 @@ export const Create: FC<Props> = ({ ids }) => {
 	const { palette } = useTheme()
 
 	const dispatch = useAppDispatch()
+	const realm = useAppSelector(getRealm)
 
 	const { data, isFetching } = useGetInstrumentByIdQuery(ids?.length ? ids[active] : '', {
 		skip: !ids?.length || !ids[active],
@@ -57,9 +60,11 @@ export const Create: FC<Props> = ({ ids }) => {
 
 		form.instrumentId = data.data.id
 		if (!form.nextVerificationDate || form.nextVerificationDate == '') {
-			form.nextVerificationDate = dayjs(form.verificationDate)
-				.add(+(data.data.interVerificationInterval || 0), 'month')
-				.toISOString()
+			form.nextVerificationDate = calcNextVerificationDate(
+				form.verificationDate,
+				+(data.data.interVerificationInterval || 0),
+				realm?.verificationSubtractDay,
+			)
 		}
 
 		form.docs = form.docs?.filter(d => d.doc && d.doc != '')

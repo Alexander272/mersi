@@ -20,6 +20,7 @@ type ImportService struct {
 	transferToSave TransferToSave
 	transferToDep  TransferToDepartment
 	writeOff       WriteOff
+	realm          Realm
 }
 
 type ImportDeps struct {
@@ -30,6 +31,7 @@ type ImportDeps struct {
 	TransferToSave TransferToSave
 	TransferToDep  TransferToDepartment
 	WriteOff       WriteOff
+	Realm          Realm
 }
 
 func NewImportService(deps *ImportDeps) *ImportService {
@@ -41,6 +43,7 @@ func NewImportService(deps *ImportDeps) *ImportService {
 		transferToSave: deps.TransferToSave,
 		transferToDep:  deps.TransferToDep,
 		writeOff:       deps.WriteOff,
+		realm:          deps.Realm,
 	}
 }
 
@@ -319,6 +322,11 @@ func (s *ImportService) LoadOintoSi(ctx context.Context, dto *models.ImportDTO) 
 				}
 			}
 			nextDate := date.AddDate(0, si[i].InterVerificationInterval, 0)
+
+			realmData, err := s.realm.GetById(ctx, &models.GetRealmByIdDTO{ID: dto.RealmId})
+			if err == nil && realmData.VerificationSubtractDay {
+				nextDate = nextDate.AddDate(0, 0, -1)
+			}
 
 			status := "work"
 			if strings.Contains(strings.ToLower(verString), "списан") || strings.Contains(strings.ToLower(verString), "непригод") {

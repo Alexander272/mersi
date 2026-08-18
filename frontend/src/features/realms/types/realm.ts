@@ -15,6 +15,7 @@ export interface IRealm {
 	hasCommissioningCert: boolean
 	hasPreservations: boolean
 	hasTransfer: boolean
+	verificationSubtractDay: boolean
 	created: string
 }
 
@@ -33,4 +34,5 @@ export interface IRealmDTO {
 	hasCommissioningCert: boolean
 	hasPreservations: boolean
 	hasTransfer: boolean
+	verificationSubtractDay: boolean
 }

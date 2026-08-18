@@ -10,6 +10,8 @@ import { useAppSelector } from '@/hooks/redux'
 import { useGetTempFilesQuery } from '@/features/files/fileApiSlice'
 import { useGetVerificationFieldsQuery } from '../../modules/fieldsApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
+import { getRealm } from '@/features/realms/realmSlice'
+import { calcNextVerificationDate } from '@/utils/format'
 import { UploadButton } from '@/features/files/components/UploadButton/UploadButton'
 import { DateTextField } from '@/components/DatePicker/DatePicker'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
@@ -60,6 +62,7 @@ type FieldProps = {
 
 const DateField: FC<FieldProps & { minDate: string; interval?: number }> = ({ label, field, minDate, interval }) => {
 	const { control, watch, setValue } = useFormContext()
+	const realm = useAppSelector(getRealm)
 
 	let date = ''
 	let status = ''
@@ -72,13 +75,13 @@ const DateField: FC<FieldProps & { minDate: string; interval?: number }> = ({ la
 		if (field == 'nextVerificationDate') {
 			console.log(date, interval)
 			if (interval && date) {
-				const newDate = dayjs(date).add(interval, 'M').subtract(1, 'd').toISOString()
+				const newDate = calcNextVerificationDate(date, interval, realm?.verificationSubtractDay)
 				console.log(newDate)
 
 				setValue('nextVerificationDate', newDate)
 			}
 		}
-	}, [date, field, interval, setValue])
+	}, [date, field, interval, setValue, realm?.verificationSubtractDay])
 
 	if (field == 'nextVerificationDate' && status != VerificationStatuses.Work) return null
 	return (

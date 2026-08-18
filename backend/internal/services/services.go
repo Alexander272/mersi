@@ -173,6 +173,7 @@ func NewServices(deps *Deps) *Services {
 		TransferToSave: transferToSave,
 		TransferToDep:  transferToDep,
 		WriteOff:       writeOff,
+		Realm:          realm,
 	})
 
 	scheduler := NewSchedulerService(&SchedulerDeps{

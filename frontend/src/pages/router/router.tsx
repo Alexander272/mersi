@@ -2,7 +2,7 @@ import { createBrowserRouter, RouteObject } from 'react-router'
 
 import { AppRoutes } from './routes'
 import { Layout } from '@/components/Layout/Layout'
-import { NotFound } from '@/pages/notFound/NotFoundLazy'
+import ErrorPage from '@/pages/error/ErrorPage'
 import { Auth } from '@/pages/auth/AuthLazy'
 import { Home } from '@/pages/home/HomeLazy'
 import { Sections } from '@/pages/sections/SectionLazy'
@@ -16,7 +16,7 @@ import PrivateRoute from './PrivateRoute'
 const config: RouteObject[] = [
 	{
 		element: <Layout />,
-		errorElement: <NotFound />,
+		errorElement: <ErrorPage />,
 		children: [
 			{
 				path: AppRoutes.Auth,

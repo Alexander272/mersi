@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'
 import type { IFetchError } from '@/app/types/error'
 import type { IVerification, IVerificationDTO } from '../../types/verification'
 import { useAppDispatch } from '@/hooks/redux'
+import { useGetInstrumentByIdQuery } from '@/features/table/instrumentApiSlice'
 import { useUpdateVerificationMutation, useDeleteVerificationMutation } from '../../verificationApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
@@ -25,6 +26,9 @@ export const EditVerificationItem: FC<Props> = ({ data }) => {
 		values: { ...data, instrumentId: data.instrumentId || '' },
 	})
 
+	const { data: instrument } = useGetInstrumentByIdQuery(data.instrumentId || '', {
+		skip: !data.instrumentId,
+	})
 	const [update, { isLoading }] = useUpdateVerificationMutation()
 	const [remove, { isLoading: isDeleting }] = useDeleteVerificationMutation()
 
@@ -56,7 +60,7 @@ export const EditVerificationItem: FC<Props> = ({ data }) => {
 
 			<Stack component={'form'} onSubmit={submitHandler}>
 				<FormProvider {...methods}>
-					<Inputs instrumentId={data.instrumentId || ''} />
+					<Inputs instrumentId={data.instrumentId || ''} interval={instrument?.data.interVerificationInterval} />
 				</FormProvider>
 
 				<Stack direction={'row'} justifyContent={'center'} spacing={2}>

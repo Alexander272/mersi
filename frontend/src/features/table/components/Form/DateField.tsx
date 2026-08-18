@@ -5,6 +5,9 @@ import dayjs from 'dayjs'
 
 import type { ICreateFormField } from '@/features/sections/modules/form/types/create'
 import { DateTextField } from '@/components/DatePicker/DatePicker'
+import { useAppSelector } from '@/hooks/redux'
+import { getRealm } from '@/features/realms/realmSlice'
+import { calcNextVerificationDate } from '@/utils/format'
 
 type Props = {
 	data: ICreateFormField
@@ -13,6 +16,7 @@ type Props = {
 export const DateField: FC<Props> = ({ data }) => {
 	const { control, setValue, watch } = useFormContext()
 	const watchField = watch(data.hide)
+	const realm = useAppSelector(getRealm)
 
 	let interval = 0
 	let date = ''
@@ -24,11 +28,11 @@ export const DateField: FC<Props> = ({ data }) => {
 	useEffect(() => {
 		if (data.field == 'nextVerificationDate') {
 			if (interval && date) {
-				const newDate = dayjs(date).add(interval, 'M').subtract(1, 'd').toISOString()
+				const newDate = calcNextVerificationDate(date, interval, realm?.verificationSubtractDay)
 				setValue('verification.nextVerificationDate', newDate)
 			}
 		}
-	}, [data.field, date, interval, setValue])
+	}, [data.field, date, interval, setValue, realm?.verificationSubtractDay])
 
 	if (data.hide && watchField) return null
 	return (

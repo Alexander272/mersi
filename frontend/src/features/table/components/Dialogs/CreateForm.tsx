@@ -2,17 +2,18 @@ import { FC, useEffect, useState } from 'react'
 import { Box, Button, Divider, Stack, Tooltip } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
-import dayjs from 'dayjs'
 
 import type { IFetchError } from '@/app/types/error'
 import type { ISiForm } from '../../types/si'
 import { NullDate } from '@/constants/defaultValues'
+import { isEmptyDate, calcNextVerificationDate } from '@/utils/format'
 import { localKeys } from '../../constants/storage'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useGetCreateFormStepsQuery } from '@/features/sections/modules/form/formApiSlice'
 import { useCreateSiMutation } from '../../siApiSlice'
 import { changeDialogIsOpen } from '@/features/dialog/dialogSlice'
 import { getSection } from '@/features/sections/sectionSlice'
+import { getRealm } from '@/features/realms/realmSlice'
 import { BoxFallback } from '@/components/Fallback/BoxFallback'
 import { Step, Stepper } from '@/components/Stepper/Stepper'
 import { RefreshIcon } from '@/components/Icons/RefreshIcon'
@@ -27,6 +28,7 @@ export const CreateForm: FC<Props> = () => {
 	const [steps, setSteps] = useState<Step[]>([])
 
 	const section = useAppSelector(getSection)
+	const realm = useAppSelector(getRealm)
 	const dispatch = useAppDispatch()
 
 	const { data, isFetching } = useGetCreateFormStepsQuery(
@@ -79,13 +81,15 @@ export const CreateForm: FC<Props> = () => {
 			form.verification.registerLink = form.verification.registerLink?.trim()
 
 			if (
+				isEmptyDate(form.verification.nextVerificationDate) &&
 				form.verification.verificationDate &&
-				form.verification.verificationDate != '' &&
 				form.instrument.interVerificationInterval
 			) {
-				form.verification.nextVerificationDate = dayjs(form.verification.verificationDate)
-					.add(+form.instrument.interVerificationInterval, 'month')
-					.toISOString()
+				form.verification.nextVerificationDate = calcNextVerificationDate(
+					form.verification.verificationDate,
+					+form.instrument.interVerificationInterval,
+					realm?.verificationSubtractDay,
+				)
 			}
 			if (form.verification.notVerified) {
 				form.instrument.interVerificationInterval = 0

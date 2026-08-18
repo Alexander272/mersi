@@ -3,21 +3,22 @@ package models
 import "time"
 
 type Realm struct {
-	ID                   string    `json:"id" db:"id"`
-	Name                 string    `json:"name" db:"name"`
-	Realm                string    `json:"realm" db:"realm"`
-	IsActive             bool      `json:"isActive" db:"is_active"`
-	NotificationChannel  string    `json:"notificationChannel" db:"notification_channel"`
-	ExpirationNotice     bool      `json:"expirationNotice" db:"expiration_notice"`
-	ReturnNotice         bool      `json:"returnNotice" db:"return_notice"`
-	LocationType         string    `json:"locationType" db:"location_type"`
-	NeedConfirmed        bool      `json:"needConfirmed" db:"need_confirmed"`
-	NasEmployees         bool      `json:"hasEmployees" db:"has_employees"`
-	HasResponsible       bool      `json:"hasResponsible" db:"has_responsible"`
-	HasCommissioningCert bool      `json:"hasCommissioningCert" db:"has_commissioning_cert"`
-	HasPreservations     bool      `json:"hasPreservations" db:"has_preservations"`
-	HasTransfer          bool      `json:"hasTransfer" db:"has_transfer"`
-	Created              time.Time `json:"created" db:"created_at"`
+	ID                     string    `json:"id" db:"id"`
+	Name                   string    `json:"name" db:"name"`
+	Realm                  string    `json:"realm" db:"realm"`
+	IsActive               bool      `json:"isActive" db:"is_active"`
+	NotificationChannel    string    `json:"notificationChannel" db:"notification_channel"`
+	ExpirationNotice       bool      `json:"expirationNotice" db:"expiration_notice"`
+	ReturnNotice           bool      `json:"returnNotice" db:"return_notice"`
+	LocationType           string    `json:"locationType" db:"location_type"`
+	NeedConfirmed          bool      `json:"needConfirmed" db:"need_confirmed"`
+	NasEmployees           bool      `json:"hasEmployees" db:"has_employees"`
+	HasResponsible         bool      `json:"hasResponsible" db:"has_responsible"`
+	HasCommissioningCert   bool      `json:"hasCommissioningCert" db:"has_commissioning_cert"`
+	HasPreservations       bool      `json:"hasPreservations" db:"has_preservations"`
+	HasTransfer            bool      `json:"hasTransfer" db:"has_transfer"`
+	VerificationSubtractDay bool    `json:"verificationSubtractDay" db:"verification_subtract_day"`
+	Created                time.Time `json:"created" db:"created_at"`
 }
 
 type GetRealmsDTO struct {
@@ -39,20 +40,21 @@ type ChooseRealmDTO struct {
 }
 
 type RealmDTO struct {
-	ID                   string `json:"id" db:"id"`
-	Name                 string `json:"name" db:"name" binding:"required"`
-	Realm                string `json:"realm" db:"realm" binding:"required"`
-	IsActive             bool   `json:"isActive" db:"is_active"`
-	NotificationChannel  string `json:"notificationChannel" db:"notification_channel"`
-	ExpirationNotice     bool   `json:"expirationNotice" db:"expiration_notice"`
-	ReturnNotice         bool   `json:"returnNotice" db:"return_notice"`
-	LocationType         string `json:"locationType" db:"location_type"`
-	NeedConfirmed        bool   `json:"needConfirmed" db:"need_confirmed"`
-	NasEmployees         bool   `json:"hasEmployees" db:"has_employees"`
-	HasResponsible       bool   `json:"hasResponsible" db:"has_responsible"`
-	HasCommissioningCert bool   `json:"hasCommissioningCert" db:"has_commissioning_cert"`
-	HasPreservations     bool   `json:"hasPreservations" db:"has_preservations"`
-	HasTransfer          bool   `json:"hasTransfer" db:"has_transfer"`
+	ID                     string `json:"id" db:"id"`
+	Name                   string `json:"name" db:"name" binding:"required"`
+	Realm                  string `json:"realm" db:"realm" binding:"required"`
+	IsActive               bool   `json:"isActive" db:"is_active"`
+	NotificationChannel    string `json:"notificationChannel" db:"notification_channel"`
+	ExpirationNotice       bool   `json:"expirationNotice" db:"expiration_notice"`
+	ReturnNotice           bool   `json:"returnNotice" db:"return_notice"`
+	LocationType           string `json:"locationType" db:"location_type"`
+	NeedConfirmed          bool   `json:"needConfirmed" db:"need_confirmed"`
+	NasEmployees           bool   `json:"hasEmployees" db:"has_employees"`
+	HasResponsible         bool   `json:"hasResponsible" db:"has_responsible"`
+	HasCommissioningCert   bool   `json:"hasCommissioningCert" db:"has_commissioning_cert"`
+	HasPreservations       bool   `json:"hasPreservations" db:"has_preservations"`
+	HasTransfer            bool   `json:"hasTransfer" db:"has_transfer"`
+	VerificationSubtractDay bool  `json:"verificationSubtractDay" db:"verification_subtract_day"`
 }
 
 type DeleteRealmDTO struct {

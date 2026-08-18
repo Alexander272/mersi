@@ -25,8 +25,11 @@ export const ActiveRealm: FC<Props> = ({ sx }) => {
 	useEffect(() => {
 		if (!data) return
 		const founded = data.data.find(e => e.id === realm?.id)
-		if (founded) return
-		dispatch(setRealm(data.data[0]))
+		if (founded) {
+			dispatch(setRealm(founded))
+		} else {
+			dispatch(setRealm(data.data[0]))
+		}
 	}, [data, dispatch, realm])
 
 	const changeHandler = async (event: SelectChangeEvent) => {
