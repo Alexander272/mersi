@@ -1,6 +1,6 @@
 import { toast } from 'react-toastify'
 
-import type { IEmployee } from './types/employee'
+import type { IEmployee, IUniqueEmployee } from './types/employee'
 import type { IBaseFetchError } from '@/app/types/error'
 import { apiSlice } from '@/app/apiSlice'
 import { API } from '@/app/api'
@@ -23,7 +23,7 @@ const employeesApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
-		getUniqueEmployee: builder.query<{ data: IEmployee[] }, string>({
+		getUniqueEmployee: builder.query<{ data: IUniqueEmployee[] }, string>({
 			query: realm => ({
 				url: `${API.employees}/unique`,
 				params: new URLSearchParams({ realm }),

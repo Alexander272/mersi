@@ -61,7 +61,7 @@ var siFieldsMap = map[string]string{
 	"lastCertificate":           "vd.name",
 	"department":                "l.department_id",
 	"place":                     "l.place",
-	"person":                    "l.person",
+	"person":                    "l.person_id::text",
 	"status":                    "l.status",
 }
 
@@ -267,6 +267,15 @@ func (r *SIRepo) buildFilterClause(filters []*models.Filter, params []interface{
 			continue
 		}
 
+		// Специальная логика для person: фильтрация по person_id (UUID)
+		if f.Field == "person" {
+			val := f.Values[0].Value
+			params = append(params, val)
+			idx := len(params)
+			clauses = append(clauses, fmt.Sprintf("l.person_id::text = ANY(string_to_array($%d, ','))", idx))
+			continue
+		}
+
 		// Общая логика для остальных фильтров
 		for _, sv := range f.Values {
 			val := sv.Value
@@ -392,6 +401,14 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 	count := len(params) + 1
 
 	for _, f := range req.Filters {
+		// Специальная логика для person: фильтрация по person_id (UUID)
+		if f.Field == "person" {
+			val := f.Values[0].Value
+			params = append(params, val)
+			filter += fmt.Sprintf(" AND l.person_id::text = ANY(string_to_array($%d, ','))", count)
+			count++
+			continue
+		}
 		for _, sv := range f.Values {
 			filter += " AND " + getFilterLine(sv.CompareType, r.formatField(f.Field), count)
 			if sv.CompareType == "in" {

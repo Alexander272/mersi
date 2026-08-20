@@ -329,7 +329,10 @@ export const ListFilter: FC<Props & { label?: string }> = ({ index, label }) => 
 		}
 		if (field == 'person') {
 			const { data } = await getEmployees(realm.id)
-			setOptions(data?.data.map(d => ({ id: d.name.replaceAll('.', '_'), name: d.name })) || [])
+			setOptions(data?.data.map(d => ({
+				id: d.id,
+				name: d.department ? `${d.name} (${d.department})` : d.name,
+			})) || [])
 		}
 	}, [field, getDepartments, getEmployees, hasReserve, realm])
 
@@ -338,13 +341,13 @@ export const ListFilter: FC<Props & { label?: string }> = ({ index, label }) => 
 	}, [fetchData])
 
 	const changeHandler = (values: Option[]) => {
-		setValue(`filters.${index}.value`, values.map(v => v.id.replaceAll('_', '.')).join(','))
+		setValue(`filters.${index}.value`, values.map(v => v.id).join(','))
 	}
 
 	if (isFetchDeps || isFetchEmp) return <Fallback />
 	return (
 		<SelectWithFilter
-			values={options.filter(o => value.includes(o.id.replaceAll('_', '.')))}
+			values={options.filter(o => value.includes(o.id))}
 			options={options}
 			onChange={changeHandler}
 			label={label}

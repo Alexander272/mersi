@@ -23,6 +23,7 @@ type Employee struct {
 	Name         string `json:"name" db:"name"`
 	Notes        string `json:"notes" db:"notes"`
 	DepartmentId string `json:"departmentId" db:"department_id"`
+	Department   string `json:"department" db:"department"`
 	// IncludeDepartments []string `json:"includeDepartments" db:"include_departments"` //TODO возможно это нужно делать в другом месте
 	// DefaultFilters     string   // TODO определиться с типом и форматом фильтров (возможно фильтры нужно делать в другом месте)
 	MattermostId string `json:"mattermostId" db:"most_id"` //TODO возможно на клиенте это мне не нужно будет

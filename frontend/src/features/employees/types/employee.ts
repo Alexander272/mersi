@@ -13,6 +13,12 @@ export interface IEmployee {
 	notes: string
 }
 
+export interface IUniqueEmployee {
+	id: string
+	name: string
+	department: string
+}
+
 export interface IEmployeeForm {
 	lastName: string
 	firstName: string

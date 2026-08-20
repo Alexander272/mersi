@@ -66,8 +66,8 @@ func (r *EmployeeRepo) GetAll(ctx context.Context, req *models.GetEmployeesDTO) 
 }
 
 func (r *EmployeeRepo) GetUnique(ctx context.Context, dto *models.GetUniqueEmployeeDTO) ([]*models.Employee, error) {
-	query := fmt.Sprintf(`SELECT  DISTINCT(e.name) FROM %s AS e INNER JOIN %s AS d ON e.department_id=d.id
-		WHERE realm_id=$1 ORDER BY e.name`,
+	query := fmt.Sprintf(`SELECT e.id, e.name, d.name AS department FROM %s AS e INNER JOIN %s AS d ON e.department_id=d.id
+		WHERE realm_id=$1 ORDER BY e.name, d.name`,
 		EmployeeTable, DepartmentTable,
 	)
 	employees := []*models.Employee{}
