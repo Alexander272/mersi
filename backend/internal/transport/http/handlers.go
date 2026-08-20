@@ -118,6 +118,7 @@ var allowedStaticExts = map[string]bool{
 	".html": true, ".js": true, ".css": true, ".png": true, ".jpg": true,
 	".jpeg": true, ".svg": true, ".gif": true, ".ico": true, ".webp": true,
 	".woff": true, ".woff2": true, ".ttf": true, ".eot": true, ".map": true,
+	".webmanifest": true,
 }
 
 func (h *Handler) initStatic(router *gin.Engine, conf *config.Config) {

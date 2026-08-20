@@ -57,7 +57,7 @@ export const Head = () => {
 			const fetchError = error as IFetchError
 			toast.error(fetchError.data.message, { autoClose: false })
 		}
-	}, 5 * 1000)
+	}, 1000)
 	useEffect(() => {
 		if (!saving.current) return
 		saveSort(sort)
