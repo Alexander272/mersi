@@ -324,7 +324,7 @@ func (s *ImportService) LoadOintoSi(ctx context.Context, dto *models.ImportDTO) 
 			nextDate := date.AddDate(0, si[i].InterVerificationInterval, 0)
 
 			realmData, err := s.realm.GetById(ctx, &models.GetRealmByIdDTO{ID: dto.RealmId})
-			if err == nil && realmData.VerificationSubtractDay {
+			if err == nil && realmData != nil && realmData.VerificationSubtractDay {
 				nextDate = nextDate.AddDate(0, 0, -1)
 			}
 

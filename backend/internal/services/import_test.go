@@ -30,6 +30,7 @@ func newImportFixture() (*ImportService, *fakeInstrumentSvc, *fakeVerificationSv
 		TransferToSave: &fakeTransferToSaveSvc{},
 		TransferToDep:  transferToDep,
 		WriteOff:       writeOff,
+		Realm:          &fakeRealmSvc{},
 	})
 	return svc, instrument, verification, repair, preservation, transferToDep, writeOff
 }

@@ -111,11 +111,15 @@ func (m *Middleware) DepartmentAccess(c *gin.Context) {
 
 	realm := c.GetHeader("realm")
 
-	access, err := m.services.Permission.Enforce(user.ID, realm, constants.SI, constants.Write)
-	if err != nil {
-		logger.Error("failed to check write permission", logger.ErrAttr(err))
+	siAccess, siErr := m.services.Permission.Enforce(user.ID, realm, constants.SI, constants.Write)
+	if siErr != nil {
+		logger.Error("failed to check si write permission", logger.ErrAttr(siErr))
 	}
-	if err == nil && access {
+	locAccess, locErr := m.services.Permission.Enforce(user.ID, realm, constants.Location, constants.Write)
+	if locErr != nil {
+		logger.Error("failed to check location write permission", logger.ErrAttr(locErr))
+	}
+	if (siErr == nil && siAccess) || (locErr == nil && locAccess) {
 		c.Set(constants.CtxHasWritePermission, true)
 	} else {
 		c.Set(constants.CtxHasWritePermission, false)

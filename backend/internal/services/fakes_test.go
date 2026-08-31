@@ -511,7 +511,8 @@ func (f *fakeRuleSvc) GetAll(ctx context.Context) ([]*models.Rule, error) {
 
 type fakeRealmSvc struct {
 	Realm
-	getFn func(ctx context.Context, dto *models.GetRealmsDTO) ([]*models.Realm, error)
+	getFn     func(ctx context.Context, dto *models.GetRealmsDTO) ([]*models.Realm, error)
+	getByIdFn func(ctx context.Context, req *models.GetRealmByIdDTO) (*models.Realm, error)
 }
 
 func (f *fakeRealmSvc) Get(ctx context.Context, dto *models.GetRealmsDTO) ([]*models.Realm, error) {
@@ -519,6 +520,13 @@ func (f *fakeRealmSvc) Get(ctx context.Context, dto *models.GetRealmsDTO) ([]*mo
 		return f.getFn(ctx, dto)
 	}
 	return nil, nil
+}
+
+func (f *fakeRealmSvc) GetById(ctx context.Context, req *models.GetRealmByIdDTO) (*models.Realm, error) {
+	if f.getByIdFn != nil {
+		return f.getByIdFn(ctx, req)
+	}
+	return &models.Realm{ID: req.ID}, nil
 }
 
 type fakeRoleSvc struct {
