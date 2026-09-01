@@ -76,6 +76,10 @@ func (s *NotificationService) CheckSent(ctx context.Context) error {
 
 func (s *NotificationService) CheckUsed(ctx context.Context) error {
 	logger.Info("Check used")
+	if len(s.conf.Times) == 0 {
+		return nil
+	}
+
 	index := s.iteration % len(s.conf.Times)
 
 	now := s.now()
@@ -171,11 +175,11 @@ func (s *NotificationService) CheckVerification(ctx context.Context) error {
 	for _, item := range sections {
 		if item.VerificationDay < 0 {
 			if time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day()-item.VerificationDay != now.Day() {
-				return nil
+				continue
 			}
 		} else {
 			if item.VerificationDay != now.Day() {
-				return nil
+				continue
 			}
 		}
 		logger.Debug("Check verification", logger.AnyAttr("section", item))
@@ -308,9 +312,11 @@ func (s *NotificationService) CheckReceiving(ctx context.Context, dto *models.Di
 	}
 
 	instrumentsDTO.SI = accept
-	instrumentsDTO.Place = accept[0].Place
-	if err := s.updateInstruments(ctx, instrumentsDTO); err != nil {
-		return err
+	if len(accept) > 0 {
+		instrumentsDTO.Place = accept[0].Place
+		if err := s.updateInstruments(ctx, instrumentsDTO); err != nil {
+			return err
+		}
 	}
 
 	if len(missing) > 0 {
@@ -323,6 +329,10 @@ func (s *NotificationService) CheckReceiving(ctx context.Context, dto *models.Di
 }
 
 func (s *NotificationService) sendInstruments(ctx context.Context, dto *models.SiReceiving) error {
+	if len(dto.SI) == 0 {
+		return nil
+	}
+
 	post := &models.CreatePostDTO{
 		ChannelId: dto.Channel,
 		IsPinned:  true,
@@ -407,6 +417,10 @@ func (s *NotificationService) sendInstruments(ctx context.Context, dto *models.S
 }
 
 func (s *NotificationService) updateInstruments(ctx context.Context, dto *models.SiReceiving) error {
+	if len(dto.SI) == 0 {
+		return nil
+	}
+
 	post := &models.UpdatePostDTO{
 		PostId:   dto.PostId,
 		IsPinned: false,

@@ -80,7 +80,7 @@ func (r *ResponsibleRepo) GetWithChannel(ctx context.Context, req *models.GetRes
 		condition = "WHERE " + strings.Join(params, " AND ")
 	}
 
-	query := fmt.Sprintf(`SELECT r.id, department_id, sso_id, channel_id FROM %s AS r
+	query := fmt.Sprintf(`SELECT r.id, department_id, sso_id, COALESCE(d.channel_id::text, '') AS channel_id FROM %s AS r
 		LEFT JOIN %s AS d ON d.id=department_id
 		%s ORDER BY r.created_at, r.id`,
 		ResponsibleTable, DepartmentTable, condition,

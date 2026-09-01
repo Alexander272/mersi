@@ -169,8 +169,18 @@ func (h *Handler) upload(c *gin.Context) {
 		return
 	}
 
-	instrumentId := form.Value["instrumentId"][0]
-	group := form.Value["group"][0]
+	instrumentIds, ok := form.Value["instrumentId"]
+	if !ok || len(instrumentIds) == 0 {
+		response.SendError(c, fmt.Errorf("%w: instrumentId", models.ErrNotValid))
+		return
+	}
+	groups, ok := form.Value["group"]
+	if !ok || len(groups) == 0 {
+		response.SendError(c, fmt.Errorf("%w: group", models.ErrNotValid))
+		return
+	}
+	instrumentId := instrumentIds[0]
+	group := groups[0]
 
 	u, exists := c.Get(constants.CtxUser)
 	if !exists {

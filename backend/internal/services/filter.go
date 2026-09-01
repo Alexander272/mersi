@@ -47,6 +47,10 @@ func (s *FilterService) Create(ctx context.Context, dto []*models.SavedFilterDTO
 }
 
 func (s *FilterService) Change(ctx context.Context, dto []*models.SavedFilterDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
+
 	if err := s.Delete(ctx, &models.DeleteSavedFiltersDTO{
 		UserId:    dto[0].UserId,
 		SectionId: dto[0].SectionId,

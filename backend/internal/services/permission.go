@@ -146,12 +146,15 @@ func (s *PermissionService) ReloadPolicies(ctx context.Context) error {
 	}
 
 	for _, a := range accesses {
-		role := roles[0].Name
+		role := ""
 		for _, r := range roles {
 			if r.ID == a.RoleID {
 				role = r.Name
 				break
 			}
+		}
+		if role == "" {
+			continue
 		}
 		if _, err := s.enforcer.AddGroupingPolicy(a.SSO_ID, role, a.RealmID); err != nil {
 			return fmt.Errorf("failed to add group (access) policy. error: %w", err)

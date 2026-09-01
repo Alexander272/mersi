@@ -27,7 +27,7 @@ type Channel interface {
 }
 
 func (r *ChannelRepo) GetAll(ctx context.Context) ([]*models.Channel, error) {
-	query := fmt.Sprintf(`SELECT id, name, description, most_channel_id FROM %s ORDER BY name`, ChannelTable)
+	query := fmt.Sprintf(`SELECT id, name, description, COALESCE(most_channel_id, '') AS most_channel_id FROM %s ORDER BY name`, ChannelTable)
 	channels := []*models.Channel{}
 
 	if err := r.db.SelectContext(ctx, &channels, query); err != nil {

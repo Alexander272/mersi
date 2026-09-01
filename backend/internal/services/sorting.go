@@ -58,6 +58,10 @@ func (s *SortingService) Update(ctx context.Context, dto *models.SortingDTO) err
 }
 
 func (s *SortingService) Change(ctx context.Context, dto []*models.SortingDTO) error {
+	if len(dto) == 0 {
+		return nil
+	}
+
 	if err := s.DeleteAll(ctx, &models.DeleteSortingDTO{
 		UserId:    dto[0].UserId,
 		SectionId: dto[0].SectionId,

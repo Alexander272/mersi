@@ -251,6 +251,9 @@ func (r *SIRepo) buildFilterClause(filters []*models.Filter, params []interface{
 	var clauses []string
 
 	for _, f := range filters {
+		if len(f.Values) == 0 {
+			continue
+		}
 		field := r.formatField(f.Field)
 
 		// Специальная логика для департамента
@@ -342,8 +345,9 @@ func (r *SIRepo) mapToDomain(tmp []*pq_models.SI) []*models.SI {
 }
 
 func (r *SIRepo) GetVerification(ctx context.Context, req *models.Period) ([]*models.SiVerification, error) {
-	query := fmt.Sprintf(`SELECT i.id, i.name, type, factory_number, year_of_issue, state_register, measurement_limits, date, next_date, 
-		inter_verification_interval, manufacturer, notes, notification_channel, bid_type
+	query := fmt.Sprintf(`SELECT i.id, i.name, type, factory_number, year_of_issue, state_register, measurement_limits, 
+		COALESCE(v.date, '0001-01-01'::date) AS date, COALESCE(v.next_date, '0001-01-01'::date) AS next_date, 
+		inter_verification_interval, manufacturer, notes, COALESCE(r.notification_channel, '') AS notification_channel, COALESCE(s.bid_type, '') AS bid_type
 		FROM %s AS i
 		LEFT JOIN %s AS s ON s.id=section_id
 		LEFT JOIN %s AS r ON r.id=realm_id
@@ -401,6 +405,9 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 	count := len(params) + 1
 
 	for _, f := range req.Filters {
+		if len(f.Values) == 0 {
+			continue
+		}
 		// Специальная логика для person: фильтрация по person_id (UUID)
 		if f.Field == "person" {
 			val := f.Values[0].Value
@@ -421,7 +428,8 @@ func (r *SIRepo) GetSent(ctx context.Context, req *models.GetSiDTO) ([]*models.S
 		}
 	}
 
-	query := fmt.Sprintf(`SELECT i.id, i.name, factory_number, year_of_issue, state_register, measurement_limits, date, next_date,
+	query := fmt.Sprintf(`SELECT i.id, i.name, factory_number, year_of_issue, state_register, measurement_limits, 
+		COALESCE(v.date, '0001-01-01'::date) AS date, COALESCE(v.next_date, '0001-01-01'::date) AS next_date,
 		COALESCE(person, e.emp, '') AS person, COALESCE(place, d.dep, '') AS place, COALESCE(l.last_place, lp.name, '') AS last_place,
 		COALESCE(most_channel_id, channel, '') AS notification_channel
 		FROM %s AS i
