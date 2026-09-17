@@ -3,6 +3,7 @@ package utils
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Alexander272/mersi/backend/internal/constants"
 	"github.com/Alexander272/mersi/backend/internal/models"
@@ -60,7 +61,7 @@ func GetFilterParams(c *gin.Context) *models.GetSiDTO {
 
 			filterValues = append(filterValues, &models.FilterValue{
 				CompareType: compareType,
-				Value:       val,
+				Value:       NormalizeFilterValue(field, val),
 			})
 		}
 
@@ -122,6 +123,30 @@ func parseSort(sortLine string) []*models.Sort {
 		sorts = append(sorts, &models.Sort{Field: field, Type: order})
 	}
 	return sorts
+}
+
+// dateFilterFields — поля, значения которых сравниваются со столбцами типа date/time в БД.
+// Для них нужно приводить legacy-значения (unix-время в секундах) к строке, понятной PostgreSQL.
+var dateFilterFields = map[string]struct{}{
+	"nextVerificationDate": {},
+	"verificationDate":     {},
+	"dateOfReceipt":        {},
+	"repairInfo":           {},
+}
+
+// NormalizeFilterValue приводит значение date-фильтра к строке, которую PostgreSQL сможет
+// привести к типу столбца. Старые фильтры, сохранённые прежней версией фронтенда, содержат
+// unix-время в секундах (например 1774983600), а колонки БД уже являются datetime.
+// ISO-строки ("2026-04-01T00:00:00.000Z") и NullDate оставляем без изменений.
+func NormalizeFilterValue(field, value string) string {
+	if _, ok := dateFilterFields[field]; !ok {
+		return value
+	}
+	sec, err := strconv.ParseInt(value, 10, 64)
+	if err != nil || sec <= 0 {
+		return value
+	}
+	return time.Unix(sec, 0).In(time.Local).Format("2006-01-02 15:04:05")
 }
 
 // Выносим маппинг и реплейсер на уровень пакета, чтобы не пересоздавать их при каждом вызове

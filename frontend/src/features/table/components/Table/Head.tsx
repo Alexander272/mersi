@@ -8,6 +8,7 @@ import { ColWidth, RowHeight } from '../../constants/defaultValues'
 import { useAppDispatch, useAppSelector } from '@/hooks/redux'
 import { useDebounceFunc } from '@/hooks/useDebounceFunc'
 import { useCalcWidth } from '../../utils/calcWidth'
+import { normalizeFilters } from '../../utils/normalizeFilters'
 import { useGetColumnsQuery } from '@/features/sections/modules/columns/columnsApiSlice'
 import { useGetFiltersQuery, useGetSortQuery, useSaveSortMutation } from '../../filtersApiSlice'
 import { getSection } from '@/features/sections/sectionSlice'
@@ -34,7 +35,7 @@ export const Head = () => {
 	const [save] = useSaveSortMutation()
 
 	useEffect(() => {
-		if (filters) dispatch(setFilters(filters.data))
+		if (filters) dispatch(setFilters(normalizeFilters(filters.data)))
 	}, [dispatch, filters])
 	useEffect(() => {
 		if (sorting)

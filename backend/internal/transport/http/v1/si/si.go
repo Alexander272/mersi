@@ -120,7 +120,7 @@ func (h *Handler) getSent(c *gin.Context) {
 		for key, value := range valueMap {
 			values = append(values, &models.FilterValue{
 				CompareType: key,
-				Value:       value,
+				Value:       utils.NormalizeFilterValue(k, value),
 			})
 		}
 
