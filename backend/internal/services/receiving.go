@@ -140,7 +140,7 @@ func (s *ReceivingService) ReceivingDialogOpen(ctx context.Context, dto *models.
 
 func (s *ReceivingService) ForcedReceipt(ctx context.Context, dto *models.ForcedReceiptDTO) error {
 	// Получаем старые данные для логирования
-	oldData, err := s.location.GetById(ctx, &models.GetLocationDTO{InstrumentId: dto.InstrumentId})
+	oldData, err := s.location.GetLast(ctx, &models.GetLocationDTO{InstrumentId: dto.InstrumentId})
 	if err != nil && !errors.Is(err, models.ErrNoRows) {
 		return fmt.Errorf("failed to get old location data. error: %w", err)
 	}
